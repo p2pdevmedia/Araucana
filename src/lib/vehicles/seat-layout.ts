@@ -12,6 +12,11 @@ function positionMatches(seat: VehicleSeat, row: number, column: number) {
   return seat.row === row && seat.column === column;
 }
 
+function nextSeatNumber(seats: VehicleSeat[]) {
+  const max = seats.reduce((currentMax, seat) => Math.max(currentMax, Number(seat.number) || 0), 0);
+  return String(max + 1).padStart(2, "0");
+}
+
 export function moveSeatToPosition(seats: VehicleSeat[], fromIndex: number, row: number, column: number): VehicleSeat[] {
   const movingSeat = seats[fromIndex];
 
@@ -59,4 +64,19 @@ export function getSeatCanvasSize(seats: VehicleSeat[]) {
     rows: maxRow + 1,
     columns: Math.max(minimumCanvasColumns, maxColumn + 1)
   };
+}
+
+export function addSeatAtPosition(seats: VehicleSeat[], row: number, column: number): VehicleSeat[] {
+  if (row < 1 || column < 1 || seats.some((seat) => positionMatches(seat, row, column))) {
+    return seats;
+  }
+
+  return [
+    ...seats,
+    {
+      number: nextSeatNumber(seats),
+      row,
+      column
+    }
+  ];
 }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { getSeatCanvasSize, moveSeatToPosition, removeSeatAtIndex, updateSeatNumber } from "./seat-layout";
+import { addSeatAtPosition, getSeatCanvasSize, moveSeatToPosition, removeSeatAtIndex, updateSeatNumber } from "./seat-layout";
 
 describe("seat layout editing", () => {
   test("moves a seat into an empty row and column", () => {
@@ -65,5 +65,18 @@ describe("seat layout editing", () => {
       rows: 3,
       columns: 6
     });
+  });
+
+  test("creates a new seat directly at an empty grid position", () => {
+    expect(addSeatAtPosition([{ number: "01", row: 1, column: 1 }], 1, 3)).toEqual([
+      { number: "01", row: 1, column: 1 },
+      { number: "02", row: 1, column: 3 }
+    ]);
+  });
+
+  test("does not create a duplicate seat when the grid position is occupied", () => {
+    expect(addSeatAtPosition([{ number: "01", row: 1, column: 1 }], 1, 1)).toEqual([
+      { number: "01", row: 1, column: 1 }
+    ]);
   });
 });

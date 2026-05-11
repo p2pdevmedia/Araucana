@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { getSeatCanvasSize, moveSeatToPosition, removeSeatAtIndex, updateSeatNumber } from "@/lib/vehicles/seat-layout";
+import {
+  addSeatAtPosition,
+  getSeatCanvasSize,
+  moveSeatToPosition,
+  removeSeatAtIndex,
+  updateSeatNumber
+} from "@/lib/vehicles/seat-layout";
 import { type VehicleSeat } from "@/lib/vehicles/templates";
 
 type SeatLayoutEditorProps = {
@@ -14,56 +20,20 @@ const blankSeat: VehicleSeat = {
   column: 1
 };
 
-function nextSeatNumber(seats: VehicleSeat[]) {
-  const max = seats.reduce((currentMax, seat) => Math.max(currentMax, Number(seat.number) || 0), 0);
-  return String(max + 1).padStart(2, "0");
-}
-
-function nextSeatNumberFrom(seats: VehicleSeat[], offset: number) {
-  const max = seats.reduce((currentMax, seat) => Math.max(currentMax, Number(seat.number) || 0), 0);
-  return String(max + offset).padStart(2, "0");
-}
-
 function seatsToJson(seats: VehicleSeat[]) {
   return JSON.stringify(seats);
-}
-
-function maxSeatValue(seats: VehicleSeat[], key: "row" | "column") {
-  return seats.reduce((max, seat) => Math.max(max, seat[key]), 1);
 }
 
 export function SeatLayoutEditor({ initialSeats }: SeatLayoutEditorProps) {
   const [seats, setSeats] = useState<VehicleSeat[]>(initialSeats.length ? initialSeats : [blankSeat]);
   const [draggedSeatIndex, setDraggedSeatIndex] = useState<number | null>(null);
+  const [activeEmptyCell, setActiveEmptyCell] = useState<string | null>(null);
+  const [aisleCells, setAisleCells] = useState<Set<string>>(() => new Set());
   const serializedSeats = useMemo(() => seatsToJson(seats), [seats]);
   const { rows, columns } = getSeatCanvasSize(seats);
 
   function updateSeat(index: number, value: string) {
     setSeats((currentSeats) => updateSeatNumber(currentSeats, index, value));
-  }
-
-  function addSeat() {
-    setSeats((currentSeats) => [
-      ...currentSeats,
-      {
-        number: nextSeatNumber(currentSeats),
-        row: maxSeatValue(currentSeats, "row") + 1,
-        column: 1
-      }
-    ]);
-  }
-
-  function addRowWithLayout(rowColumns: number[]) {
-    setSeats((currentSeats) => {
-      const row = maxSeatValue(currentSeats, "row") + 1;
-      const nextSeats = rowColumns.map((column, index) => ({
-        number: nextSeatNumberFrom(currentSeats, index + 1),
-        row,
-        column
-      }));
-
-      return [...currentSeats, ...nextSeats];
-    });
   }
 
   function removeSeat(index: number) {
@@ -77,6 +47,28 @@ export function SeatLayoutEditor({ initialSeats }: SeatLayoutEditorProps) {
 
     setSeats((currentSeats) => moveSeatToPosition(currentSeats, draggedSeatIndex, row, column));
     setDraggedSeatIndex(null);
+    setActiveEmptyCell(null);
+  }
+
+  function createSeat(row: number, column: number) {
+    const cellKey = `${row}-${column}`;
+    setSeats((currentSeats) => addSeatAtPosition(currentSeats, row, column));
+    setAisleCells((currentAisles) => {
+      const nextAisles = new Set(currentAisles);
+      nextAisles.delete(cellKey);
+      return nextAisles;
+    });
+    setActiveEmptyCell(null);
+  }
+
+  function markAisle(row: number, column: number) {
+    const cellKey = `${row}-${column}`;
+    setAisleCells((currentAisles) => {
+      const nextAisles = new Set(currentAisles);
+      nextAisles.add(cellKey);
+      return nextAisles;
+    });
+    setActiveEmptyCell(null);
   }
 
   function autoNumber() {
@@ -102,15 +94,6 @@ export function SeatLayoutEditor({ initialSeats }: SeatLayoutEditorProps) {
           <button className="ghost-button" type="button" onClick={autoNumber}>
             Autonumerar
           </button>
-          <button className="ghost-button" type="button" onClick={() => addRowWithLayout([1, 2, 4])}>
-            Fila 2+1 con pasillo
-          </button>
-          <button className="ghost-button" type="button" onClick={() => addRowWithLayout([1, 2, 4, 5])}>
-            Fila 2+2 con pasillo
-          </button>
-          <button className="ghost-button" type="button" onClick={addSeat}>
-            Agregar asiento
-          </button>
         </div>
       </div>
       <div
@@ -122,6 +105,9 @@ export function SeatLayoutEditor({ initialSeats }: SeatLayoutEditorProps) {
           const column = (index % columns) + 1;
           const seatIndex = seats.findIndex((item) => item.row === row && item.column === column);
           const seat = seatIndex >= 0 ? seats[seatIndex] : null;
+          const cellKey = `${row}-${column}`;
+          const isActiveEmptyCell = activeEmptyCell === cellKey;
+          const isMarkedAisle = aisleCells.has(cellKey);
           const hasSeatBefore = seats.some((item) => item.row === row && item.column < column);
           const hasSeatAfter = seats.some((item) => item.row === row && item.column > column);
 
@@ -155,21 +141,60 @@ export function SeatLayoutEditor({ initialSeats }: SeatLayoutEditorProps) {
             </div>
           ) : (
             <button
-              className="vehicle-seat-gap"
-              aria-label="Mover asiento a este espacio libre"
+              className={`vehicle-seat-gap ${isActiveEmptyCell ? "active" : ""} ${isMarkedAisle ? "marked" : ""}`}
+              aria-label="Casillero vacio"
               key={`${row}-${column}`}
               onDragOver={(event) => event.preventDefault()}
+              onClick={() => setActiveEmptyCell((currentCell) => (currentCell === cellKey ? null : cellKey))}
               onDrop={() => moveSeat(row, column)}
               type="button"
             >
-              {hasSeatBefore && hasSeatAfter ? "Pasillo" : ""}
+              {isActiveEmptyCell ? (
+                <span className="empty-seat-actions">
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      createSeat(row, column);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        createSeat(row, column);
+                      }
+                    }}
+                  >
+                    Asiento
+                  </span>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      markAisle(row, column);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        markAisle(row, column);
+                      }
+                    }}
+                  >
+                    Pasillo
+                  </span>
+                </span>
+              ) : isMarkedAisle || (hasSeatBefore && hasSeatAfter) ? (
+                "Pasillo"
+              ) : (
+                "+"
+              )}
             </button>
           );
         })}
       </div>
       <p className="seat-layout-help">
-        Arrastra un asiento para cambiarlo de posicion o soltarlo en el pasillo. Tambien podes editar el numero o
-        borrarlo desde el mismo grafico.
+        Toca un casillero vacio para crear un asiento o marcar pasillo. Arrastra un asiento para cambiarlo de posicion.
       </p>
     </div>
   );
