@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { StopsEditorField } from "./stops-editor-field";
 
 type RouteFormAction = (formData: FormData) => Promise<void>;
 
@@ -17,24 +18,6 @@ type RouteFormData = {
   isActive?: boolean;
   stops?: unknown;
 };
-
-function stopsToText(stops: unknown) {
-  if (!Array.isArray(stops)) {
-    return "";
-  }
-
-  return stops
-    .map((stop) => {
-      if (!stop || typeof stop !== "object") {
-        return "";
-      }
-
-      const item = stop as { name?: unknown; km?: unknown; minutes?: unknown; note?: unknown };
-      return [item.name, item.km, item.minutes, item.note].map((value) => String(value ?? "")).join(" | ");
-    })
-    .filter(Boolean)
-    .join("\n");
-}
 
 type RouteFormProps = {
   action: RouteFormAction;
@@ -82,10 +65,7 @@ export function RouteForm({ action, route, submitLabel }: RouteFormProps) {
         Descripcion
         <textarea name="description" rows={3} defaultValue={route?.description} />
       </label>
-      <label className="span-2">
-        Paradas (Nombre | km | minutos | nota)
-        <textarea name="stops" rows={4} defaultValue={stopsToText(route?.stops)} />
-      </label>
+      <StopsEditorField stops={route?.stops} />
       <label className="checkbox-row">
         <input name="featured" type="checkbox" defaultChecked={route?.featured ?? false} />
         Destacada

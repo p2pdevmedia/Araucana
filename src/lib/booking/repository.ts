@@ -9,7 +9,7 @@ import {
   ScheduleOptionDto,
   SeatMapDto
 } from "./types";
-import { createReservationSchema, type CreateReservationInput } from "./validation";
+import { createReservationSchema, passengerSchema, type CreateReservationInput, type PassengerInput } from "./validation";
 import { manualPaymentProvider } from "@/lib/payments/manual-provider";
 import type { PaymentProvider } from "@/lib/payments/types";
 
@@ -122,6 +122,7 @@ type BookingTransactionClient = {
   };
   passenger: {
     create(args: unknown): Promise<PassengerRecord & { id: string }>;
+    update(args: unknown): Promise<PassengerRecord>;
   };
   reservation: {
     findFirst(args: unknown): Promise<ReservationRecord | null>;
@@ -301,6 +302,21 @@ function mapReservation(reservation: ReservationRecord): ReservationDetailDto {
           qrPayload: reservation.ticket.qrPayload
         }
       : null
+  };
+}
+
+function normalizePassengerInput(input: PassengerInput): PassengerInput {
+  const nationality = input.nationality?.trim() || null;
+
+  return {
+    ...input,
+    firstName: input.firstName.trim(),
+    lastName: input.lastName.trim(),
+    email: input.email.trim().toLowerCase(),
+    phone: input.phone.trim(),
+    documentType: input.documentType.trim(),
+    documentId: input.documentId.trim(),
+    nationality
   };
 }
 
@@ -525,6 +541,35 @@ export function createBookingRepository(client: BookingClient, deps: BookingRepo
       return getReservationByCodeWithClient(client, code);
     },
 
+    async updatePassengerForReservation(code: string, input: PassengerInput) {
+      const normalizedCode = code.toUpperCase();
+      const parsed = normalizePassengerInput(passengerSchema.parse(input));
+
+      return client.$transaction(async (tx) => {
+        const reservation = await tx.reservation.findUnique({
+          where: { code: normalizedCode },
+          include: reservationInclude()
+        });
+
+        if (!reservation) {
+          throw new BookingError("RESERVATION_NOT_FOUND", "Reservation not found");
+        }
+
+        await tx.passenger.update({
+          where: { id: reservation.passengerId },
+          data: parsed
+        });
+
+        const detail = await getReservationByCodeWithClient(tx, normalizedCode);
+
+        if (!detail) {
+          throw new BookingError("RESERVATION_NOT_FOUND", "Reservation not found after passenger update");
+        }
+
+        return detail;
+      });
+    },
+
     async attachManualPaymentReceipt(
       code: string,
       receipt: {
@@ -692,6 +737,7 @@ export const listSchedulesForRoute = defaultRepository.listSchedulesForRoute;
 export const getSeatMap = defaultRepository.getSeatMap;
 export const createWebReservation = defaultRepository.createWebReservation;
 export const getReservationByCode = defaultRepository.getReservationByCode;
+export const updatePassengerForReservation = defaultRepository.updatePassengerForReservation;
 export const attachManualPaymentReceipt = defaultRepository.attachManualPaymentReceipt;
 export const approveManualPayment = defaultRepository.approveManualPayment;
 export const listAdminSchedules = defaultRepository.listAdminSchedules;

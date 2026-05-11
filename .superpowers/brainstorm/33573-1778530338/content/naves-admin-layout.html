@@ -1,0 +1,102 @@
+<h2>Pantalla Admin: Naves</h2>
+<p class="subtitle">La idea: cargar unidades propias sin linkearlas todavia con rutas, usando plantillas de marca/modelo para ahorrar tiempo y dejando todo editable.</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Vista principal</div>
+    <div class="mockup-body">
+      <div style="display:grid;grid-template-columns:180px 1fr;min-height:520px;border-radius:16px;overflow:hidden;border:1px solid #d7ccb4;background:#f7f0e2">
+        <div style="background:#123d35;color:#fbf6eb;padding:20px 16px">
+          <div style="font-family:Georgia,serif;font-size:24px;margin-bottom:26px">Araucana<br><span style="font:700 10px Arial;letter-spacing:.16em;text-transform:uppercase;opacity:.7">Admin</span></div>
+          <div style="display:grid;gap:14px;font:700 13px Arial">
+            <span>Panel</span>
+            <span>Rutas</span>
+            <span>Salidas</span>
+            <span style="color:#f0c587">Naves</span>
+            <span>Reservas</span>
+          </div>
+        </div>
+        <div style="padding:22px;display:grid;gap:18px">
+          <div style="display:flex;justify-content:space-between;gap:18px;align-items:center">
+            <div>
+              <div style="color:#a05438;font:800 10px Arial;letter-spacing:.18em;text-transform:uppercase">Flota</div>
+              <div style="font-family:Georgia,serif;font-size:42px;line-height:1">Naves</div>
+            </div>
+            <button class="mock-button">Agregar nave</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+            <div style="background:white;border:1px solid #e2d8c4;border-radius:12px;padding:14px"><div style="color:#6b7a6e;font-size:11px">Activas</div><strong style="font-size:28px;color:#1f5b4f">4</strong></div>
+            <div style="background:white;border:1px solid #e2d8c4;border-radius:12px;padding:14px"><div style="color:#6b7a6e;font-size:11px">Asientos</div><strong style="font-size:28px;color:#1f5b4f">79</strong></div>
+            <div style="background:white;border:1px solid #e2d8c4;border-radius:12px;padding:14px"><div style="color:#6b7a6e;font-size:11px">Plantillas</div><strong style="font-size:28px;color:#1f5b4f">8</strong></div>
+          </div>
+          <table style="width:100%;border-collapse:collapse;background:#fffaf1;border-radius:12px;overflow:hidden;font-size:13px">
+            <thead style="background:#e7dcc5;text-align:left">
+              <tr><th style="padding:12px">Nombre</th><th>Modelo</th><th>Capacidad</th><th>Estado</th></tr>
+            </thead>
+            <tbody>
+              <tr style="border-top:1px solid #e5ddcf"><td style="padding:12px">Araucana 24</td><td>Mercedes Sprinter 19+1</td><td>19 pax</td><td>Activa</td></tr>
+              <tr style="border-top:1px solid #e5ddcf"><td style="padding:12px">Transfer Lagos</td><td>Fiat Ducato Minibus</td><td>16 pax</td><td>Activa</td></tr>
+              <tr style="border-top:1px solid #e5ddcf"><td style="padding:12px">Van Chile</td><td>Toyota Hiace Commuter</td><td>15 pax</td><td>Activa</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Formulario con plantilla editable</div>
+    <div class="mockup-body">
+      <div style="display:grid;grid-template-columns:1fr 260px;gap:18px;min-height:520px">
+        <div style="background:#fbf6eb;border:1px solid #d7ccb4;border-radius:16px;padding:18px;display:grid;gap:13px;align-content:start">
+          <div style="font-family:Georgia,serif;font-size:30px">Agregar nave</div>
+          <label style="display:grid;gap:6px;font:700 12px Arial;color:#3d4d45">Nombre interno<input class="mock-input" value="Araucana Norte"></label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <label style="display:grid;gap:6px;font:700 12px Arial;color:#3d4d45">Marca<select class="mock-input"><option>Mercedes-Benz</option><option>Fiat</option><option>Iveco</option><option>Toyota</option></select></label>
+            <label style="display:grid;gap:6px;font:700 12px Arial;color:#3d4d45">Modelo<select class="mock-input"><option>Sprinter 517 CDI Minibus 19+1</option><option>Ducato Minibus 16 plazas</option><option>Daily Minibus 18+1</option></select></label>
+          </div>
+          <label style="display:grid;gap:6px;font:700 12px Arial;color:#3d4d45">Patente / identificador<input class="mock-input" value="AE 123 AR"></label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <label style="display:grid;gap:6px;font:700 12px Arial;color:#3d4d45">Capacidad pasajeros<input class="mock-input" value="19"></label>
+            <label style="display:grid;gap:6px;font:700 12px Arial;color:#3d4d45">Columnas<input class="mock-input" value="4"></label>
+          </div>
+          <div style="background:#fffaf1;border:1px solid #e2d8c4;border-radius:12px;padding:12px;font-size:13px;color:#3d4d45">
+            Al elegir modelo se precarga capacidad y asientos. Luego el admin puede renumerar, borrar butacas, cambiar filas o marcar espacios sin asiento.
+          </div>
+          <button class="mock-button">Guardar nave</button>
+        </div>
+        <div style="background:#fffaf1;border:1px solid #d7ccb4;border-radius:16px;padding:16px">
+          <div style="font-weight:800;margin-bottom:10px;color:#1f5b4f">Distribucion</div>
+          <div style="display:grid;grid-template-columns:repeat(4,42px);gap:9px;justify-content:center;background:#e7dcc5;border-radius:28px;padding:18px 12px 28px">
+            <div style="grid-column:1/3;background:#b7c9c4;border-radius:10px;padding:9px;text-align:center;font-size:11px">Chofer</div>
+            <div></div><div style="background:#d8c2a5;border-radius:10px;padding:9px;text-align:center;font-size:11px">Aux</div>
+            <div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">01</div><div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">02</div><div></div><div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">03</div>
+            <div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">04</div><div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">05</div><div></div><div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">06</div>
+            <div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">07</div><div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">08</div><div></div><div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">09</div>
+            <div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">10</div><div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">11</div><div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">12</div><div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">13</div>
+            <div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">14</div><div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">15</div><div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">16</div><div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">17</div>
+            <div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">18</div><div style="background:white;border:1px solid #cfc4b1;border-radius:10px;padding:10px;text-align:center">19</div><div></div><div></div>
+          </div>
+          <div style="margin-top:12px;font-size:12px;color:#6b7a6e">Botones esperados: agregar fila, quitar asiento, auto numerar, restaurar plantilla.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="recommended" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Recomendado: plantillas locales editables</h3>
+      <p>Incluye una base chica de Mercedes, Fiat, Iveco, Toyota, Renault y Hyundai. Sirve para precargar, pero el dato final es lo que edita el administrador.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="manual-first" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Manual primero, plantillas despues</h3>
+      <p>Menos riesgo inicial, pero el admin carga mas a mano y perdemos el ahorro de tiempo que estas buscando.</p>
+    </div>
+  </div>
+</div>

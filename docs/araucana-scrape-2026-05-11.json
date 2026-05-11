@@ -1,0 +1,224 @@
+{
+  "scrapedAt": "2026-05-11",
+  "baseUrl": "https://www.araucana.com.ar",
+  "importantCaveat": "Las paginas de horarios publicadas por el sitio indican vigencia 2018. Conviene usarlas como demo o llamar para verificar antes de vender pasajes reales.",
+  "sources": [
+    "https://www.araucana.com.ar/Index.html",
+    "https://www.araucana.com.ar/Servicio_Publico_7_Lagos.html",
+    "https://www.araucana.com.ar/Horarios_SMA_TRAFUL.html",
+    "https://www.araucana.com.ar/Horarios_VLA_TRAFUL.html",
+    "https://www.araucana.com.ar/Traslados_Aeropuerto.html",
+    "https://www.araucana.com.ar/Excursiones.html",
+    "https://www.araucana.com.ar/Viajes_a_Chile.html",
+    "https://www.araucana.com.ar/Viajes_Mercosur.html",
+    "https://www.araucana.com.ar/Flota_y_Tripulaci%C3%B3n.html",
+    "https://www.araucana.com.ar/Region_de_los_Lagos.html"
+  ],
+  "company": {
+    "name": "La Araucana Viajes E.V. y T.",
+    "license": "Leg: 12410 - Disp. 924/05",
+    "address": "Mariano Moreno 829, San Martin de los Andes, CP 8370, Neuquen, Patagonia Argentina",
+    "phone": "02972 420285",
+    "email": "info@araucana.com.ar",
+    "website": "www.araucana.tur.ar",
+    "officeHours": [
+      "Lunes-Viernes 8.30am - 9pm",
+      "Sabados 9am-1pm y 5pm - 9pm",
+      "Domingos 9am-1pm y 5pm - 9pm"
+    ]
+  },
+  "ticketableRoutes": [
+    {
+      "id": "sma-villa-traful",
+      "category": "Servicio Publico 7 Lagos",
+      "from": "San Martin de los Andes",
+      "to": "Villa Traful",
+      "via": "Ruta 40 - 7 Lagos",
+      "validFrom": "2018-04-01",
+      "validTo": "2018-12-31",
+      "operatingDays": ["SATURDAY"],
+      "frequencyLabel": "Sabados - una frecuencia",
+      "departureTime": "10:00",
+      "arrivalTime": "12:15",
+      "durationMin": 135,
+      "price": null,
+      "priceNote": "Consultar tarifas",
+      "stops": [
+        { "name": "S. M. Andes", "event": "Sale", "time": "10:00" },
+        { "name": "Lago Hermoso", "event": "Pasa", "time": "10:37" },
+        { "name": "Lago Falkner", "event": "Pasa", "time": "10:51" },
+        { "name": "Paraje Traful", "event": "Pasa", "time": "11:09" },
+        { "name": "Portezuelo", "event": "Pasa", "time": "11:38" },
+        { "name": "Villa Traful", "event": "Llega", "time": "12:15" }
+      ],
+      "source": "https://www.araucana.com.ar/Horarios_SMA_TRAFUL.html"
+    },
+    {
+      "id": "villa-traful-sma",
+      "category": "Servicio Publico 7 Lagos",
+      "from": "Villa Traful",
+      "to": "San Martin de los Andes",
+      "via": "Ruta 40 - 7 Lagos",
+      "validFrom": "2018-04-01",
+      "validTo": "2018-12-31",
+      "operatingDays": ["SATURDAY"],
+      "frequencyLabel": "Sabados - una frecuencia",
+      "departureTime": "15:45",
+      "arrivalTime": "18:00",
+      "durationMin": 135,
+      "price": null,
+      "priceNote": "Consultar tarifas",
+      "stops": [
+        { "name": "Villa Traful", "event": "Sale", "time": "15:45" },
+        { "name": "Portezuelo", "event": "Pasa", "time": "16:22" },
+        { "name": "Paraje Traful", "event": "Pasa", "time": "16:51" },
+        { "name": "Lago Falkner", "event": "Pasa", "time": "17:00" },
+        { "name": "Lago Hermoso", "event": "Pasa", "time": "17:23" },
+        { "name": "S. M. Andes", "event": "Llega", "time": "18:00" }
+      ],
+      "source": "https://www.araucana.com.ar/Horarios_SMA_TRAFUL.html"
+    },
+    {
+      "id": "villa-la-angostura-villa-traful",
+      "category": "Servicio Publico 7 Lagos",
+      "from": "Villa La Angostura",
+      "to": "Villa Traful",
+      "via": "Ruta 40 - 7 Lagos",
+      "validFrom": "2018-03-05",
+      "validTo": "2018-12-31",
+      "operatingDays": ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"],
+      "frequencyLabel": "Lunes a viernes - una frecuencia",
+      "departureTime": "11:00",
+      "arrivalTime": "12:30",
+      "durationMin": 90,
+      "price": null,
+      "priceNote": "Consultar tarifas",
+      "stops": [
+        { "name": "V. Angostura", "event": "Sale", "time": "11:00" },
+        { "name": "Espejo Chico", "event": "Pasa", "time": "11:40" },
+        { "name": "Villa Traful", "event": "Llega", "time": "12:30" }
+      ],
+      "source": "https://www.araucana.com.ar/Horarios_VLA_TRAFUL.html"
+    },
+    {
+      "id": "villa-traful-villa-la-angostura",
+      "category": "Servicio Publico 7 Lagos",
+      "from": "Villa Traful",
+      "to": "Villa La Angostura",
+      "via": "Ruta 40 - 7 Lagos",
+      "validFrom": "2018-03-05",
+      "validTo": "2018-12-31",
+      "operatingDays": ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"],
+      "frequencyLabel": "Lunes a viernes - una frecuencia",
+      "departureTime": "19:05",
+      "arrivalTime": "20:35",
+      "durationMin": 90,
+      "price": null,
+      "priceNote": "Consultar tarifas",
+      "stops": [
+        { "name": "Villa Traful", "event": "Sale", "time": "19:05" },
+        { "name": "Espejo Chico", "event": "Pasa", "time": "19:55" },
+        { "name": "V. Angostura", "event": "Llega", "time": "20:35" }
+      ],
+      "source": "https://www.araucana.com.ar/Horarios_VLA_TRAFUL.html"
+    }
+  ],
+  "requestOnlyTransfers": [
+    {
+      "id": "sma-aeropuerto-chapelco",
+      "from": "San Martin de los Andes",
+      "to": "Aeropuerto Chapelco",
+      "serviceType": "Traslado regular puerta a puerta",
+      "frequencyLabel": "Salidas regulares",
+      "scheduleNote": "Horarios sujetos a vuelos, consultar",
+      "priceNote": "Costo: consultar",
+      "source": "https://www.araucana.com.ar/Traslados_Aeropuerto.html"
+    },
+    {
+      "id": "sma-aeropuerto-bariloche",
+      "from": "San Martin de los Andes",
+      "to": "Aeropuerto Bariloche",
+      "serviceType": "Servicio puerta a puerta",
+      "frequencyLabel": "Salidas previamente programadas",
+      "scheduleNote": "Horarios sujetos a vuelos, consultar",
+      "priceNote": "Costo: consultar",
+      "source": "https://www.araucana.com.ar/Traslados_Aeropuerto.html"
+    }
+  ],
+  "excursions": [
+    {
+      "name": "Cerro Chapelco",
+      "duration": "3 horas",
+      "summary": "Centro de ski, Mirador Pil Pil, base del complejo, reserva mapuche Curruhuinca y Mirador Arrayan."
+    },
+    {
+      "name": "Villa La Angostura y 7 Lagos",
+      "duration": "Dia entero",
+      "summary": "San Martin de los Andes a Villa La Angostura por 115 km, lagos Machonico, Falkner, Villarino, Escondido, Correntoso, Espejo y Nahuel Huapi; visita a El Mesidor y puerto."
+    },
+    {
+      "name": "Bariloche, Villa La Angostura por ruta de los 7 Lagos",
+      "duration": "Dia entero",
+      "summary": "Itinerario de 7 Lagos y llegada a Bariloche con dos horas en el centro civico."
+    },
+    {
+      "name": "Pucon Chile",
+      "duration": "Dia entero",
+      "summary": "Salida por Paso Tromen, Volcan Lanin, bosque de araucarias nativas, frontera y Pucon al pie del Volcan Villarrica. Grupo minimo 6 pasajeros."
+    },
+    {
+      "name": "Lanin, lagos Huechulafquen y Paimun",
+      "duration": "Dia entero",
+      "summary": "Junin de los Andes, lagos Huechulafquen y Paimun, Volcan Lanin."
+    },
+    {
+      "name": "Balcones del Lacar",
+      "duration": "5 horas",
+      "summary": "Pampas y miradores, Hua Hum, cascada de Chachin, Cristo en el limite con Chile y Playa Yuco."
+    },
+    {
+      "name": "Villa Quila Quina",
+      "duration": "3 horas",
+      "summary": "Villa sobre margen sur del Lago Lacar, Comunidad Mapuche Curruhuinca y cascada del Arroyo Grande."
+    }
+  ],
+  "fleet": [
+    {
+      "type": "Omnibus",
+      "capacity": "46 pasajeros",
+      "models": ["Volkswagen 17260 EOT 2014", "Mercedes Benz O500M 2012"],
+      "features": ["Carroceria Saldivia Aries", "Asientos reclinables", "Audio y video", "Pantallas plasma", "Bano"]
+    },
+    {
+      "type": "Minibus",
+      "capacity": "15 a 24 pasajeros",
+      "models": ["Mercedes Benz LO915 Metalpar Maiten 2015", "Marcopolo Volare 2006", "Mercedes Benz Sprinter 515 y 413"],
+      "features": ["Aire acondicionado", "Calefaccion", "Musica funcional", "Video", "Microfono", "Comunicacion", "Bodega", "Portapaquetes", "Luces individuales"]
+    },
+    {
+      "type": "Fiat Ducato",
+      "capacity": "14 pasajeros",
+      "model": "2011",
+      "features": ["Habilitada para turismo regional, provincial, nacional e internacional"]
+    }
+  ],
+  "siteSections": [
+    "Servicio Publico 7 Lagos",
+    "Traslados Aeropuerto",
+    "Flota y Tripulacion",
+    "Viajes Especiales",
+    "Viajes a Chile",
+    "Viajes Mercosur",
+    "Autos con Chofer",
+    "Region de los Lagos",
+    "Excursiones",
+    "Actividades",
+    "Alojamiento",
+    "Minibuses para Turismo",
+    "Autos de Alquiler",
+    "Otros Servicios",
+    "Turismo Nacional e Internacional",
+    "Argentina",
+    "Resto del Mundo"
+  ]
+}

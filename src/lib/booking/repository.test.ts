@@ -40,7 +40,6 @@ type ScheduleRecord = {
   arrivalAt: Date;
   status: string;
   route: RouteRecord;
-  inactiveRoute: RouteRecord;
   vehicle: VehicleRecord;
 };
 
@@ -90,6 +89,7 @@ type TicketRecord = {
 
 class FakeBookingClient {
   route: RouteRecord;
+  inactiveRoute: RouteRecord;
   seats: SeatRecord[];
   vehicle: VehicleRecord;
   scheduleRecord: ScheduleRecord;
@@ -270,6 +270,16 @@ class FakeBookingClient {
         id: `passenger-${this.passengers.length + 1}`
       };
       this.passengers.push(passenger);
+      return passenger;
+    },
+    update: async ({ where, data }: { where: { id: string }; data: Partial<PassengerRecord> }) => {
+      this.assertTransactionOpen();
+      const passenger = this.passengers.find((item) => item.id === where.id);
+      if (!passenger) {
+        throw new Error("Missing passenger");
+      }
+
+      Object.assign(passenger, data);
       return passenger;
     }
   };
@@ -680,6 +690,58 @@ describe("booking repository", () => {
         hasReceipt: true
       })
     ]);
+  });
+
+  it("updates passenger details for a reservation code", async () => {
+    const client = new FakeBookingClient();
+    const repository = createTestRepository(client);
+    client.seedReservation({ code: "ARC-2611-EDIT" });
+
+    await expect(
+      repository.updatePassengerForReservation("ARC-2611-EDIT", {
+        firstName: "Cami",
+        lastName: "Vidal",
+        email: "cami.vidal@example.com",
+        phone: "+5492944556677",
+        documentType: "PAS",
+        documentId: "A1234567",
+        nationality: "CL"
+      })
+    ).resolves.toMatchObject({
+      code: "ARC-2611-EDIT",
+      passenger: {
+        firstName: "Cami",
+        email: "cami.vidal@example.com",
+        documentType: "PAS",
+        documentId: "A1234567",
+        nationality: "CL"
+      }
+    });
+    await expect(repository.getReservationByCode("ARC-2611-EDIT")).resolves.toMatchObject({
+      passenger: {
+        firstName: "Cami",
+        email: "cami.vidal@example.com"
+      }
+    });
+  });
+
+  it("rejects passenger updates for missing reservation codes", async () => {
+    const client = new FakeBookingClient();
+    const repository = createTestRepository(client);
+
+    await expect(
+      repository.updatePassengerForReservation("ARC-2611-MISSING", {
+        firstName: "Cami",
+        lastName: "Vidal",
+        email: "cami.vidal@example.com",
+        phone: "+5492944556677",
+        documentType: "DNI",
+        documentId: "30111222",
+        nationality: ""
+      })
+    ).rejects.toMatchObject({
+      code: "RESERVATION_NOT_FOUND"
+    } satisfies Partial<BookingError>);
   });
 
   it("approves a manual payment and confirms the reservation", async () => {

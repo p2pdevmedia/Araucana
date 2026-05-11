@@ -52,7 +52,11 @@ export default async function AdminReservationsPage() {
           {reservations.map((reservation) => (
             <tr key={reservation.code}>
               <td>{reservation.code}</td>
-              <td>{reservation.passenger}</td>
+              <td>
+                <Link className="table-link" href={`/admin/reservas/${reservation.code}`}>
+                  {reservation.passenger}
+                </Link>
+              </td>
               <td>{reservation.route}</td>
               <td>{reservation.seatNumber}</td>
               <td>{formatReservationStatus(reservation.status)}</td>

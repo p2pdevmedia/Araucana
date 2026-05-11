@@ -944,6 +944,45 @@ svg {
   grid-column: span 2;
 }
 
+.stops-editor {
+  display: grid;
+  gap: 12px;
+}
+
+.stops-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.stops-editor-list {
+  display: grid;
+  gap: 10px;
+}
+
+.stops-editor-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.4fr) minmax(84px, 0.7fr) minmax(100px, 0.8fr) minmax(150px, 1.4fr) auto;
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 250, 241, 0.7);
+}
+
+.stops-editor-row .danger-button,
+.stops-editor-head .ghost-button {
+  min-height: 40px;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
 .checkbox-row {
   min-height: 48px;
   display: flex !important;
@@ -1093,6 +1132,10 @@ svg {
 
   .admin-form-grid .span-2 {
     grid-column: auto;
+  }
+
+  .stops-editor-row {
+    grid-template-columns: 1fr;
   }
 
   .admin-edit-head {
