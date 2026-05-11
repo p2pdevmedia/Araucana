@@ -12,7 +12,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
     const reservation = await getReservationByCode(code.toUpperCase());
 
     if (!reservation) {
-      return jsonError("Reserva no encontrada", 404);
+      return jsonError("RESERVATION_NOT_FOUND", "Reserva no encontrada", 404);
     }
 
     return NextResponse.json({ reservation });

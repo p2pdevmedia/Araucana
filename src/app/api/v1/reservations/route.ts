@@ -18,13 +18,13 @@ export async function POST(request: Request) {
     try {
       payload = await request.json();
     } catch {
-      return jsonError("Revisa los datos de la reserva", 400);
+      return jsonError("INVALID_JSON", "Revisa los datos de la reserva", 400);
     }
 
     const body = createReservationSchema.safeParse(payload);
 
     if (!body.success) {
-      return jsonError("Revisa los datos de la reserva", 400);
+      return jsonError("VALIDATION_ERROR", "Revisa los datos de la reserva", 400);
     }
 
     const reservation = await createWebReservation(body.data);
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     if (error instanceof BookingError) {
       const response = bookingErrorResponses[error.code] ?? { message: error.message, status: 400 };
 
-      return jsonError(response.message, response.status);
+      return jsonError(error.code, response.message, response.status);
     }
 
     return handleApiError(error);

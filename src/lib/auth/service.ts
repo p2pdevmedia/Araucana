@@ -15,6 +15,25 @@ const DEFAULT_SESSION_DAYS = 30;
 
 export type AuthenticatedUser = ReturnType<typeof toPublicUser>;
 
+type SessionWritableClient = {
+  session: {
+    create(args: {
+      data: {
+        tokenHash: string;
+        userId: string;
+        expiresAt: Date;
+      };
+    }): Promise<unknown>;
+  };
+};
+
+type SessionRefreshClient = SessionWritableClient & {
+  session: SessionWritableClient["session"] & {
+    findUnique(args: unknown): Promise<({ user: Prisma.UserGetPayload<Record<string, never>> } & { expiresAt: Date; id: string }) | null>;
+    delete(args: unknown): Promise<unknown>;
+  };
+};
+
 export class AuthenticationError extends Error {
   constructor(message = "Credenciales invalidas") {
     super(message);
@@ -36,6 +55,35 @@ export function getConfiguredSessionDays() {
     : DEFAULT_SESSION_DAYS;
 }
 
+export async function createSessionForUser(
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    role: string;
+    isActive?: boolean;
+  },
+  client: SessionWritableClient = prisma,
+  now = new Date()
+) {
+  const token = generateSessionToken();
+  const expiresAt = getSessionExpirationDate(getConfiguredSessionDays(), now);
+
+  await client.session.create({
+    data: {
+      tokenHash: hashSessionToken(token),
+      userId: user.id,
+      expiresAt
+    }
+  });
+
+  return {
+    token,
+    expiresAt,
+    user: toPublicUser(user)
+  };
+}
+
 export async function createSessionForCredentials(input: {
   email: string;
   password: string;
@@ -54,22 +102,7 @@ export async function createSessionForCredentials(input: {
     throw new AuthenticationError();
   }
 
-  const token = generateSessionToken();
-  const expiresAt = getSessionExpirationDate(getConfiguredSessionDays());
-
-  await prisma.session.create({
-    data: {
-      tokenHash: hashSessionToken(token),
-      userId: user.id,
-      expiresAt
-    }
-  });
-
-  return {
-    token,
-    expiresAt,
-    user: toPublicUser(user)
-  };
+  return createSessionForUser(user);
 }
 
 export async function getUserFromToken(token: string | null) {
@@ -108,6 +141,28 @@ export async function deleteSessionByToken(token: string | null) {
 
       throw error;
     });
+}
+
+export async function refreshSessionByToken(token: string | null, client: SessionRefreshClient = prisma) {
+  if (!token) {
+    throw new AuthenticationError("Sesion invalida");
+  }
+
+  const tokenHash = hashSessionToken(token);
+  const session = await client.session.findUnique({
+    where: { tokenHash },
+    include: { user: true }
+  });
+
+  if (!session || isSessionExpired(session.expiresAt) || !session.user.isActive) {
+    if (session) {
+      await client.session.delete({ where: { id: session.id } }).catch(() => null);
+    }
+    throw new AuthenticationError("Sesion invalida");
+  }
+
+  await client.session.delete({ where: { tokenHash } });
+  return createSessionForUser(session.user, client);
 }
 
 export function getTokenFromRequest(request: Request) {

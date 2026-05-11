@@ -8,7 +8,9 @@ export async function GET(request: Request) {
     const routeId = searchParams.get("routeId");
 
     if (!routeId) {
-      return jsonError("routeId es requerido", 400);
+      return jsonError("VALIDATION_ERROR", "routeId es requerido", 400, {
+        routeId: "routeId es requerido"
+      });
     }
 
     const schedules = await listSchedulesForRoute(routeId);

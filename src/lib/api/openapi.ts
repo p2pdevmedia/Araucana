@@ -1,0 +1,311 @@
+type OpenApiSpec = {
+  openapi: "3.1.0";
+  info: {
+    title: string;
+    version: string;
+    description: string;
+  };
+  servers: Array<{ url: string }>;
+  paths: Record<string, Record<string, unknown>>;
+  components: {
+    securitySchemes: Record<string, unknown>;
+    schemas: Record<string, unknown>;
+  };
+};
+
+const bearerSecurity = [{ bearerAuth: [] }];
+
+function jsonResponse(schemaRef: string) {
+  return {
+    "200": {
+      description: "OK",
+      content: {
+        "application/json": {
+          schema: {
+            $ref: schemaRef
+          }
+        }
+      }
+    }
+  };
+}
+
+function adminPath(summary: string, responseRef: string) {
+  return {
+    summary,
+    security: bearerSecurity,
+    responses: jsonResponse(responseRef)
+  };
+}
+
+export function getOpenApiSpec(baseUrl = "https://araucana.app"): OpenApiSpec {
+  return {
+    openapi: "3.1.0",
+    info: {
+      title: "Araucana API",
+      version: "1.0.0",
+      description: "API JSON compartida por la web, iPhone SwiftUI y Android nativo."
+    },
+    servers: [{ url: baseUrl }],
+    paths: {
+      "/api/v1/auth/login": {
+        post: {
+          summary: "Inicia sesion y devuelve token Bearer para mobile.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/LoginInput" }
+              }
+            }
+          },
+          responses: jsonResponse("#/components/schemas/AuthSession")
+        }
+      },
+      "/api/v1/auth/me": {
+        get: {
+          summary: "Devuelve el usuario autenticado.",
+          security: bearerSecurity,
+          responses: jsonResponse("#/components/schemas/UserEnvelope")
+        }
+      },
+      "/api/v1/auth/refresh": {
+        post: {
+          summary: "Renueva una sesion mobile antes de su vencimiento.",
+          security: bearerSecurity,
+          responses: jsonResponse("#/components/schemas/AuthSession")
+        }
+      },
+      "/api/v1/auth/logout": {
+        post: {
+          summary: "Cierra la sesion actual.",
+          security: bearerSecurity,
+          responses: jsonResponse("#/components/schemas/OkEnvelope")
+        }
+      },
+      "/api/v1/routes": {
+        get: adminPath("Lista rutas publicas activas.", "#/components/schemas/RoutesEnvelope")
+      },
+      "/api/v1/routes/{slug}": {
+        get: {
+          summary: "Obtiene una ruta publica por slug.",
+          parameters: [{ name: "slug", in: "path", required: true, schema: { type: "string" } }],
+          responses: jsonResponse("#/components/schemas/RouteEnvelope")
+        }
+      },
+      "/api/v1/schedules": {
+        get: {
+          summary: "Lista salidas publicas para una ruta.",
+          parameters: [{ name: "routeId", in: "query", required: true, schema: { type: "string" } }],
+          responses: jsonResponse("#/components/schemas/SchedulesEnvelope")
+        }
+      },
+      "/api/v1/reservations": {
+        post: {
+          summary: "Crea una reserva web/mobile.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/CreateReservationInput" }
+              }
+            }
+          },
+          responses: {
+            "201": {
+              description: "Reserva creada",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ReservationEnvelope" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/reservations/{code}": {
+        get: {
+          summary: "Consulta una reserva por codigo.",
+          parameters: [{ name: "code", in: "path", required: true, schema: { type: "string" } }],
+          responses: jsonResponse("#/components/schemas/ReservationEnvelope")
+        }
+      },
+      "/api/v1/reservations/{code}/receipt": {
+        post: {
+          summary: "Sube comprobante de pago manual desde mobile.",
+          parameters: [{ name: "code", in: "path", required: true, schema: { type: "string" } }],
+          requestBody: {
+            required: true,
+            content: {
+              "multipart/form-data": {
+                schema: {
+                  type: "object",
+                  required: ["receipt"],
+                  properties: {
+                    receipt: { type: "string", format: "binary" }
+                  }
+                }
+              }
+            }
+          },
+          responses: jsonResponse("#/components/schemas/ReservationEnvelope")
+        }
+      },
+      "/api/v1/admin/routes": {
+        get: adminPath("Lista rutas para administracion.", "#/components/schemas/RoutesEnvelope"),
+        post: {
+          ...adminPath("Crea una ruta.", "#/components/schemas/RouteEnvelope"),
+          requestBody: { $ref: "#/components/schemas/AdminRouteInputBody" }
+        }
+      },
+      "/api/v1/admin/routes/{id}": {
+        get: adminPath("Obtiene una ruta admin.", "#/components/schemas/RouteEnvelope"),
+        patch: adminPath("Actualiza una ruta o su estado activo.", "#/components/schemas/RouteEnvelope"),
+        delete: adminPath("Borra o archiva una ruta.", "#/components/schemas/DeleteEnvelope")
+      },
+      "/api/v1/admin/schedules": {
+        get: adminPath("Lista salidas para administracion.", "#/components/schemas/SchedulesEnvelope"),
+        post: adminPath("Crea una salida.", "#/components/schemas/ScheduleEnvelope")
+      },
+      "/api/v1/admin/schedules/{id}": {
+        get: adminPath("Obtiene una salida admin.", "#/components/schemas/ScheduleEnvelope"),
+        patch: adminPath("Actualiza una salida o su estado.", "#/components/schemas/ScheduleEnvelope"),
+        delete: adminPath("Borra o cierra una salida.", "#/components/schemas/DeleteEnvelope")
+      },
+      "/api/v1/admin/vehicles": {
+        get: adminPath("Lista naves.", "#/components/schemas/VehiclesEnvelope"),
+        post: adminPath("Crea una nave.", "#/components/schemas/VehicleEnvelope")
+      },
+      "/api/v1/admin/vehicles/{id}": {
+        get: adminPath("Obtiene una nave.", "#/components/schemas/VehicleEnvelope"),
+        patch: adminPath("Actualiza una nave o su estado activo.", "#/components/schemas/VehicleEnvelope"),
+        delete: adminPath("Borra o archiva una nave.", "#/components/schemas/DeleteEnvelope")
+      },
+      "/api/v1/admin/reservations": {
+        get: adminPath("Lista reservas admin.", "#/components/schemas/AdminReservationsEnvelope")
+      },
+      "/api/v1/admin/reservations/{code}": {
+        get: adminPath("Obtiene una reserva admin.", "#/components/schemas/ReservationEnvelope"),
+        patch: adminPath("Actualiza datos de pasajero de una reserva.", "#/components/schemas/ReservationEnvelope")
+      },
+      "/api/v1/admin/reservations/{code}/approve-payment": {
+        post: adminPath("Aprueba un pago manual con comprobante.", "#/components/schemas/ReservationEnvelope")
+      }
+    },
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "session-token"
+        }
+      },
+      schemas: {
+        ApiError: {
+          type: "object",
+          required: ["error"],
+          properties: {
+            error: {
+              type: "object",
+              required: ["code", "message"],
+              properties: {
+                code: { type: "string" },
+                message: { type: "string" },
+                fields: {
+                  type: "object",
+                  additionalProperties: { type: "string" }
+                }
+              }
+            }
+          }
+        },
+        LoginInput: {
+          type: "object",
+          required: ["email", "password"],
+          properties: {
+            email: { type: "string", format: "email" },
+            password: { type: "string" }
+          }
+        },
+        AuthSession: {
+          type: "object",
+          required: ["token", "expiresAt", "user"],
+          properties: {
+            token: { type: "string" },
+            expiresAt: { type: "string", format: "date-time" },
+            user: { $ref: "#/components/schemas/User" }
+          }
+        },
+        User: {
+          type: "object",
+          required: ["id", "email", "role"],
+          properties: {
+            id: { type: "string" },
+            email: { type: "string", format: "email" },
+            name: { type: ["string", "null"] },
+            role: { type: "string", enum: ["ADMIN", "USER"] }
+          }
+        },
+        UserEnvelope: { type: "object", properties: { user: { $ref: "#/components/schemas/User" } } },
+        OkEnvelope: { type: "object", properties: { ok: { type: "boolean" } } },
+        Route: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+            slug: { type: "string" },
+            from: { type: "string" },
+            to: { type: "string" },
+            via: { type: "string" },
+            durationMin: { type: "integer" },
+            priceCents: { type: "integer" },
+            currency: { type: "string" }
+          }
+        },
+        RouteEnvelope: { type: "object", properties: { route: { $ref: "#/components/schemas/Route" } } },
+        RoutesEnvelope: {
+          type: "object",
+          properties: {
+            routes: { type: "array", items: { $ref: "#/components/schemas/Route" } }
+          }
+        },
+        ScheduleEnvelope: { type: "object", properties: { schedule: { type: "object" } } },
+        SchedulesEnvelope: { type: "object", properties: { schedules: { type: "array", items: { type: "object" } } } },
+        VehicleEnvelope: { type: "object", properties: { vehicle: { type: "object" } } },
+        VehiclesEnvelope: { type: "object", properties: { vehicles: { type: "array", items: { type: "object" } } } },
+        ReservationEnvelope: { type: "object", properties: { reservation: { type: "object" } } },
+        AdminReservationsEnvelope: { type: "object", properties: { reservations: { type: "array", items: { type: "object" } } } },
+        DeleteEnvelope: {
+          type: "object",
+          properties: {
+            deleted: { type: "boolean" },
+            archived: { type: "boolean" }
+          }
+        },
+        CreateReservationInput: {
+          type: "object",
+          required: ["scheduleId", "seatNumber", "passenger"],
+          properties: {
+            scheduleId: { type: "string" },
+            seatNumber: { type: "string" },
+            passenger: { type: "object" }
+          }
+        },
+        AdminRouteInputBody: {
+          type: "object",
+          properties: {
+            content: {
+              type: "object",
+              properties: {
+                "application/json": {
+                  schema: {
+                    type: "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  };
+}

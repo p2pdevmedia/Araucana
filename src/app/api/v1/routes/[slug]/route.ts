@@ -12,7 +12,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
     const route = await getPublicRouteBySlug(slug);
 
     if (!route) {
-      return jsonError("Ruta no encontrada", 404);
+      return jsonError("ROUTE_NOT_FOUND", "Ruta no encontrada", 404);
     }
 
     return NextResponse.json({ route });
