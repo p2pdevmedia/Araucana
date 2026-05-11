@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { AuthorizationError, requireDriverUser } from "@/lib/auth/service";
 import { prisma } from "@/lib/db/prisma";
-import { parseDriverLocationInput } from "@/lib/driver/location";
+import { deriveLocationTelemetry, parseDriverLocationInput } from "@/lib/driver/location";
 import { handleApiError, jsonError } from "@/lib/api/responses";
 
 export async function POST(request: Request) {
@@ -23,22 +23,49 @@ export async function POST(request: Request) {
       return jsonError("VEHICLE_NOT_FOUND", "La nave seleccionada no esta activa", 404);
     }
 
-    const savedLocation = await prisma.driverVehicleLocation.upsert({
-      where: {
-        driverId: user.id
-      },
-      update: location,
-      create: {
+    const savedLocation = await prisma.$transaction(async (tx) => {
+      const previousLocation = await tx.driverVehicleLocation.findUnique({
+        where: {
+          driverId: user.id
+        },
+        select: {
+          latitude: true,
+          longitude: true,
+          recordedAt: true,
+          stoppedDurationSeconds: true,
+          stopStartedAt: true
+        }
+      });
+      const telemetry = deriveLocationTelemetry(location, previousLocation);
+      const locationData = {
         ...location,
-        driverId: user.id
-      },
-      include: {
-        vehicle: {
-          select: {
-            name: true
+        ...telemetry
+      };
+
+      await tx.driverLocationSample.create({
+        data: {
+          ...locationData,
+          driverId: user.id
+        }
+      });
+
+      return tx.driverVehicleLocation.upsert({
+        where: {
+          driverId: user.id
+        },
+        update: locationData,
+        create: {
+          ...locationData,
+          driverId: user.id
+        },
+        include: {
+          vehicle: {
+            select: {
+              name: true
+            }
           }
         }
-      }
+      });
     });
 
     return NextResponse.json({
@@ -50,6 +77,18 @@ export async function POST(request: Request) {
         accuracy: savedLocation.accuracy,
         heading: savedLocation.heading,
         speed: savedLocation.speed,
+        altitude: savedLocation.altitude,
+        altitudeAccuracy: savedLocation.altitudeAccuracy,
+        batteryLevel: savedLocation.batteryLevel,
+        batteryCharging: savedLocation.batteryCharging,
+        clientNetworkType: savedLocation.clientNetworkType,
+        distanceFromPreviousMeters: savedLocation.distanceFromPreviousMeters,
+        secondsFromPrevious: savedLocation.secondsFromPrevious,
+        reportedSpeedKmh: savedLocation.reportedSpeedKmh,
+        inferredSpeedKmh: savedLocation.inferredSpeedKmh,
+        isStopped: savedLocation.isStopped,
+        stoppedDurationSeconds: savedLocation.stoppedDurationSeconds,
+        stopStartedAt: savedLocation.stopStartedAt?.toISOString() ?? null,
         recordedAt: savedLocation.recordedAt.toISOString(),
         updatedAt: savedLocation.updatedAt.toISOString()
       }

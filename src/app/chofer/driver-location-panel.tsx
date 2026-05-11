@@ -18,8 +18,32 @@ type DriverLocationPanelProps = {
 
 type ShareState = "idle" | "sharing" | "error";
 
+type BatteryManager = EventTarget & {
+  charging: boolean;
+  level: number;
+};
+
+type NavigatorWithTelemetry = Navigator & {
+  getBattery?: () => Promise<BatteryManager>;
+  connection?: {
+    effectiveType?: string;
+    type?: string;
+  };
+};
+
 function vehicleLabel(vehicle: DriverVehicle) {
   return `${vehicle.name} · ${vehicle.brand} ${vehicle.model}${vehicle.licensePlate ? ` · ${vehicle.licensePlate}` : ""}`;
+}
+
+async function readDeviceTelemetry() {
+  const telemetryNavigator = navigator as NavigatorWithTelemetry;
+  const battery = telemetryNavigator.getBattery ? await telemetryNavigator.getBattery().catch(() => null) : null;
+
+  return {
+    batteryLevel: battery?.level ?? null,
+    batteryCharging: battery?.charging ?? null,
+    clientNetworkType: telemetryNavigator.connection?.effectiveType ?? telemetryNavigator.connection?.type ?? null
+  };
 }
 
 export function DriverLocationPanel({ vehicles, initialVehicleId = "" }: DriverLocationPanelProps) {
@@ -49,6 +73,7 @@ export function DriverLocationPanel({ vehicles, initialVehicleId = "" }: DriverL
       isSendingRef.current = true;
 
       try {
+        const deviceTelemetry = await readDeviceTelemetry();
         const response = await fetch("/api/v1/driver/location", {
           method: "POST",
           headers: {
@@ -61,6 +86,9 @@ export function DriverLocationPanel({ vehicles, initialVehicleId = "" }: DriverL
             accuracy: position.coords.accuracy,
             heading: position.coords.heading,
             speed: position.coords.speed,
+            altitude: position.coords.altitude,
+            altitudeAccuracy: position.coords.altitudeAccuracy,
+            ...deviceTelemetry,
             recordedAt: new Date(position.timestamp).toISOString()
           })
         });
