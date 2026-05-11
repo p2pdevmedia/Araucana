@@ -1,6 +1,6 @@
 # Araucana
 
-Aplicacion base con Next.js, Prisma y SQLite.
+Aplicacion base con Next.js, Prisma y Postgres/Neon.
 
 ## Usuario inicial
 
@@ -27,7 +27,7 @@ Authorization: Bearer <token>
 
 ```bash
 npm install
-npm run prisma:push
+npm run prisma:migrate
 npm run prisma:seed
 npm run dev
 ```

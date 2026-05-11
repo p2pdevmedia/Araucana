@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "test": "vitest run",
-    "test:e2e": "npm run prisma:push && npm run prisma:seed && playwright test",
-    "test:e2e:headed": "npm run prisma:push && npm run prisma:seed && playwright test --headed",
+    "test:e2e": "npm run prisma:migrate && npm run prisma:seed && playwright test",
+    "test:e2e:headed": "npm run prisma:migrate && npm run prisma:seed && playwright test --headed",
     "test:watch": "vitest",
     "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
     "prisma:push": "prisma db push",
     "prisma:seed": "tsx prisma/seed.ts"
   },

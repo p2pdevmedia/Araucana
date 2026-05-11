@@ -3,7 +3,8 @@ node_modules
 dist
 coverage
 .env
+prisma/*.db
+prisma/*.db-*
 tsconfig.tsbuildinfo
 .DS_Store
-
 
