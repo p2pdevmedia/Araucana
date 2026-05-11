@@ -1,9 +1,5 @@
 import { put } from "@vercel/blob";
-
-export const receiptUploadConfig = {
-  maxSizeBytes: 8 * 1024 * 1024,
-  allowedContentTypes: ["application/pdf", "image/jpeg", "image/png", "image/webp"]
-} as const;
+export { receiptUploadConfig, validateReceiptFile } from "./receipt-validation";
 
 type StoredReceipt = {
   blobUrl: string;
@@ -35,22 +31,6 @@ function safeFileStem(fileName: string) {
     .slice(0, 60);
 
   return normalized || "comprobante";
-}
-
-export function validateReceiptFile(file: File) {
-  if (file.size <= 0) {
-    return "Subi un comprobante valido.";
-  }
-
-  if (file.size > receiptUploadConfig.maxSizeBytes) {
-    return "El comprobante no puede superar 8 MB.";
-  }
-
-  if (!receiptUploadConfig.allowedContentTypes.includes(file.type as (typeof receiptUploadConfig.allowedContentTypes)[number])) {
-    return "El comprobante debe ser PDF, JPG, PNG o WebP.";
-  }
-
-  return null;
 }
 
 export async function storeManualPaymentReceipt(reservationCode: string, file: File): Promise<StoredReceipt> {

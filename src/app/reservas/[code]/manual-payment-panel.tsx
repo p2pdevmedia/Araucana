@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState, type FormEvent } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { manualBankDetails } from "@/lib/payments/manual-bank-details";
+import { validateReceiptFile } from "@/lib/payments/receipt-validation";
 import { uploadManualPaymentReceiptAction, type UploadReceiptState } from "./actions";
 
 type ManualPaymentPanelProps = {
@@ -34,6 +35,7 @@ function formatUploadedAt(value: Date | string) {
 
 export function ManualPaymentPanel({ reservationCode, existingReceipt }: ManualPaymentPanelProps) {
   const router = useRouter();
+  const [clientError, setClientError] = useState("");
   const initialState: UploadReceiptState = {
     ok: false,
     message: ""
@@ -45,6 +47,24 @@ export function ManualPaymentPanel({ reservationCode, existingReceipt }: ManualP
       router.refresh();
     }
   }, [router, state.ok]);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    setClientError("");
+    const formData = new FormData(event.currentTarget);
+    const receipt = formData.get("receipt");
+
+    if (!(receipt instanceof File)) {
+      setClientError("Subi un comprobante valido.");
+      event.preventDefault();
+      return;
+    }
+
+    const validationError = validateReceiptFile(receipt);
+    if (validationError) {
+      setClientError(validationError);
+      event.preventDefault();
+    }
+  }
 
   return (
     <section className="plain-card manual-payment-panel">
@@ -90,15 +110,21 @@ export function ManualPaymentPanel({ reservationCode, existingReceipt }: ManualP
         </p>
       ) : null}
 
-      <form className="receipt-form" action={formAction}>
+      <form className="receipt-form" action={formAction} onSubmit={handleSubmit}>
         <input type="hidden" name="code" value={reservationCode} />
         <label>
           Comprobante
-          <input name="receipt" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required />
+          <input
+            name="receipt"
+            type="file"
+            accept="application/pdf,image/jpeg,image/png,image/webp"
+            onChange={() => setClientError("")}
+            required
+          />
         </label>
-        {state.message ? (
-          <p className={state.ok ? "success" : "error"} role="status">
-            {state.message}
+        {clientError || state.message ? (
+          <p className={clientError || !state.ok ? "error" : "success"} role="status">
+            {clientError || state.message}
           </p>
         ) : null}
         <SubmitButton />
