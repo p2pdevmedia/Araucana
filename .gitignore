@@ -7,4 +7,4 @@ prisma/*.db
 prisma/*.db-*
 tsconfig.tsbuildinfo
 .DS_Store
-
+.superpowers/
