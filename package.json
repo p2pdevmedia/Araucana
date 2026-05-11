@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
+    "test:e2e": "npm run prisma:push && npm run prisma:seed && playwright test",
+    "test:e2e:headed": "npm run prisma:push && npm run prisma:seed && playwright test --headed",
     "test:watch": "vitest",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
@@ -21,6 +23,7 @@
     "zod": "latest"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
