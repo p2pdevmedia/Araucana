@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
 import { prisma } from "@/lib/db/prisma";
-import { getVehicleTemplate } from "@/lib/vehicles/templates";
+import { getVehicleTemplate, type VehicleSeat } from "@/lib/vehicles/templates";
 import { parseSeatLayout } from "@/lib/vehicles/validation";
 import { errorState, type AdminFieldErrors, type AdminFormState } from "../form-state";
 
@@ -49,7 +49,7 @@ function vehicleData(formData: FormData) {
     fieldErrors.templateKey = "La plantilla seleccionada ya no existe.";
   }
 
-  let seats;
+  let seats: VehicleSeat[] = [];
   try {
     seats = parseSeatLayout(value(formData, "seats"));
   } catch (error) {
@@ -194,6 +194,7 @@ export async function setVehicleActiveAction(formData: FormData) {
   });
 
   revalidateVehiclePaths();
+  redirect(`/admin/naves?notice=${encodeURIComponent(isActive ? "Nave activada con exito." : "Nave inactivada con exito.")}`);
 }
 
 export async function deleteVehicleAction(formData: FormData) {
@@ -202,14 +203,17 @@ export async function deleteVehicleAction(formData: FormData) {
   const id = value(formData, "id");
   const scheduleCount = await prisma.schedule.count({ where: { vehicleId: id } });
 
+  let notice = "Nave borrada con exito.";
   if (scheduleCount > 0) {
     await prisma.vehicle.update({
       where: { id },
       data: { isActive: false }
     });
+    notice = "Nave archivada con exito porque ya tenia salidas.";
   } else {
     await prisma.vehicle.delete({ where: { id } });
   }
 
   revalidateVehiclePaths();
+  redirect(`/admin/naves?notice=${encodeURIComponent(notice)}`);
 }

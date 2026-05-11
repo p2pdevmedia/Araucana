@@ -4,6 +4,12 @@ import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
 import { listAdminSchedules } from "@/lib/booking/repository";
 import { deleteScheduleAction, setScheduleStatusAction } from "./actions";
 
+type AdminSchedulesPageProps = {
+  searchParams?: Promise<{
+    notice?: string;
+  }>;
+};
+
 const dateFormatter = new Intl.DateTimeFormat("es-AR", {
   weekday: "short",
   day: "2-digit",
@@ -28,12 +34,17 @@ function formatScheduleStatus(status: string) {
   return labels[status] ?? status;
 }
 
-export default async function AdminSchedulesPage() {
+export default async function AdminSchedulesPage({ searchParams }: AdminSchedulesPageProps) {
   await getCurrentAdminOrRedirect();
+  const params = await searchParams;
   const schedules = await listAdminSchedules();
 
   return (
-    <AdminShell title="Salidas" action={<Link className="button" href="/admin/salidas/nueva">Agregar salida</Link>}>
+    <AdminShell
+      title="Salidas"
+      notice={params?.notice}
+      action={<Link className="button" href="/admin/salidas/nueva">Agregar salida</Link>}
+    >
       <table className="data-table">
         <thead>
           <tr>

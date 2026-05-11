@@ -4,6 +4,7 @@ import { AdminShell } from "@/components/admin-shell";
 import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
 import { getReservationByCode } from "@/lib/booking/repository";
 import { updatePassengerAction } from "../actions";
+import { PassengerForm } from "./passenger-form";
 
 type AdminPassengerPageProps = {
   params: Promise<{
@@ -107,45 +108,7 @@ export default async function AdminPassengerPage({ params }: AdminPassengerPageP
 
       <section className="plain-card admin-section">
         <h2>Editar pasajero</h2>
-        <form className="admin-form-grid" action={updatePassengerAction}>
-          <input type="hidden" name="code" value={reservation.code} />
-          <label>
-            Nombre
-            <input name="firstName" defaultValue={reservation.passenger.firstName} required />
-          </label>
-          <label>
-            Apellido
-            <input name="lastName" defaultValue={reservation.passenger.lastName} required />
-          </label>
-          <label>
-            Email
-            <input name="email" type="email" defaultValue={reservation.passenger.email} required />
-          </label>
-          <label>
-            Telefono
-            <input name="phone" defaultValue={reservation.passenger.phone} required />
-          </label>
-          <label>
-            Tipo documento
-            <input name="documentType" defaultValue={reservation.passenger.documentType} required />
-          </label>
-          <label>
-            Numero documento
-            <input name="documentId" defaultValue={reservation.passenger.documentId} required />
-          </label>
-          <label className="span-2">
-            Nacionalidad
-            <input name="nationality" defaultValue={reservation.passenger.nationality ?? ""} />
-          </label>
-          <div className="form-actions span-2">
-            <button className="button" type="submit">
-              Guardar cambios
-            </button>
-            <Link className="ghost-button" href="/admin/reservas">
-              Cancelar
-            </Link>
-          </div>
-        </form>
+        <PassengerForm action={updatePassengerAction} reservation={reservation} />
       </section>
     </AdminShell>
   );

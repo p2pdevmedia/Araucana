@@ -187,6 +187,7 @@ export async function setRouteActiveAction(formData: FormData) {
     select: { slug: true }
   });
   revalidateRoutePaths(route.slug);
+  redirect(`/admin/rutas?notice=${encodeURIComponent(isActive ? "Ruta activada con exito." : "Ruta inactivada con exito.")}`);
 }
 
 export async function deleteRouteAction(formData: FormData) {
@@ -206,14 +207,17 @@ export async function deleteRouteAction(formData: FormData) {
     }
   });
 
+  let notice = "Ruta borrada con exito.";
   if (reservations > 0) {
     await prisma.$transaction([
       prisma.travelRoute.update({ where: { id }, data: { isActive: false } }),
       prisma.schedule.updateMany({ where: { routeId: id }, data: { status: "CLOSED" } })
     ]);
+    notice = "Ruta archivada con exito porque ya tenia reservas.";
   } else {
     await prisma.travelRoute.delete({ where: { id } });
   }
 
   revalidateRoutePaths(route.slug);
+  redirect(`/admin/rutas?notice=${encodeURIComponent(notice)}`);
 }

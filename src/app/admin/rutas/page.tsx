@@ -4,6 +4,12 @@ import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
 import { listAdminRoutes } from "@/lib/booking/repository";
 import { deleteRouteAction, setRouteActiveAction } from "./actions";
 
+type AdminRoutesPageProps = {
+  searchParams?: Promise<{
+    notice?: string;
+  }>;
+};
+
 function formatPrice(cents: number, currency: string) {
   return new Intl.NumberFormat("es-AR", {
     style: "currency",
@@ -23,13 +29,15 @@ function formatDuration(minutes: number) {
   return remainder ? `${hours} h ${remainder} min` : `${hours} h`;
 }
 
-export default async function AdminRoutesPage() {
+export default async function AdminRoutesPage({ searchParams }: AdminRoutesPageProps) {
   await getCurrentAdminOrRedirect();
+  const params = await searchParams;
   const routes = await listAdminRoutes();
 
   return (
     <AdminShell
       title="Rutas"
+      notice={params?.notice}
       action={
         <div className="inline-actions">
           <Link className="ghost-button" href="/rutas">Ver publico</Link>

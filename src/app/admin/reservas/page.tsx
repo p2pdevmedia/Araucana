@@ -4,6 +4,12 @@ import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
 import { listAdminReservations } from "@/lib/booking/repository";
 import { approveManualPaymentAction } from "./actions";
 
+type AdminReservationsPageProps = {
+  searchParams?: Promise<{
+    notice?: string;
+  }>;
+};
+
 function formatReservationStatus(status: string) {
   const labels: Record<string, string> = {
     CONFIRMED: "Confirmada",
@@ -34,12 +40,13 @@ function whatsappHref(phone: string) {
   return digits ? `https://wa.me/${digits}` : null;
 }
 
-export default async function AdminReservationsPage() {
+export default async function AdminReservationsPage({ searchParams }: AdminReservationsPageProps) {
   await getCurrentAdminOrRedirect();
+  const params = await searchParams;
   const reservations = await listAdminReservations();
 
   return (
-    <AdminShell title="Reservas">
+    <AdminShell title="Reservas" notice={params?.notice}>
       <table className="data-table">
         <thead>
           <tr>

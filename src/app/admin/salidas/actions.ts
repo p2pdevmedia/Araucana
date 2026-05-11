@@ -183,6 +183,7 @@ export async function setScheduleStatusAction(formData: FormData) {
     }
   });
   revalidateSchedulePaths(schedule.route.slug);
+  redirect(`/admin/salidas?notice=${encodeURIComponent("Salida actualizada con exito.")}`);
 }
 
 export async function deleteScheduleAction(formData: FormData) {
@@ -206,11 +207,14 @@ export async function deleteScheduleAction(formData: FormData) {
 
   const reservations = await prisma.reservation.count({ where: { scheduleId: id } });
 
+  let notice = "Salida borrada con exito.";
   if (reservations > 0) {
     await prisma.schedule.update({ where: { id }, data: { status: "CLOSED" } });
+    notice = "Salida cerrada con exito porque ya tenia reservas.";
   } else {
     await prisma.schedule.delete({ where: { id } });
   }
 
   revalidateSchedulePaths(schedule.route.slug);
+  redirect(`/admin/salidas?notice=${encodeURIComponent(notice)}`);
 }

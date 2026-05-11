@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
 import { approveManualPayment, BookingError, updatePassengerForReservation } from "@/lib/booking/repository";
 import { passengerSchema } from "@/lib/booking/validation";
@@ -21,16 +22,17 @@ export async function approveManualPaymentAction(formData: FormData) {
   const code = String(formData.get("code") ?? "").trim().toUpperCase();
 
   if (!code) {
-    return;
+    redirect(`/admin/reservas?notice=${encodeURIComponent("No pudimos validar el pago porque falta el codigo de reserva.")}`);
   }
 
   try {
     await approveManualPayment(code);
     revalidatePath("/admin/reservas");
     revalidatePath(`/reservas/${code}`);
+    redirect(`/admin/reservas?notice=${encodeURIComponent("Pago validado con exito.")}`);
   } catch (error) {
     if (error instanceof BookingError && error.code === "RECEIPT_NOT_FOUND") {
-      return;
+      redirect(`/admin/reservas?notice=${encodeURIComponent("No encontramos el comprobante para validar ese pago.")}`);
     }
 
     throw error;

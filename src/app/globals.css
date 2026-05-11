@@ -530,7 +530,10 @@ svg {
 }
 
 .form-panel input[aria-invalid="true"],
-.form-panel select[aria-invalid="true"] {
+.form-panel select[aria-invalid="true"],
+.admin-form-grid input[aria-invalid="true"],
+.admin-form-grid select[aria-invalid="true"],
+.admin-form-grid textarea[aria-invalid="true"] {
   border-color: #9f2d20;
   background: #fff7f4;
 }
@@ -547,6 +550,19 @@ svg {
   font-weight: 700;
 }
 
+.form-alert,
+.admin-form-grid > .admin-toast {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.form-alert {
+  padding: 12px 14px;
+  border: 1px solid rgba(159, 45, 32, 0.22);
+  border-radius: 12px;
+  background: #fff7f4;
+}
+
 .field-error {
   color: #9f2d20;
   font-size: 12px;
@@ -559,9 +575,20 @@ svg {
   font-weight: 700;
 }
 
+.admin-toast {
+  margin-bottom: 18px;
+  padding: 13px 15px;
+  border: 1px solid rgba(31, 91, 79, 0.22);
+  border-radius: 12px;
+  background: #edf6f0;
+  color: var(--primary-deep);
+  font-weight: 800;
+}
+
 .checkout-layout button:disabled,
 .checkout-layout select:disabled,
-.checkout-layout input:disabled {
+.checkout-layout input:disabled,
+.admin-form-grid button:disabled {
   cursor: not-allowed;
 }
 
@@ -1097,7 +1124,7 @@ svg {
 .vehicle-seat-map {
   display: grid;
   gap: 9px;
-  max-width: 420px;
+  max-width: 560px;
   padding: 18px;
   border: 1px solid var(--line);
   border-radius: 24px;
@@ -1106,27 +1133,98 @@ svg {
 
 .vehicle-seat-chip,
 .vehicle-seat-gap {
-  min-height: 44px;
+  min-height: 92px;
   display: grid;
   place-items: center;
   border-radius: 12px;
 }
 
 .vehicle-seat-chip {
+  position: relative;
+  gap: 7px;
+  align-content: center;
   border: 1px solid var(--line-strong);
   background: #fffaf1;
   color: var(--ink);
   font-weight: 800;
+  padding: 8px;
+  cursor: grab;
+}
+
+.vehicle-seat-chip:active {
+  cursor: grabbing;
+}
+
+.vehicle-seat-chip label {
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  color: var(--ink-muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.vehicle-seat-chip input {
+  min-height: 34px;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--ink);
+  padding: 0 6px;
+  text-align: center;
+  font-weight: 900;
+}
+
+.vehicle-seat-drag {
+  color: var(--primary);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .vehicle-seat-gap {
   border: 1px dashed rgba(26, 37, 34, 0.16);
   background: rgba(251, 246, 235, 0.32);
+  color: var(--ink-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.seat-editor-list {
+.vehicle-seat-gap:hover {
+  border-color: var(--primary);
+  background: rgba(213, 225, 220, 0.72);
+}
+
+.seat-delete-button {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  min-height: 24px;
+  width: 24px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent-deep);
+  color: var(--surface);
   display: grid;
-  gap: 10px;
+  place-items: center;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0;
+  box-shadow: 0 4px 12px rgba(122, 61, 38, 0.24);
+}
+
+.seat-layout-help {
+  max-width: 640px;
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .seat-editor-row {

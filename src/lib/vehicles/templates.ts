@@ -29,7 +29,7 @@ function createLayout(capacity: number, templateKey: string): VehicleSeat[] {
   let nextSeat = 1;
 
   while (nextSeat <= capacity) {
-    const columns = twoOneLayouts.has(templateKey) && row < 6 ? [1, 2, 4] : [1, 2, 3, 4];
+    const columns = twoOneLayouts.has(templateKey) && row < 6 ? [1, 2, 4] : [1, 2, 4, 5];
 
     for (const column of columns) {
       if (nextSeat > capacity) {

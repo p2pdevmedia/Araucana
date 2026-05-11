@@ -5,8 +5,15 @@ import { prisma } from "@/lib/db/prisma";
 import { VEHICLE_TEMPLATES } from "@/lib/vehicles/templates";
 import { deleteVehicleAction, setVehicleActiveAction } from "./actions";
 
-export default async function AdminVehiclesPage() {
+type AdminVehiclesPageProps = {
+  searchParams?: Promise<{
+    notice?: string;
+  }>;
+};
+
+export default async function AdminVehiclesPage({ searchParams }: AdminVehiclesPageProps) {
   await getCurrentAdminOrRedirect();
+  const params = await searchParams;
   const vehicles = await prisma.vehicle.findMany({
     orderBy: [{ isActive: "desc" }, { name: "asc" }],
     include: {
@@ -22,7 +29,11 @@ export default async function AdminVehiclesPage() {
   const totalSeats = vehicles.reduce((total, vehicle) => total + vehicle._count.seats, 0);
 
   return (
-    <AdminShell title="Naves" action={<Link className="button" href="/admin/naves/nueva">Agregar nave</Link>}>
+    <AdminShell
+      title="Naves"
+      notice={params?.notice}
+      action={<Link className="button" href="/admin/naves/nueva">Agregar nave</Link>}
+    >
       <section className="admin-grid">
         <div className="admin-card">
           <span className="muted">Naves activas</span>
