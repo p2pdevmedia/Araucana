@@ -986,6 +986,27 @@ svg {
   display: inline-flex;
 }
 
+.table-actions,
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.table-actions .button,
+.table-actions .ghost-button,
+.table-actions .danger-button {
+  min-height: 36px;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.table-actions form {
+  display: inline-flex;
+}
+
 .status-pill {
   display: inline-flex;
   align-items: center;

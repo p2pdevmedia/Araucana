@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
 import { prisma } from "@/lib/db/prisma";
@@ -90,6 +91,7 @@ export async function createRouteAction(formData: FormData) {
   const data = routeData(formData);
   await prisma.travelRoute.create({ data });
   revalidateRoutePaths(data.slug);
+  redirect("/admin/rutas");
 }
 
 export async function updateRouteAction(formData: FormData) {
@@ -105,6 +107,7 @@ export async function updateRouteAction(formData: FormData) {
   await prisma.travelRoute.update({ where: { id }, data });
   revalidateRoutePaths(current?.slug);
   revalidateRoutePaths(data.slug);
+  redirect("/admin/rutas");
 }
 
 export async function setRouteActiveAction(formData: FormData) {

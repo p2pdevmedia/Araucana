@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
 import { prisma } from "@/lib/db/prisma";
 
@@ -83,6 +84,7 @@ export async function createScheduleAction(formData: FormData) {
   const { data, routeSlug } = await scheduleData(formData);
   await prisma.schedule.create({ data });
   revalidateSchedulePaths(routeSlug);
+  redirect("/admin/salidas");
 }
 
 export async function updateScheduleAction(formData: FormData) {
@@ -107,6 +109,7 @@ export async function updateScheduleAction(formData: FormData) {
   await prisma.schedule.update({ where: { id }, data });
   revalidateSchedulePaths(current?.route.slug);
   revalidateSchedulePaths(routeSlug);
+  redirect("/admin/salidas");
 }
 
 export async function setScheduleStatusAction(formData: FormData) {
