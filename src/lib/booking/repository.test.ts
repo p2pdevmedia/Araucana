@@ -14,6 +14,7 @@ type RouteRecord = {
   category: string;
   description: string;
   featured: boolean;
+  isActive: boolean;
   stops: unknown;
 };
 
@@ -39,6 +40,7 @@ type ScheduleRecord = {
   arrivalAt: Date;
   status: string;
   route: RouteRecord;
+  inactiveRoute: RouteRecord;
   vehicle: VehicleRecord;
 };
 
@@ -71,6 +73,12 @@ type PaymentRecord = {
   amountCents: number;
   currency: string;
   externalRef: string | null;
+  receiptBlobUrl?: string | null;
+  receiptBlobPathname?: string | null;
+  receiptFileName?: string | null;
+  receiptContentType?: string | null;
+  receiptSize?: number | null;
+  receiptUploadedAt?: Date | null;
 };
 
 type TicketRecord = {
@@ -106,7 +114,17 @@ class FakeBookingClient {
       category: "Argentina",
       description: "Ruta escenica",
       featured: true,
+      isActive: true,
       stops: []
+    };
+    this.inactiveRoute = {
+      ...this.route,
+      id: "route-inactive",
+      slug: "sma-junin-inactiva",
+      from: "SMA",
+      to: "Junin",
+      featured: false,
+      isActive: false
     };
     this.seats = [
       { id: "seat-04", vehicleId: "vehicle-1", number: "04", row: 1, column: 4 },
@@ -130,9 +148,23 @@ class FakeBookingClient {
   }
 
   travelRoute = {
-    findMany: async () => [this.route],
+    findMany: async (args?: { where?: { isActive?: boolean } }) =>
+      [this.route, this.inactiveRoute].filter((route) => {
+        if (typeof args?.where?.isActive === "boolean") {
+          return route.isActive === args.where.isActive;
+        }
+
+        return true;
+      }),
     findUnique: async ({ where }: { where: { slug?: string; id?: string } }) =>
-      where.slug === this.route.slug || where.id === this.route.id ? this.route : null
+      [this.route, this.inactiveRoute].find((route) => where.slug === route.slug || where.id === route.id) ?? null,
+    findFirst: async ({ where }: { where: { slug?: string; id?: string; isActive?: boolean } }) =>
+      [this.route, this.inactiveRoute].find((route) => {
+        const matchesIdentity = where.slug === route.slug || where.id === route.id;
+        const matchesActive = typeof where.isActive === "boolean" ? route.isActive === where.isActive : true;
+
+        return matchesIdentity && matchesActive;
+      }) ?? null
   };
 
   schedule = {
@@ -176,6 +208,16 @@ class FakeBookingClient {
       this.assertTransactionOpen();
       const reservation = this.reservations.find((item) => item.code === where.code);
       return reservation ? this.withRelations(reservation) : null;
+    },
+    update: async ({ where, data }: { where: { id: string }; data: Partial<ReservationRecord> }) => {
+      this.assertTransactionOpen();
+      const reservation = this.reservations.find((item) => item.id === where.id);
+      if (!reservation) {
+        throw new Error("Missing reservation");
+      }
+
+      Object.assign(reservation, data);
+      return this.withRelations(reservation);
     },
     create: async ({ data }: { data: Omit<ReservationRecord, "id" | "createdAt" | "schedule" | "passenger"> }) => {
       this.assertTransactionOpen();
@@ -240,6 +282,16 @@ class FakeBookingClient {
         id: `payment-${this.payments.length + 1}`
       };
       this.payments.push(payment);
+      return payment;
+    },
+    update: async ({ where, data }: { where: { reservationId: string }; data: Partial<PaymentRecord> }) => {
+      this.assertTransactionOpen();
+      const payment = this.payments.find((item) => item.reservationId === where.reservationId);
+      if (!payment) {
+        throw new Error("Missing payment");
+      }
+
+      Object.assign(payment, data);
       return payment;
     }
   };
@@ -407,6 +459,24 @@ function createTestRepository(
 }
 
 describe("booking repository", () => {
+  it("lists only active public routes", async () => {
+    const client = new FakeBookingClient();
+    const repository = createTestRepository(client);
+
+    await expect(repository.listPublicRoutes()).resolves.toMatchObject([
+      {
+        slug: "sma-bariloche-7-lagos"
+      }
+    ]);
+  });
+
+  it("does not return inactive routes by public slug", async () => {
+    const client = new FakeBookingClient();
+    const repository = createTestRepository(client);
+
+    await expect(repository.getPublicRouteBySlug("sma-junin-inactiva")).resolves.toBeNull();
+  });
+
   it("creates a pending reservation with passenger, payment, and ticket", async () => {
     const client = new FakeBookingClient();
     const repository = createTestRepository(client);
@@ -580,5 +650,63 @@ describe("booking repository", () => {
       code: "SEAT_OCCUPIED"
     } satisfies Partial<BookingError>);
     expect(paymentProvider.createPendingPayment).not.toHaveBeenCalled();
+  });
+
+  it("includes manual payment receipt metadata in admin reservation rows", async () => {
+    const client = new FakeBookingClient();
+    const repository = createTestRepository(client);
+    const reservation = client.seedReservation({ code: "ARC-2611-PROOF" });
+    client.payments.push({
+      id: "payment-proof",
+      reservationId: reservation.id,
+      provider: "MANUAL",
+      status: "PENDING",
+      amountCents: reservation.totalCents,
+      currency: reservation.currency,
+      externalRef: null,
+      receiptBlobUrl: "https://store.private.blob.vercel-storage.com/manual-payment-receipts/ARC-2611-PROOF.jpg",
+      receiptBlobPathname: "manual-payment-receipts/ARC-2611-PROOF.jpg",
+      receiptFileName: "comprobante.jpg",
+      receiptContentType: "image/jpeg",
+      receiptSize: 1280,
+      receiptUploadedAt: new Date("2026-05-11T18:00:00.000Z")
+    });
+
+    await expect(repository.listAdminReservations()).resolves.toEqual([
+      expect.objectContaining({
+        code: "ARC-2611-PROOF",
+        receiptFileName: "comprobante.jpg",
+        receiptUploadedAt: new Date("2026-05-11T18:00:00.000Z"),
+        hasReceipt: true
+      })
+    ]);
+  });
+
+  it("approves a manual payment and confirms the reservation", async () => {
+    const client = new FakeBookingClient();
+    const repository = createTestRepository(client);
+    const reservation = client.seedReservation({ code: "ARC-2611-VALIDATE", status: "PENDING_PAYMENT" });
+    client.payments.push({
+      id: "payment-validate",
+      reservationId: reservation.id,
+      provider: "MANUAL",
+      status: "PENDING",
+      amountCents: reservation.totalCents,
+      currency: reservation.currency,
+      externalRef: null,
+      receiptBlobPathname: "manual-payment-receipts/ARC-2611-VALIDATE.pdf",
+      receiptFileName: "comprobante.pdf",
+      receiptContentType: "application/pdf",
+      receiptSize: 2048,
+      receiptUploadedAt: new Date("2026-05-11T18:00:00.000Z")
+    });
+
+    await expect(repository.approveManualPayment("ARC-2611-VALIDATE")).resolves.toMatchObject({
+      code: "ARC-2611-VALIDATE",
+      status: "CONFIRMED",
+      payment: {
+        status: "APPROVED"
+      }
+    });
   });
 });

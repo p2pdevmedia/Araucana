@@ -1,0 +1,1 @@
+ALTER TABLE "TravelRoute" ADD COLUMN "isActive" BOOLEAN NOT NULL DEFAULT true;

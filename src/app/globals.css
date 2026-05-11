@@ -48,7 +48,8 @@ a {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -514,7 +515,11 @@ svg {
 }
 
 .form-panel input,
-.form-panel select {
+.form-panel select,
+.form-panel textarea,
+.admin-form-grid input,
+.admin-form-grid select,
+.admin-form-grid textarea {
   min-height: 48px;
   width: 100%;
   border: 1px solid var(--line-strong);
@@ -524,8 +529,20 @@ svg {
   padding: 0 13px;
 }
 
+.form-panel textarea,
+.admin-form-grid textarea {
+  min-height: 110px;
+  padding: 12px 13px;
+  resize: vertical;
+}
+
 .error {
   color: #9f2d20;
+  font-weight: 700;
+}
+
+.success {
+  color: var(--primary);
   font-weight: 700;
 }
 
@@ -726,6 +743,66 @@ svg {
   gap: 18px;
 }
 
+.manual-payment-panel {
+  display: grid;
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.bank-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.bank-detail-grid div {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fffaf1;
+}
+
+.bank-detail-grid dt {
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.bank-detail-grid dd {
+  margin: 7px 0 0;
+  color: var(--ink);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.receipt-form {
+  display: grid;
+  gap: 14px;
+  max-width: 560px;
+}
+
+.receipt-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.receipt-form input[type="file"] {
+  min-height: 48px;
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: #fffaf1;
+  color: var(--ink);
+  padding: 11px 13px;
+}
+
 .qr-payload {
   display: grid;
   gap: 8px;
@@ -822,6 +899,113 @@ svg {
   text-transform: uppercase;
 }
 
+.table-link {
+  color: var(--primary);
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.table-action {
+  min-height: 36px;
+  border-radius: 10px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.admin-section {
+  margin-bottom: 24px;
+}
+
+.admin-section h2,
+.admin-edit-card h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 28px;
+  font-weight: 500;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.admin-form-grid label {
+  display: grid;
+  gap: 7px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-form-grid .span-2 {
+  grid-column: span 2;
+}
+
+.checkbox-row {
+  min-height: 48px;
+  display: flex !important;
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: start;
+  gap: 10px !important;
+}
+
+.checkbox-row input {
+  width: 18px;
+  min-height: 18px;
+}
+
+.admin-edit-list {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-edit-card {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-edit-head,
+.compact-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.compact-actions {
+  flex-wrap: wrap;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.compact-actions form {
+  display: inline-flex;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.status-pill.active {
+  background: var(--primary-soft);
+  color: var(--primary-deep);
+}
+
+.status-pill.inactive {
+  background: rgba(160, 84, 56, 0.12);
+  color: var(--accent-deep);
+}
+
 .site-footer {
   padding: 56px 0 32px;
   background: var(--primary-deep);
@@ -845,7 +1029,9 @@ svg {
   .feature-grid,
   .split,
   .admin-layout,
+  .admin-form-grid,
   .admin-grid,
+  .bank-detail-grid,
   .stats-grid,
   .checkout-intro,
   .checkout-layout,
@@ -882,6 +1068,15 @@ svg {
 
   .admin-main {
     padding: 24px 16px;
+  }
+
+  .admin-form-grid .span-2 {
+    grid-column: auto;
+  }
+
+  .admin-edit-head {
+    align-items: start;
+    flex-direction: column;
   }
 }
 

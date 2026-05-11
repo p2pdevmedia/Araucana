@@ -1,10 +1,23 @@
 import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
-import { routes } from "@/lib/travel-data";
+import { listPublicRoutes } from "@/lib/booking/repository";
 
-const chileRoutes = routes.filter((route) => route.category === "Chile");
+export const dynamic = "force-dynamic";
 
-export default function ChileCrossingPage() {
+function formatDuration(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+
+  if (!hours) {
+    return `${remainder} min`;
+  }
+
+  return remainder ? `${hours} h ${remainder} min` : `${hours} h`;
+}
+
+export default async function ChileCrossingPage() {
+  const chileRoutes = (await listPublicRoutes()).filter((route) => route.category === "Chile");
+
   return (
     <>
       <main>
@@ -51,7 +64,7 @@ export default function ChileCrossingPage() {
                 <div className="route-body">
                   <span className="route-kicker">Chile</span>
                   <h2 className="route-title">{route.from} → {route.to}</h2>
-                  <p className="muted">{route.via} · {route.frequency}</p>
+                  <p className="muted">{route.via} · {formatDuration(route.durationMin)}</p>
                 </div>
               </Link>
             ))}

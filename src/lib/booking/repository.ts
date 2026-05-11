@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db/prisma";
 import { createReservationCode as defaultCreateReservationCode, createTicketCode } from "./codes";
 import {
+  AdminRouteRowDto,
   AdminReservationRowDto,
   AdminScheduleRowDto,
   PublicRouteDto,
@@ -21,10 +22,14 @@ type RouteRecord = {
   description: string;
   category: string;
   featured: boolean;
+  isActive: boolean;
   durationMin: number;
   priceCents: number;
   currency: string;
   stops?: unknown;
+  _count?: {
+    schedules: number;
+  };
 };
 
 type SeatRecord = {
@@ -72,6 +77,12 @@ type PaymentRecord = {
   amountCents: number;
   currency: string;
   externalRef?: string | null;
+  receiptBlobUrl?: string | null;
+  receiptBlobPathname?: string | null;
+  receiptFileName?: string | null;
+  receiptContentType?: string | null;
+  receiptSize?: number | null;
+  receiptUploadedAt?: Date | null;
 };
 
 type TicketRecord = {
@@ -100,6 +111,7 @@ type BookingTransactionClient = {
   travelRoute: {
     findMany(args?: unknown): Promise<RouteRecord[]>;
     findUnique(args: unknown): Promise<RouteRecord | null>;
+    findFirst(args: unknown): Promise<RouteRecord | null>;
   };
   schedule: {
     findMany(args?: unknown): Promise<ScheduleRecord[]>;
@@ -116,9 +128,11 @@ type BookingTransactionClient = {
     findMany(args?: unknown): Promise<ReservationRecord[]>;
     findUnique(args: unknown): Promise<ReservationRecord | null>;
     create(args: unknown): Promise<ReservationRecord>;
+    update(args: unknown): Promise<ReservationRecord>;
   };
   payment: {
     create(args: unknown): Promise<PaymentRecord>;
+    update(args: unknown): Promise<PaymentRecord>;
   };
   ticket: {
     create(args: unknown): Promise<TicketRecord>;
@@ -272,7 +286,13 @@ function mapReservation(reservation: ReservationRecord): ReservationDetailDto {
           amountCents: reservation.payment.amountCents,
           amount: centsToPrice(reservation.payment.amountCents),
           currency: reservation.payment.currency,
-          externalRef: reservation.payment.externalRef
+          externalRef: reservation.payment.externalRef,
+          receiptBlobUrl: reservation.payment.receiptBlobUrl,
+          receiptBlobPathname: reservation.payment.receiptBlobPathname,
+          receiptFileName: reservation.payment.receiptFileName,
+          receiptContentType: reservation.payment.receiptContentType,
+          receiptSize: reservation.payment.receiptSize,
+          receiptUploadedAt: reservation.payment.receiptUploadedAt
         }
       : null,
     ticket: reservation.ticket
@@ -330,6 +350,7 @@ export function createBookingRepository(client: BookingClient, deps: BookingRepo
   return {
     async listPublicRoutes() {
       const routes = await client.travelRoute.findMany({
+        where: { isActive: true },
         orderBy: [{ featured: "desc" }, { from: "asc" }, { to: "asc" }, { slug: "asc" }]
       });
 
@@ -337,8 +358,8 @@ export function createBookingRepository(client: BookingClient, deps: BookingRepo
     },
 
     async getPublicRouteBySlug(slug: string) {
-      const route = await client.travelRoute.findUnique({
-        where: { slug }
+      const route = await client.travelRoute.findFirst({
+        where: { slug, isActive: true }
       });
 
       return route ? mapRoute(route) : null;
@@ -346,7 +367,7 @@ export function createBookingRepository(client: BookingClient, deps: BookingRepo
 
     async listSchedulesForRoute(routeId: string) {
       const schedules = await client.schedule.findMany({
-        where: { routeId },
+        where: { routeId, status: { in: ["OPEN", "DOCUMENTATION"] } },
         include: scheduleInclude(),
         orderBy: { departureAt: "asc" }
       });
@@ -504,6 +525,100 @@ export function createBookingRepository(client: BookingClient, deps: BookingRepo
       return getReservationByCodeWithClient(client, code);
     },
 
+    async attachManualPaymentReceipt(
+      code: string,
+      receipt: {
+        blobUrl: string;
+        blobPathname: string;
+        fileName: string;
+        contentType: string;
+        size: number;
+        uploadedAt: Date;
+      }
+    ) {
+      const normalizedCode = code.toUpperCase();
+
+      return client.$transaction(async (tx) => {
+        const reservation = await tx.reservation.findUnique({
+          where: { code: normalizedCode },
+          include: reservationInclude()
+        });
+
+        if (!reservation) {
+          throw new BookingError("RESERVATION_NOT_FOUND", "Reservation not found");
+        }
+
+        if (!reservation.payment) {
+          throw new BookingError("PAYMENT_NOT_FOUND", "Payment not found");
+        }
+
+        await tx.payment.update({
+          where: { reservationId: reservation.id },
+          data: {
+            status: "PENDING",
+            receiptBlobUrl: receipt.blobUrl,
+            receiptBlobPathname: receipt.blobPathname,
+            receiptFileName: receipt.fileName,
+            receiptContentType: receipt.contentType,
+            receiptSize: receipt.size,
+            receiptUploadedAt: receipt.uploadedAt
+          }
+        });
+
+        const detail = await getReservationByCodeWithClient(tx, normalizedCode);
+
+        if (!detail) {
+          throw new BookingError("RESERVATION_NOT_FOUND", "Reservation not found after receipt upload");
+        }
+
+        return detail;
+      });
+    },
+
+    async approveManualPayment(code: string) {
+      const normalizedCode = code.toUpperCase();
+
+      return client.$transaction(async (tx) => {
+        const reservation = await tx.reservation.findUnique({
+          where: { code: normalizedCode },
+          include: reservationInclude()
+        });
+
+        if (!reservation) {
+          throw new BookingError("RESERVATION_NOT_FOUND", "Reservation not found");
+        }
+
+        if (!reservation.payment) {
+          throw new BookingError("PAYMENT_NOT_FOUND", "Payment not found");
+        }
+
+        if (!reservation.payment.receiptBlobPathname) {
+          throw new BookingError("RECEIPT_NOT_FOUND", "Manual payment receipt not found");
+        }
+
+        await tx.payment.update({
+          where: { reservationId: reservation.id },
+          data: {
+            status: "APPROVED"
+          }
+        });
+        await tx.reservation.update({
+          where: { id: reservation.id },
+          data: {
+            status: "CONFIRMED"
+          }
+        });
+
+        const detail = await getReservationByCodeWithClient(tx, normalizedCode);
+
+        if (!detail) {
+          throw new BookingError("RESERVATION_NOT_FOUND", "Reservation not found after payment approval");
+        }
+
+        return detail;
+      });
+    },
+
     async listAdminSchedules(): Promise<AdminScheduleRowDto[]> {
       const schedules = await client.schedule.findMany({
         include: scheduleInclude(),
@@ -515,6 +630,7 @@ export function createBookingRepository(client: BookingClient, deps: BookingRepo
         return {
           id: schedule.id,
           routeId: schedule.routeId,
+          vehicleId: schedule.vehicleId,
           route: `${schedule.route.from} -> ${schedule.route.to}`,
           departureAt: schedule.departureAt,
           arrivalAt: schedule.arrivalAt,
@@ -523,6 +639,25 @@ export function createBookingRepository(client: BookingClient, deps: BookingRepo
           totalSeats: option.totalSeats
         };
       });
+    },
+
+    async listAdminRoutes(): Promise<AdminRouteRowDto[]> {
+      const routes = await client.travelRoute.findMany({
+        include: {
+          _count: {
+            select: {
+              schedules: true
+            }
+          }
+        },
+        orderBy: [{ isActive: "desc" }, { featured: "desc" }, { from: "asc" }, { to: "asc" }, { slug: "asc" }]
+      });
+
+      return routes.map((route) => ({
+        ...mapRoute(route),
+        isActive: route.isActive,
+        scheduleCount: route._count?.schedules ?? 0
+      }));
     },
 
     async listAdminReservations(): Promise<AdminReservationRowDto[]> {
@@ -540,6 +675,9 @@ export function createBookingRepository(client: BookingClient, deps: BookingRepo
         seatNumber: reservation.seatNumber,
         status: reservation.status,
         paymentStatus: reservation.payment?.status ?? null,
+        hasReceipt: Boolean(reservation.payment?.receiptBlobPathname),
+        receiptFileName: reservation.payment?.receiptFileName ?? null,
+        receiptUploadedAt: reservation.payment?.receiptUploadedAt ?? null,
         createdAt: reservation.createdAt
       }));
     }
@@ -554,5 +692,8 @@ export const listSchedulesForRoute = defaultRepository.listSchedulesForRoute;
 export const getSeatMap = defaultRepository.getSeatMap;
 export const createWebReservation = defaultRepository.createWebReservation;
 export const getReservationByCode = defaultRepository.getReservationByCode;
+export const attachManualPaymentReceipt = defaultRepository.attachManualPaymentReceipt;
+export const approveManualPayment = defaultRepository.approveManualPayment;
 export const listAdminSchedules = defaultRepository.listAdminSchedules;
+export const listAdminRoutes = defaultRepository.listAdminRoutes;
 export const listAdminReservations = defaultRepository.listAdminReservations;

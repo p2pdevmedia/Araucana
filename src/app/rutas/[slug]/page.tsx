@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
-import { formatPrice, getRouteBySlug } from "@/lib/travel-data";
+import { getPublicRouteBySlug, listSchedulesForRoute } from "@/lib/booking/repository";
+
+export const dynamic = "force-dynamic";
 
 type RouteDetailPageProps = {
   params: Promise<{
@@ -9,13 +11,65 @@ type RouteDetailPageProps = {
   }>;
 };
 
+type RouteStop = {
+  name: string;
+  km: number;
+  minutes: number;
+  note: string;
+};
+
+function formatDuration(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+
+  if (!hours) {
+    return `${remainder} min`;
+  }
+
+  return remainder ? `${hours} h ${remainder} min` : `${hours} h`;
+}
+
+function formatPrice(cents: number, currency: string) {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0
+  }).format(cents / 100);
+}
+
+function normalizeStops(stops: unknown): RouteStop[] {
+  if (!Array.isArray(stops)) {
+    return [];
+  }
+
+  return stops
+    .map((stop) => {
+      if (!stop || typeof stop !== "object") {
+        return null;
+      }
+
+      const item = stop as { name?: unknown; km?: unknown; minutes?: unknown; note?: unknown };
+      return {
+        name: String(item.name ?? ""),
+        km: Number(item.km ?? 0),
+        minutes: Number(item.minutes ?? 0),
+        note: String(item.note ?? "")
+      };
+    })
+    .filter((stop): stop is RouteStop => Boolean(stop?.name));
+}
+
 export default async function RouteDetailPage({ params }: RouteDetailPageProps) {
   const { slug } = await params;
-  const route = getRouteBySlug(slug);
+  const route = await getPublicRouteBySlug(slug);
 
   if (!route) {
     notFound();
   }
+
+  const schedules = await listSchedulesForRoute(route.id);
+  const stops = normalizeStops(route.stops);
+  const duration = formatDuration(route.durationMin);
 
   return (
     <>
@@ -23,7 +77,7 @@ export default async function RouteDetailPage({ params }: RouteDetailPageProps) 
         <section className="hero">
           <div className="hero-inner">
             <div className="hero-copy">
-              <p className="eyebrow">{route.category} · {route.duration}</p>
+              <p className="eyebrow">{route.category} · {duration}</p>
               <h1 className="display-title">
                 {route.from} → <em>{route.to}</em>
               </h1>
@@ -44,15 +98,15 @@ export default async function RouteDetailPage({ params }: RouteDetailPageProps) 
               </div>
               <div className="dock-field">
                 <span>Duracion</span>
-                <strong>{route.duration}</strong>
+                <strong>{duration}</strong>
               </div>
               <div className="dock-field">
-                <span>Frecuencia</span>
-                <strong>{route.frequency}</strong>
+                <span>Salidas</span>
+                <strong>{schedules.length} disponibles</strong>
               </div>
               <div className="dock-field">
                 <span>Desde</span>
-                <strong>{formatPrice(route.price)}</strong>
+                <strong>{formatPrice(route.priceCents, route.currency)}</strong>
               </div>
               <Link className="button" href={`/reservar/${route.slug}`}>
                 Continuar
@@ -70,7 +124,7 @@ export default async function RouteDetailPage({ params }: RouteDetailPageProps) 
             <p className="lead">Este detalle será la base del flujo mobile y web de reservas.</p>
           </div>
           <div className="lake-grid">
-            {route.stops.map((stop, index) => (
+            {stops.map((stop, index) => (
               <div className="lake-card" key={`${stop.name}-${index}`}>
                 <small>0{index + 1} · km {stop.km}</small>
                 <strong>{stop.name}</strong>

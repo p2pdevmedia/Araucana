@@ -1,10 +1,33 @@
 import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
-import { formatPrice, lakes, routes } from "@/lib/travel-data";
+import { listPublicRoutes } from "@/lib/booking/repository";
+import { lakes } from "@/lib/travel-data";
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+function formatDuration(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+
+  if (!hours) {
+    return `${remainder} min`;
+  }
+
+  return remainder ? `${hours} h ${remainder} min` : `${hours} h`;
+}
+
+function formatPrice(cents: number, currency: string) {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0
+  }).format(cents / 100);
+}
+
+export default async function HomePage() {
+  const routes = await listPublicRoutes();
   const featured = routes.find((route) => route.featured) ?? routes[0];
-  const secondaryRoutes = routes.filter((route) => route.id !== featured.id).slice(0, 4);
+  const secondaryRoutes = featured ? routes.filter((route) => route.id !== featured.id).slice(0, 4) : [];
 
   return (
     <>
@@ -72,7 +95,7 @@ export default function HomePage() {
               <span>anos de operacion</span>
             </div>
             <div className="stat-card">
-              <strong>5</strong>
+              <strong>{routes.length}</strong>
               <span>rutas activas</span>
             </div>
             <div className="stat-card">
@@ -97,39 +120,43 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="route-grid">
-            <Link className="route-card featured" href={`/rutas/${featured.slug}`}>
-              <div className="route-media" />
-              <div className="route-body">
-                <span className="route-kicker">Ruta signature</span>
-                <h3 className="route-title">
-                  {featured.from} → {featured.to}
-                </h3>
-                <p className="muted">{featured.via}</p>
-                <div className="route-meta">
-                  <span>{featured.duration} · {featured.frequency}</span>
-                  <span className="price">{formatPrice(featured.price)}</span>
-                </div>
-              </div>
-            </Link>
-
-            {secondaryRoutes.map((route) => (
-              <Link className="route-card" href={`/rutas/${route.slug}`} key={route.id}>
+          {featured ? (
+            <div className="route-grid">
+              <Link className="route-card featured" href={`/rutas/${featured.slug}`}>
                 <div className="route-media" />
                 <div className="route-body">
-                  <span className="route-kicker">{route.category}</span>
+                  <span className="route-kicker">Ruta signature</span>
                   <h3 className="route-title">
-                    {route.from} → {route.to}
+                    {featured.from} → {featured.to}
                   </h3>
-                  <p className="muted">{route.via}</p>
+                  <p className="muted">{featured.via}</p>
                   <div className="route-meta">
-                    <span>{route.duration}</span>
-                    <span className="price">{formatPrice(route.price)}</span>
+                    <span>{formatDuration(featured.durationMin)}</span>
+                    <span className="price">{formatPrice(featured.priceCents, featured.currency)}</span>
                   </div>
                 </div>
               </Link>
-            ))}
-          </div>
+
+              {secondaryRoutes.map((route) => (
+                <Link className="route-card" href={`/rutas/${route.slug}`} key={route.id}>
+                  <div className="route-media" />
+                  <div className="route-body">
+                    <span className="route-kicker">{route.category}</span>
+                    <h3 className="route-title">
+                      {route.from} → {route.to}
+                    </h3>
+                    <p className="muted">{route.via}</p>
+                    <div className="route-meta">
+                      <span>{formatDuration(route.durationMin)}</span>
+                      <span className="price">{formatPrice(route.priceCents, route.currency)}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="lead">No hay rutas activas publicadas por ahora.</p>
+          )}
         </section>
 
         <section className="page-shell section">

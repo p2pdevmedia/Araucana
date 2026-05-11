@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
 import { getReservationByCode } from "@/lib/booking/repository";
+import { ManualPaymentPanel } from "./manual-payment-panel";
+
+export const dynamic = "force-dynamic";
 
 type ReservationConfirmationPageProps = {
   params: Promise<{
@@ -141,6 +144,16 @@ export default async function ReservationConfirmationPage({ params }: Reservatio
             </div>
           </div>
         </section>
+
+        {reservation.payment?.provider === "MANUAL" && reservation.payment.status !== "APPROVED" ? (
+          <ManualPaymentPanel
+            reservationCode={reservation.code}
+            existingReceipt={{
+              fileName: reservation.payment.receiptFileName ?? null,
+              uploadedAt: reservation.payment.receiptUploadedAt ?? null
+            }}
+          />
+        ) : null}
       </main>
       <SiteFooter />
     </>

@@ -95,6 +95,7 @@ async function main() {
         category: route.category,
         description: route.description,
         featured: route.featured ?? false,
+        isActive: true,
         stops: route.stops
       },
       create: {
@@ -109,6 +110,7 @@ async function main() {
         category: route.category,
         description: route.description,
         featured: route.featured ?? false,
+        isActive: true,
         stops: route.stops
       }
     });

@@ -20,6 +20,11 @@ export type PublicRouteDto = {
   stops?: unknown;
 };
 
+export type AdminRouteRowDto = PublicRouteDto & {
+  isActive: boolean;
+  scheduleCount: number;
+};
+
 export type ScheduleOptionDto = {
   id: string;
   route: PublicRouteDto;
@@ -64,6 +69,12 @@ export type PaymentDto = {
   amount: number;
   currency: string;
   externalRef?: string | null;
+  receiptBlobUrl?: string | null;
+  receiptBlobPathname?: string | null;
+  receiptFileName?: string | null;
+  receiptContentType?: string | null;
+  receiptSize?: number | null;
+  receiptUploadedAt?: Date | null;
 };
 
 export type TicketDto = {
@@ -91,6 +102,7 @@ export type AdminScheduleRowDto = {
   id: string;
   route: string;
   routeId: string;
+  vehicleId: string;
   departureAt: Date;
   arrivalAt: Date;
   status: string;
@@ -107,5 +119,8 @@ export type AdminReservationRowDto = {
   seatNumber: string;
   status: string;
   paymentStatus: string | null;
+  hasReceipt: boolean;
+  receiptFileName: string | null;
+  receiptUploadedAt: Date | null;
   createdAt: Date;
 };

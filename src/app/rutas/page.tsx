@@ -1,8 +1,41 @@
 import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
-import { formatPrice, routes } from "@/lib/travel-data";
+import { listPublicRoutes, listSchedulesForRoute } from "@/lib/booking/repository";
 
-export default function RoutesPage() {
+export const dynamic = "force-dynamic";
+
+function formatDuration(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+
+  if (!hours) {
+    return `${remainder} min`;
+  }
+
+  return remainder ? `${hours} h ${remainder} min` : `${hours} h`;
+}
+
+function formatPrice(cents: number, currency: string) {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0
+  }).format(cents / 100);
+}
+
+async function getRoutesWithScheduleCount() {
+  const routes = await listPublicRoutes();
+  const schedules = await Promise.all(routes.map((route) => listSchedulesForRoute(route.id)));
+
+  return routes.map((route, index) => ({
+    ...route,
+    scheduleCount: schedules[index]?.length ?? 0
+  }));
+}
+
+export default async function RoutesPage() {
+  const routes = await getRoutesWithScheduleCount();
+
   return (
     <>
       <main className="page-shell section">
@@ -51,8 +84,8 @@ export default function RoutesPage() {
                   <p className="muted">{route.via}</p>
                   <p>{route.description}</p>
                   <div className="route-meta">
-                    <span>{route.duration} · {route.frequency}</span>
-                    <span className="price">{formatPrice(route.price)}</span>
+                    <span>{formatDuration(route.durationMin)} · {route.scheduleCount} salidas disponibles</span>
+                    <span className="price">{formatPrice(route.priceCents, route.currency)}</span>
                   </div>
                 </div>
               </Link>
