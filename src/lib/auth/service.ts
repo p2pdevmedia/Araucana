@@ -218,3 +218,12 @@ export async function requireReservationsUser(request: Request) {
 
   return user;
 }
+
+export async function requireDriverUser(request: Request) {
+  const user = await requireAuthenticatedUser(request);
+  if (user.role !== "DRIVER") {
+    throw new AuthorizationError("Se requiere un usuario chofer");
+  }
+
+  return user;
+}
