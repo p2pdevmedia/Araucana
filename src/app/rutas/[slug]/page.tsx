@@ -29,7 +29,7 @@ export default async function RouteDetailPage({ params }: RouteDetailPageProps) 
               </h1>
               <p className="lead">{route.description}</p>
               <div className="hero-actions">
-                <Link className="cream-button" href="/app">
+                <Link className="cream-button" href={`/reservar/${route.slug}`}>
                   Reservar asiento
                 </Link>
                 <Link className="ghost-button" href="/rutas">
@@ -54,7 +54,7 @@ export default async function RouteDetailPage({ params }: RouteDetailPageProps) 
                 <span>Desde</span>
                 <strong>{formatPrice(route.price)}</strong>
               </div>
-              <Link className="button" href="/app">
+              <Link className="button" href={`/reservar/${route.slug}`}>
                 Continuar
               </Link>
             </div>

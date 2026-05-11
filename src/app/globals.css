@@ -529,6 +529,222 @@ svg {
   font-weight: 700;
 }
 
+.checkout-layout button:disabled,
+.checkout-layout select:disabled,
+.checkout-layout input:disabled {
+  cursor: not-allowed;
+}
+
+.route-summary {
+  min-width: 220px;
+  display: grid;
+  gap: 6px;
+}
+
+.route-summary span,
+.summary-list span,
+.ticket-code span,
+.qr-payload span {
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.route-summary strong,
+.ticket-code strong {
+  color: var(--primary);
+  font-family: var(--display);
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.checkout-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.72fr);
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 28px;
+}
+
+.checkout-stats {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.checkout-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+.checkout-main {
+  display: grid;
+  gap: 18px;
+}
+
+.checkout-panel {
+  width: 100%;
+  box-shadow: none;
+}
+
+.checkout-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.checkout-fields label:last-child {
+  grid-column: 1 / -1;
+}
+
+.seat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(54px, 1fr));
+  gap: 10px;
+}
+
+.seat-button {
+  min-height: 48px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: #fffaf1;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.seat-button.selected {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--surface);
+}
+
+.seat-button.occupied {
+  border-color: rgba(26, 37, 34, 0.08);
+  background: var(--surface-2);
+  color: var(--ink-muted);
+  text-decoration: line-through;
+}
+
+.seat-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.seat-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-box {
+  width: 13px;
+  height: 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  background: #fffaf1;
+}
+
+.legend-box.selected {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+.legend-box.occupied {
+  border-color: rgba(26, 37, 34, 0.08);
+  background: var(--surface-2);
+}
+
+.checkout-summary {
+  position: sticky;
+  top: 96px;
+  display: grid;
+  gap: 18px;
+}
+
+.summary-list {
+  display: grid;
+  gap: 14px;
+}
+
+.summary-list div {
+  display: grid;
+  gap: 5px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.summary-list div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.summary-list strong {
+  overflow-wrap: anywhere;
+}
+
+.checkout-submit {
+  width: 100%;
+}
+
+.ticket-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: start;
+  margin-bottom: 24px;
+}
+
+.ticket-hero > div:first-child {
+  max-width: 760px;
+}
+
+.ticket-code {
+  min-width: 230px;
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fffaf1;
+}
+
+.ticket-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.8fr);
+  gap: 24px;
+}
+
+.ticket-summary {
+  display: grid;
+  gap: 18px;
+}
+
+.qr-payload {
+  display: grid;
+  gap: 8px;
+}
+
+.qr-payload code {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fffaf1;
+  color: var(--ink-soft);
+  font-size: 13px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .admin-layout {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
@@ -630,8 +846,19 @@ svg {
   .split,
   .admin-layout,
   .admin-grid,
-  .stats-grid {
+  .stats-grid,
+  .checkout-intro,
+  .checkout-layout,
+  .ticket-layout {
     grid-template-columns: 1fr;
+  }
+
+  .checkout-summary {
+    position: static;
+  }
+
+  .ticket-hero {
+    display: grid;
   }
 
   .booking-dock {
@@ -676,6 +903,16 @@ svg {
   }
 
   .lake-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-head {
+    display: grid;
+    align-items: start;
+  }
+
+  .checkout-fields,
+  .checkout-stats {
     grid-template-columns: 1fr;
   }
 }

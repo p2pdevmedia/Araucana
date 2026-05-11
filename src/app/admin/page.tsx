@@ -1,7 +1,7 @@
 import { AdminShell } from "@/components/admin-shell";
 import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
+import { listAdminReservations, listAdminSchedules, listPublicRoutes } from "@/lib/booking/repository";
 import { prisma } from "@/lib/db/prisma";
-import { reservations, routes, schedules } from "@/lib/travel-data";
 import { LogoutButton } from "./logout-button";
 
 export default async function AdminPage() {
@@ -16,6 +16,11 @@ export default async function AdminPage() {
       isActive: true
     }
   });
+  const [routes, schedules, reservations] = await Promise.all([
+    listPublicRoutes(),
+    listAdminSchedules(),
+    listAdminReservations()
+  ]);
 
   return (
     <AdminShell title="Panel de turismo y transporte" action={<LogoutButton />}>

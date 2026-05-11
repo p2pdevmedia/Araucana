@@ -29,7 +29,7 @@ export default function RootLayout({
               <Link href="/rutas">Rutas</Link>
               <Link href="/rutas/sma-bariloche-7-lagos">7 Lagos</Link>
               <Link href="/cruce-a-chile">Cruce a Chile</Link>
-              <Link href="/app">App</Link>
+              <Link href="/rutas">Reservas</Link>
               <Link href="/soporte">Soporte</Link>
             </div>
             <div className="nav-actions">

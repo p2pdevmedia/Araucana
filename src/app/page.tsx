@@ -24,8 +24,8 @@ export default function HomePage() {
               <Link className="cream-button" href="/rutas">
                 Ver rutas y horarios
               </Link>
-              <Link className="ghost-button" href="/app">
-                Descargar app
+              <Link className="ghost-button" href="/rutas">
+                Reservar online
               </Link>
             </div>
           </div>
@@ -178,14 +178,14 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="plain-card">
-              <p className="eyebrow">En tu bolsillo</p>
-              <h3 className="route-title">Reserva, embarca y segui tu coche.</h3>
+              <p className="eyebrow">Reserva web</p>
+              <h3 className="route-title">Reserva y confirma tu asiento online.</h3>
               <p className="muted">
-                La API ya queda pensada para Web, Android y iPhone: login por
-                token, rutas, salidas, asientos, tickets y QR.
+                Elegi ruta, salida y asiento desde la web para completar tu
+                reserva en pocos pasos, con ticket y QR listos para embarcar.
               </p>
-              <Link className="button" href="/app">
-                Ver flujo app
+              <Link className="button" href="/rutas">
+                Reservar online
               </Link>
             </div>
           </div>

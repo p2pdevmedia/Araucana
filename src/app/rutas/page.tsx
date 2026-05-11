@@ -11,8 +11,8 @@ export default function RoutesPage() {
             <p className="eyebrow">Rutas y horarios</p>
             <h1 className="section-title">Elegí tu próximo tramo.</h1>
           </div>
-          <Link className="button" href="/app">
-            Ver flujo mobile
+          <Link className="button" href="#salidas">
+            Buscar salidas
           </Link>
         </div>
 
@@ -38,7 +38,7 @@ export default function RoutesPage() {
           </button>
         </form>
 
-        <section className="section">
+        <section className="section" id="salidas">
           <div className="route-grid">
             {routes.map((route) => (
               <Link className={`route-card ${route.featured ? "featured" : ""}`} href={`/rutas/${route.slug}`} key={route.id}>

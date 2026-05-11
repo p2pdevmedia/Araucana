@@ -27,3 +27,116 @@ model Session {
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
+
+model TravelRoute {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  from        String
+  to          String
+  via         String
+  durationMin Int
+  priceCents  Int
+  currency    String     @default("ARS")
+  category    String
+  description String
+  featured    Boolean    @default(false)
+  stops       Json
+  schedules   Schedule[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Vehicle {
+  id        String     @id @default(cuid())
+  name      String
+  seats     Seat[]
+  schedules Schedule[]
+  createdAt DateTime   @default(now())
+}
+
+model Seat {
+  id        String   @id @default(cuid())
+  vehicleId String
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  number    String
+  row       Int
+  column    Int
+  createdAt DateTime @default(now())
+  reservations Reservation[]
+
+  @@unique([vehicleId, number])
+}
+
+model Schedule {
+  id           String        @id @default(cuid())
+  routeId      String
+  route        TravelRoute   @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  vehicleId    String
+  vehicle      Vehicle       @relation(fields: [vehicleId], references: [id])
+  departureAt  DateTime
+  arrivalAt    DateTime
+  status       String        @default("OPEN")
+  reservations Reservation[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([routeId, departureAt])
+}
+
+model Passenger {
+  id           String        @id @default(cuid())
+  firstName    String
+  lastName     String
+  email        String
+  phone        String
+  documentType String
+  documentId   String
+  nationality  String?
+  reservations Reservation[]
+  createdAt    DateTime      @default(now())
+}
+
+model Reservation {
+  id          String     @id @default(cuid())
+  code        String     @unique
+  scheduleId  String
+  schedule    Schedule   @relation(fields: [scheduleId], references: [id])
+  passengerId String
+  passenger   Passenger  @relation(fields: [passengerId], references: [id])
+  seatId      String
+  seat        Seat       @relation(fields: [seatId], references: [id])
+  seatNumber  String
+  status      String     @default("PENDING_PAYMENT")
+  totalCents  Int
+  currency    String     @default("ARS")
+  payment     Payment?
+  ticket      Ticket?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([scheduleId, seatNumber])
+  @@unique([scheduleId, seatId])
+  @@index([code])
+}
+
+model Payment {
+  id            String      @id @default(cuid())
+  reservationId String      @unique
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  provider      String
+  status        String      @default("PENDING")
+  amountCents   Int
+  currency      String      @default("ARS")
+  externalRef   String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Ticket {
+  id            String      @id @default(cuid())
+  reservationId String      @unique
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  code          String      @unique
+  qrPayload     String
+  createdAt     DateTime    @default(now())
+}

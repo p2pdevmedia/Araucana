@@ -1,0 +1,19 @@
+import { describe, expect, it } from "vitest";
+import { formatDateTime, statusCopy, statusHeading } from "./page";
+
+describe("reservation confirmation status copy", () => {
+  it("keeps planned heading text for pending manual-payment reservations without saying they are fully paid", () => {
+    expect(statusHeading("PENDING_PAYMENT")).toBe("Reserva confirmada");
+    expect(statusCopy("PENDING_PAYMENT")).toContain("pago queda pendiente de confirmacion manual");
+  });
+
+  it("uses explicit headings for confirmed, cancelled, and unknown statuses", () => {
+    expect(statusHeading("CONFIRMED")).toBe("Reserva confirmada");
+    expect(statusHeading("CANCELLED")).toBe("Reserva cancelada");
+    expect(statusHeading("REVIEW")).toBe("Reserva recibida");
+  });
+
+  it("formats departure times in the Salta timezone", () => {
+    expect(formatDateTime("2026-06-01T12:00:00.000Z")).toMatch(/\b9:00\b/);
+  });
+});
