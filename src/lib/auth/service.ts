@@ -27,9 +27,17 @@ type SessionWritableClient = {
   };
 };
 
+type SessionUserRecord = {
+  id: string;
+  email: string;
+  name: string | null;
+  role: string;
+  isActive: boolean;
+};
+
 type SessionRefreshClient = SessionWritableClient & {
   session: SessionWritableClient["session"] & {
-    findUnique(args: unknown): Promise<({ user: Prisma.UserGetPayload<Record<string, never>> } & { expiresAt: Date; id: string }) | null>;
+    findUnique(args: unknown): Promise<({ user: SessionUserRecord } & { expiresAt: Date; id: string }) | null>;
     delete(args: unknown): Promise<unknown>;
   };
 };
@@ -143,7 +151,7 @@ export async function deleteSessionByToken(token: string | null) {
     });
 }
 
-export async function refreshSessionByToken(token: string | null, client: SessionRefreshClient = prisma) {
+export async function refreshSessionByToken(token: string | null, client: SessionRefreshClient = prisma as unknown as SessionRefreshClient) {
   if (!token) {
     throw new AuthenticationError("Sesion invalida");
   }
