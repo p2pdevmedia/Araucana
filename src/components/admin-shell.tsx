@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminToast } from "@/app/admin/form-ui";
 import { BrandMark } from "./brand-mark";
 
 type AdminShellProps = {
@@ -6,17 +7,19 @@ type AdminShellProps = {
   title: string;
   eyebrow?: string;
   action?: React.ReactNode;
+  notice?: string;
 };
 
 const links = [
   { href: "/admin", label: "Panel" },
   { href: "/admin/rutas", label: "Rutas" },
   { href: "/admin/salidas", label: "Salidas" },
+  { href: "/admin/naves", label: "Naves" },
   { href: "/admin/reservas", label: "Reservas" },
   { href: "/", label: "Web publica" }
 ];
 
-export function AdminShell({ children, title, eyebrow = "Operacion", action }: AdminShellProps) {
+export function AdminShell({ children, title, eyebrow = "Operacion", action, notice }: AdminShellProps) {
   return (
     <main className="admin-layout">
       <aside className="admin-sidebar">
@@ -43,6 +46,7 @@ export function AdminShell({ children, title, eyebrow = "Operacion", action }: A
           </div>
           {action}
         </div>
+        <AdminToast message={notice} />
         {children}
       </section>
     </main>

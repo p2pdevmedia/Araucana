@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
 import { prisma } from "@/lib/db/prisma";
+import { errorState, type AdminFieldErrors, type AdminFormState } from "../form-state";
 
 function value(formData: FormData, key: string) {
   const entry = formData.get(key);
@@ -14,6 +15,15 @@ function value(formData: FormData, key: string) {
 function positiveNumber(formData: FormData, key: string) {
   const parsed = Number(value(formData, key));
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+class FormValidationError extends Error {
+  constructor(
+    message: string,
+    readonly fieldErrors: AdminFieldErrors
+  ) {
+    super(message);
+  }
 }
 
 function slugify(text: string) {
@@ -52,9 +62,34 @@ function routeData(formData: FormData) {
   const slug = value(formData, "slug") || slugify(`${from}-${to}-${via}`);
   const durationMin = positiveNumber(formData, "durationMin");
   const price = positiveNumber(formData, "price");
+  const fieldErrors: AdminFieldErrors = {};
 
-  if (!from || !to || !via || !slug || !durationMin || !price) {
-    throw new Error("Completá origen, destino, vía, duración y precio.");
+  if (!from) {
+    fieldErrors.from = "Ingresa el origen de la ruta.";
+  }
+
+  if (!to) {
+    fieldErrors.to = "Ingresa el destino de la ruta.";
+  }
+
+  if (!via) {
+    fieldErrors.via = "Ingresa por que camino o via se realiza.";
+  }
+
+  if (!slug) {
+    fieldErrors.slug = "Ingresa un slug publico o completa origen, destino y via para generarlo.";
+  }
+
+  if (!durationMin) {
+    fieldErrors.durationMin = "Ingresa una duracion mayor a cero.";
+  }
+
+  if (!price) {
+    fieldErrors.price = "Ingresa un precio mayor a cero.";
+  }
+
+  if (Object.keys(fieldErrors).length) {
+    throw new FormValidationError("Revisa los campos marcados para guardar la ruta.", fieldErrors);
   }
 
   return {
@@ -73,6 +108,25 @@ function routeData(formData: FormData) {
   };
 }
 
+function routeErrorState(error: unknown) {
+  if (error instanceof FormValidationError) {
+    return errorState(error.message, error.fieldErrors);
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "P2002"
+  ) {
+    return errorState("Ya existe una ruta con esos datos.", {
+      slug: "El slug publico ya esta usado por otra ruta."
+    });
+  }
+
+  return errorState("No pudimos guardar la ruta. Intentalo nuevamente.");
+}
+
 function revalidateRoutePaths(slug?: string) {
   revalidatePath("/admin");
   revalidatePath("/admin/rutas");
@@ -85,29 +139,41 @@ function revalidateRoutePaths(slug?: string) {
   }
 }
 
-export async function createRouteAction(formData: FormData) {
+export async function createRouteAction(_state: AdminFormState, formData: FormData): Promise<AdminFormState> {
   await getCurrentAdminOrRedirect();
 
-  const data = routeData(formData);
-  await prisma.travelRoute.create({ data });
+  let data: ReturnType<typeof routeData>;
+  try {
+    data = routeData(formData);
+    await prisma.travelRoute.create({ data });
+  } catch (error) {
+    return routeErrorState(error);
+  }
+
   revalidateRoutePaths(data.slug);
-  redirect("/admin/rutas");
+  redirect(`/admin/rutas?notice=${encodeURIComponent("Ruta guardada con exito.")}`);
 }
 
-export async function updateRouteAction(formData: FormData) {
+export async function updateRouteAction(_state: AdminFormState, formData: FormData): Promise<AdminFormState> {
   await getCurrentAdminOrRedirect();
 
   const id = value(formData, "id");
   if (!id) {
-    throw new Error("Falta la ruta a editar.");
+    return errorState("Falta la ruta a editar. Volve a abrirla desde el listado.");
   }
 
   const current = await prisma.travelRoute.findUnique({ where: { id }, select: { slug: true } });
-  const data = routeData(formData);
-  await prisma.travelRoute.update({ where: { id }, data });
+  let data: ReturnType<typeof routeData>;
+  try {
+    data = routeData(formData);
+    await prisma.travelRoute.update({ where: { id }, data });
+  } catch (error) {
+    return routeErrorState(error);
+  }
+
   revalidateRoutePaths(current?.slug);
   revalidateRoutePaths(data.slug);
-  redirect("/admin/rutas");
+  redirect(`/admin/rutas?notice=${encodeURIComponent("Ruta guardada con exito.")}`);
 }
 
 export async function setRouteActiveAction(formData: FormData) {

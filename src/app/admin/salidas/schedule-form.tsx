@@ -1,6 +1,11 @@
-import Link from "next/link";
+"use client";
 
-type ScheduleFormAction = (formData: FormData) => Promise<void>;
+import Link from "next/link";
+import { useActionState } from "react";
+import { AdminFormAlert, AdminSubmitButton, FieldError } from "../form-ui";
+import { initialAdminFormState, type AdminFormState } from "../form-state";
+
+type ScheduleFormAction = (state: AdminFormState, formData: FormData) => Promise<AdminFormState>;
 
 type RouteOption = {
   id: string;
@@ -57,43 +62,76 @@ type ScheduleFormProps = {
 };
 
 export function ScheduleForm({ action, routes, vehicles, schedule, submitLabel }: ScheduleFormProps) {
+  const [state, formAction] = useActionState(action, initialAdminFormState);
+  const errors = state.fieldErrors;
+
   return (
-    <form className="admin-form-grid" action={action}>
+    <form className="admin-form-grid" action={formAction}>
+      <AdminFormAlert state={state} />
       {schedule?.id ? <input type="hidden" name="id" value={schedule.id} /> : null}
       <label>
         Ruta
-        <select name="routeId" defaultValue={schedule?.routeId} required>
+        <select
+          name="routeId"
+          defaultValue={schedule?.routeId}
+          required
+          aria-invalid={Boolean(errors.routeId)}
+          aria-describedby={errors.routeId ? "routeId-error" : undefined}
+        >
           {routes.map((route) => (
             <option key={route.id} value={route.id}>
               {route.from} → {route.to}{route.isActive ? "" : " (inactiva)"}
             </option>
           ))}
         </select>
+        <FieldError id="routeId-error" message={errors.routeId} />
       </label>
       <label>
         Vehiculo
-        <select name="vehicleId" defaultValue={schedule?.vehicleId} required>
+        <select
+          name="vehicleId"
+          defaultValue={schedule?.vehicleId}
+          required
+          aria-invalid={Boolean(errors.vehicleId)}
+          aria-describedby={errors.vehicleId ? "vehicleId-error" : undefined}
+        >
           {vehicles.map((vehicle) => (
             <option key={vehicle.id} value={vehicle.id}>
               {vehicle.name} · {vehicle._count.seats} asientos
             </option>
           ))}
         </select>
+        <FieldError id="vehicleId-error" message={errors.vehicleId} />
       </label>
       <label>
         Fecha y hora
-        <input name="departureAt" type="datetime-local" defaultValue={formatDateTimeInput(schedule?.departureAt)} required />
+        <input
+          name="departureAt"
+          type="datetime-local"
+          defaultValue={formatDateTimeInput(schedule?.departureAt)}
+          required
+          aria-invalid={Boolean(errors.departureAt)}
+          aria-describedby={errors.departureAt ? "departureAt-error" : undefined}
+        />
+        <FieldError id="departureAt-error" message={errors.departureAt} />
       </label>
       <label>
         Estado
-        <select name="status" defaultValue={schedule?.status ?? "OPEN"} required>
+        <select
+          name="status"
+          defaultValue={schedule?.status ?? "OPEN"}
+          required
+          aria-invalid={Boolean(errors.status)}
+          aria-describedby={errors.status ? "status-error" : undefined}
+        >
           <option value="OPEN">Abierta</option>
           <option value="DOCUMENTATION">Documentacion</option>
           <option value="CLOSED">Inactiva / cerrada</option>
         </select>
+        <FieldError id="status-error" message={errors.status} />
       </label>
       <div className="form-actions span-2">
-        <button className="button" type="submit">{submitLabel}</button>
+        <AdminSubmitButton>{submitLabel}</AdminSubmitButton>
         <Link className="ghost-button" href="/admin/salidas">Cancelar</Link>
       </div>
     </form>

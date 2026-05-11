@@ -48,11 +48,17 @@ model TravelRoute {
 }
 
 model Vehicle {
-  id        String     @id @default(cuid())
-  name      String
-  seats     Seat[]
-  schedules Schedule[]
-  createdAt DateTime   @default(now())
+  id           String     @id @default(cuid())
+  name         String
+  brand        String     @default("Araucana")
+  model        String     @default("Operativo")
+  licensePlate String?
+  templateKey  String?
+  isActive     Boolean    @default(true)
+  seats        Seat[]
+  schedules    Schedule[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }
 
 model Seat {

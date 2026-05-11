@@ -20,6 +20,11 @@ const adminPages = [
     content: ["Ruta", "Fecha", "Hora", "Asientos", "Abierta"]
   },
   {
+    path: "/admin/naves",
+    heading: "Naves",
+    content: ["Nave", "Marca / modelo", "Araucana 24", "Mercedes-Benz"]
+  },
+  {
     path: "/admin/reservas",
     heading: "Reservas",
     content: ["Codigo", "Pasajero", "Camila Vidal", "Confirmada"]
@@ -100,5 +105,24 @@ test.describe("Administrador", () => {
 
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/login$/);
+  });
+
+  test("permite crear una nave desde una plantilla editable", async ({ page }) => {
+    await logInAsAdmin(page);
+
+    await page.goto("/admin/naves");
+    await page.getByRole("link", { name: "Agregar nave" }).click();
+    await expect(page.getByRole("heading", { name: "Agregar nave" })).toBeVisible();
+
+    await page.getByLabel("Nombre interno").fill("Araucana Test E2E");
+    await page.getByLabel("Plantilla").selectOption("fiat-ducato-16");
+    await page.getByLabel("Patente / identificador").fill("TEST 016");
+    await expect(page.getByText("16 asientos")).toBeVisible();
+    await page.getByRole("button", { name: "Crear nave" }).click();
+
+    await expect(page).toHaveURL(/\/admin\/naves$/);
+    await expect(page.getByText("Araucana Test E2E")).toBeVisible();
+    await expect(page.getByText("Fiat · Ducato Minibus 16 plazas")).toBeVisible();
+    await expect(page.getByText("16 pasajeros")).toBeVisible();
   });
 });

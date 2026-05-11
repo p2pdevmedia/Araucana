@@ -40,11 +40,21 @@ async function main() {
   await prisma.vehicle.upsert({
     where: { id: VEHICLE_ID },
     update: {
-      name: "Araucana 24"
+      name: "Araucana 24",
+      brand: "Mercedes-Benz",
+      model: "Sprinter Minibus 19+1",
+      licensePlate: "ARAU-24",
+      templateKey: "mercedes-sprinter-19",
+      isActive: true
     },
     create: {
       id: VEHICLE_ID,
-      name: "Araucana 24"
+      name: "Araucana 24",
+      brand: "Mercedes-Benz",
+      model: "Sprinter Minibus 19+1",
+      licensePlate: "ARAU-24",
+      templateKey: "mercedes-sprinter-19",
+      isActive: true
     }
   });
 

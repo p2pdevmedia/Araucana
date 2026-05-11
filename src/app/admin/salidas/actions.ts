@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
 import { prisma } from "@/lib/db/prisma";
+import { errorState, type AdminFieldErrors, type AdminFormState } from "../form-state";
 
 const scheduleStatuses = new Set(["OPEN", "DOCUMENTATION", "CLOSED"]);
 
@@ -12,16 +13,29 @@ function value(formData: FormData, key: string) {
   return typeof entry === "string" ? entry.trim() : "";
 }
 
+class FormValidationError extends Error {
+  constructor(
+    message: string,
+    readonly fieldErrors: AdminFieldErrors
+  ) {
+    super(message);
+  }
+}
+
 function parseDeparture(raw: string) {
   if (!raw) {
-    throw new Error("Elegí fecha y hora de salida.");
+    throw new FormValidationError("Revisa los campos marcados para guardar la salida.", {
+      departureAt: "Elegi fecha y hora de salida."
+    });
   }
 
   const normalized = raw.includes(":") ? raw : `${raw}T00:00`;
   const date = new Date(`${normalized}:00-03:00`);
 
   if (Number.isNaN(date.getTime())) {
-    throw new Error("La fecha de salida no es válida.");
+    throw new FormValidationError("Revisa los campos marcados para guardar la salida.", {
+      departureAt: "La fecha de salida no es valida."
+    });
   }
 
   return date;
@@ -35,13 +49,24 @@ async function scheduleData(formData: FormData) {
   const routeId = value(formData, "routeId");
   const vehicleId = value(formData, "vehicleId");
   const status = value(formData, "status") || "OPEN";
+  const fieldErrors: AdminFieldErrors = {};
 
-  if (!routeId || !vehicleId) {
-    throw new Error("Elegí ruta y vehículo.");
+  if (!routeId) {
+    fieldErrors.routeId = "Elegi una ruta para la salida.";
+  }
+
+  if (!vehicleId) {
+    fieldErrors.vehicleId = "Elegi una nave para la salida.";
+  }
+
+  if (Object.keys(fieldErrors).length) {
+    throw new FormValidationError("Revisa los campos marcados para guardar la salida.", fieldErrors);
   }
 
   if (!scheduleStatuses.has(status)) {
-    throw new Error("Estado de salida inválido.");
+    throw new FormValidationError("Revisa los campos marcados para guardar la salida.", {
+      status: "El estado seleccionado no es valido."
+    });
   }
 
   const route = await prisma.travelRoute.findUnique({
@@ -50,7 +75,9 @@ async function scheduleData(formData: FormData) {
   });
 
   if (!route) {
-    throw new Error("La ruta seleccionada no existe.");
+    throw new FormValidationError("Revisa los campos marcados para guardar la salida.", {
+      routeId: "La ruta seleccionada ya no existe."
+    });
   }
 
   const departureAt = parseDeparture(value(formData, "departureAt"));
@@ -67,6 +94,14 @@ async function scheduleData(formData: FormData) {
   };
 }
 
+function scheduleErrorState(error: unknown) {
+  if (error instanceof FormValidationError) {
+    return errorState(error.message, error.fieldErrors);
+  }
+
+  return errorState("No pudimos guardar la salida. Intentalo nuevamente.");
+}
+
 function revalidateSchedulePaths(routeSlug?: string) {
   revalidatePath("/admin");
   revalidatePath("/admin/salidas");
@@ -78,21 +113,28 @@ function revalidateSchedulePaths(routeSlug?: string) {
   }
 }
 
-export async function createScheduleAction(formData: FormData) {
+export async function createScheduleAction(_state: AdminFormState, formData: FormData): Promise<AdminFormState> {
   await getCurrentAdminOrRedirect();
 
-  const { data, routeSlug } = await scheduleData(formData);
-  await prisma.schedule.create({ data });
+  let routeSlug: string;
+  try {
+    const schedule = await scheduleData(formData);
+    routeSlug = schedule.routeSlug;
+    await prisma.schedule.create({ data: schedule.data });
+  } catch (error) {
+    return scheduleErrorState(error);
+  }
+
   revalidateSchedulePaths(routeSlug);
-  redirect("/admin/salidas");
+  redirect(`/admin/salidas?notice=${encodeURIComponent("Salida guardada con exito.")}`);
 }
 
-export async function updateScheduleAction(formData: FormData) {
+export async function updateScheduleAction(_state: AdminFormState, formData: FormData): Promise<AdminFormState> {
   await getCurrentAdminOrRedirect();
 
   const id = value(formData, "id");
   if (!id) {
-    throw new Error("Falta la salida a editar.");
+    return errorState("Falta la salida a editar. Volve a abrirla desde el listado.");
   }
 
   const current = await prisma.schedule.findUnique({
@@ -105,11 +147,18 @@ export async function updateScheduleAction(formData: FormData) {
       }
     }
   });
-  const { data, routeSlug } = await scheduleData(formData);
-  await prisma.schedule.update({ where: { id }, data });
+  let routeSlug: string;
+  try {
+    const schedule = await scheduleData(formData);
+    routeSlug = schedule.routeSlug;
+    await prisma.schedule.update({ where: { id }, data: schedule.data });
+  } catch (error) {
+    return scheduleErrorState(error);
+  }
+
   revalidateSchedulePaths(current?.route.slug);
   revalidateSchedulePaths(routeSlug);
-  redirect("/admin/salidas");
+  redirect(`/admin/salidas?notice=${encodeURIComponent("Salida guardada con exito.")}`);
 }
 
 export async function setScheduleStatusAction(formData: FormData) {

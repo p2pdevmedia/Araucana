@@ -51,7 +51,8 @@ test.describe("Reserva web", () => {
     await page.getByLabel("Nombre").fill("Camila");
     await page.getByLabel("Apellido").fill("Vidal");
     await page.getByLabel("Email").fill(`camila.${Date.now()}@example.com`);
-    await page.getByLabel("Telefono").fill("+5492944000000");
+    await page.getByLabel("Codigo de pais").selectOption("+54");
+    await page.getByLabel("Telefono").fill("9 294 400 0000");
     await page.getByLabel("Tipo de documento").selectOption("DNI");
     await page.getByLabel("Documento").fill("30111222");
 

@@ -11,7 +11,12 @@ type ReservationActionResult =
   | {
       ok: false;
       message: string;
+      fieldErrors?: ReservationFieldErrors;
     };
+
+type ReservationFieldErrors = Partial<
+  Record<"firstName" | "lastName" | "email" | "phone" | "documentType" | "documentId" | "nationality", string>
+>;
 
 const bookingMessages: Record<string, string> = {
   SEAT_OCCUPIED: "Ese asiento ya fue reservado. Elegi otro asiento.",
@@ -25,9 +30,20 @@ export async function createReservationAction(input: CreateReservationInput): Pr
   const parsed = createReservationSchema.safeParse(input);
 
   if (!parsed.success) {
+    const fieldErrors: ReservationFieldErrors = {};
+
+    for (const issue of parsed.error.issues) {
+      const [scope, field] = issue.path;
+
+      if (scope === "passenger" && typeof field === "string" && !(field in fieldErrors)) {
+        fieldErrors[field as keyof ReservationFieldErrors] = issue.message;
+      }
+    }
+
     return {
       ok: false,
-      message: "Revisa los datos de la reserva."
+      message: "Revisa los campos marcados.",
+      fieldErrors
     };
   }
 

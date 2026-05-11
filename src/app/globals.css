@@ -529,6 +529,12 @@ svg {
   padding: 0 13px;
 }
 
+.form-panel input[aria-invalid="true"],
+.form-panel select[aria-invalid="true"] {
+  border-color: #9f2d20;
+  background: #fff7f4;
+}
+
 .form-panel textarea,
 .admin-form-grid textarea {
   min-height: 110px;
@@ -539,6 +545,13 @@ svg {
 .error {
   color: #9f2d20;
   font-weight: 700;
+}
+
+.field-error {
+  color: #9f2d20;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .success {
@@ -611,6 +624,59 @@ svg {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+}
+
+.phone-field-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(150px, 0.45fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.nationality-combobox {
+  position: relative;
+}
+
+.nationality-options {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  max-height: 260px;
+  overflow: auto;
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: #fffaf1;
+  box-shadow: 0 18px 34px rgba(26, 37, 34, 0.18);
+}
+
+.nationality-option {
+  min-height: 40px;
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  padding: 0 10px;
+  text-align: left;
+  font-weight: 700;
+}
+
+.nationality-option:hover,
+.nationality-option[aria-selected="true"] {
+  background: rgba(20, 117, 90, 0.12);
+  color: var(--primary);
+}
+
+.nationality-empty {
+  padding: 10px;
+  color: var(--ink-muted);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .checkout-fields label:last-child {
@@ -1000,6 +1066,87 @@ svg {
   font-size: 13px;
 }
 
+.seat-layout-editor {
+  display: grid;
+  gap: 14px;
+}
+
+.seat-layout-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.seat-layout-head div:first-child {
+  display: grid;
+  gap: 4px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.seat-layout-head strong {
+  color: var(--primary);
+  font-family: var(--display);
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.vehicle-seat-map {
+  display: grid;
+  gap: 9px;
+  max-width: 420px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--surface-2);
+}
+
+.vehicle-seat-chip,
+.vehicle-seat-gap {
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+}
+
+.vehicle-seat-chip {
+  border: 1px solid var(--line-strong);
+  background: #fffaf1;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.vehicle-seat-gap {
+  border: 1px dashed rgba(26, 37, 34, 0.16);
+  background: rgba(251, 246, 235, 0.32);
+}
+
+.seat-editor-list {
+  display: grid;
+  gap: 10px;
+}
+
+.seat-editor-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) minmax(90px, 1fr) minmax(90px, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 250, 241, 0.7);
+}
+
+.seat-editor-row .danger-button {
+  min-height: 40px;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
 .checkbox-row {
   min-height: 48px;
   display: flex !important;
@@ -1155,6 +1302,15 @@ svg {
     grid-template-columns: 1fr;
   }
 
+  .seat-layout-head,
+  .seat-editor-row {
+    grid-template-columns: 1fr;
+  }
+
+  .seat-layout-head {
+    align-items: start;
+  }
+
   .admin-edit-head {
     align-items: start;
     flex-direction: column;
@@ -1189,6 +1345,10 @@ svg {
 
   .checkout-fields,
   .checkout-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .phone-field-row {
     grid-template-columns: 1fr;
   }
 }

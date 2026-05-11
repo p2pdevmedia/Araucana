@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { filterBookableSchedules, formatDateTime } from "./checkout-form";
+import {
+  buildPassengerPayload,
+  filterBookableSchedules,
+  filterNationalityOptions,
+  formatDateTime,
+  getNationalityOptions,
+  validateCheckoutPassenger
+} from "./checkout-form";
 import type { PublicRouteDto, ScheduleOptionDto, SeatMapDto } from "@/lib/booking/types";
 
 const route: PublicRouteDto = {
@@ -54,5 +61,60 @@ describe("checkout schedule helpers", () => {
 
   it("formats departure times in the Salta timezone", () => {
     expect(formatDateTime("2026-06-01T12:00:00.000Z")).toMatch(/\b9:00\b/);
+    expect(formatDateTime("2026-06-01T12:00:00.000Z")).not.toContain("\u00a0");
+  });
+});
+
+describe("checkout passenger validation", () => {
+  const validPassenger = {
+    firstName: "Camila",
+    lastName: "Vidal",
+    email: "camila@example.com",
+    phoneCountryCode: "+54",
+    phone: "9 294 400 0000",
+    documentType: "DNI",
+    documentId: "30111222",
+    nationality: ""
+  };
+
+  it("returns clear errors for each invalid passenger field", () => {
+    expect(
+      validateCheckoutPassenger({
+        firstName: "",
+        lastName: "",
+        email: "camila",
+        phoneCountryCode: "",
+        phone: "12",
+        documentType: "",
+        documentId: "1",
+        nationality: ""
+      })
+    ).toEqual({
+      firstName: "Ingresa el nombre del pasajero.",
+      lastName: "Ingresa el apellido del pasajero.",
+      email: "Ingresa un email valido.",
+      phoneCountryCode: "Selecciona el codigo de pais.",
+      phone: "Ingresa un telefono valido sin el codigo de pais.",
+      documentType: "Selecciona el tipo de documento.",
+      documentId: "Ingresa un documento valido."
+    });
+  });
+
+  it("combines the mandatory country code with the local phone number", () => {
+    expect(buildPassengerPayload(validPassenger).phone).toBe("+5492944000000");
+  });
+});
+
+describe("checkout nationality helpers", () => {
+  it("offers a broad list of nationality countries in Spanish", () => {
+    const options = getNationalityOptions();
+
+    expect(options.length).toBeGreaterThan(190);
+    expect(options).toContain("Argentina");
+    expect(options).toContain("Chile");
+  });
+
+  it("filters nationality options without caring about accents or case", () => {
+    expect(filterNationalityOptions("espana")).toContain("España");
   });
 });
