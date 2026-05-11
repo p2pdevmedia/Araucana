@@ -1,0 +1,148 @@
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/db/prisma";
+import { verifyPassword } from "./password";
+import {
+  SESSION_COOKIE_NAME,
+  extractBearerToken,
+  generateSessionToken,
+  getSessionExpirationDate,
+  hashSessionToken,
+  isSessionExpired,
+  toPublicUser
+} from "./session";
+
+const DEFAULT_SESSION_DAYS = 30;
+
+export type AuthenticatedUser = ReturnType<typeof toPublicUser>;
+
+export class AuthenticationError extends Error {
+  constructor(message = "Credenciales invalidas") {
+    super(message);
+    this.name = "AuthenticationError";
+  }
+}
+
+export class AuthorizationError extends Error {
+  constructor(message = "No autorizado") {
+    super(message);
+    this.name = "AuthorizationError";
+  }
+}
+
+export function getConfiguredSessionDays() {
+  const configuredDays = Number(process.env.SESSION_DAYS ?? DEFAULT_SESSION_DAYS);
+  return Number.isFinite(configuredDays) && configuredDays > 0
+    ? configuredDays
+    : DEFAULT_SESSION_DAYS;
+}
+
+export async function createSessionForCredentials(input: {
+  email: string;
+  password: string;
+}) {
+  const email = input.email.trim().toLowerCase();
+  const user = await prisma.user.findUnique({
+    where: { email }
+  });
+
+  if (!user || !user.isActive) {
+    throw new AuthenticationError();
+  }
+
+  const passwordMatches = await verifyPassword(input.password, user.passwordHash);
+  if (!passwordMatches) {
+    throw new AuthenticationError();
+  }
+
+  const token = generateSessionToken();
+  const expiresAt = getSessionExpirationDate(getConfiguredSessionDays());
+
+  await prisma.session.create({
+    data: {
+      tokenHash: hashSessionToken(token),
+      userId: user.id,
+      expiresAt
+    }
+  });
+
+  return {
+    token,
+    expiresAt,
+    user: toPublicUser(user)
+  };
+}
+
+export async function getUserFromToken(token: string | null) {
+  if (!token) {
+    return null;
+  }
+
+  const session = await prisma.session.findUnique({
+    where: { tokenHash: hashSessionToken(token) },
+    include: { user: true }
+  });
+
+  if (!session || isSessionExpired(session.expiresAt) || !session.user.isActive) {
+    if (session) {
+      await prisma.session.delete({ where: { id: session.id } }).catch(() => null);
+    }
+    return null;
+  }
+
+  return toPublicUser(session.user);
+}
+
+export async function deleteSessionByToken(token: string | null) {
+  if (!token) {
+    return;
+  }
+
+  await prisma.session
+    .delete({
+      where: { tokenHash: hashSessionToken(token) }
+    })
+    .catch((error) => {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+        return;
+      }
+
+      throw error;
+    });
+}
+
+export function getTokenFromRequest(request: Request) {
+  const bearerToken = extractBearerToken(request.headers.get("authorization"));
+  if (bearerToken) {
+    return bearerToken;
+  }
+
+  const cookieHeader = request.headers.get("cookie");
+  if (!cookieHeader) {
+    return null;
+  }
+
+  const cookies = cookieHeader.split(";").map((cookie) => cookie.trim());
+  const sessionCookie = cookies.find((cookie) =>
+    cookie.startsWith(`${SESSION_COOKIE_NAME}=`)
+  );
+
+  return sessionCookie ? decodeURIComponent(sessionCookie.split("=")[1] ?? "") : null;
+}
+
+export async function requireAuthenticatedUser(request: Request) {
+  const user = await getUserFromToken(getTokenFromRequest(request));
+  if (!user) {
+    throw new AuthorizationError();
+  }
+
+  return user;
+}
+
+export async function requireAdminUser(request: Request) {
+  const user = await requireAuthenticatedUser(request);
+  if (user.role !== "ADMIN") {
+    throw new AuthorizationError("Se requiere un usuario administrador");
+  }
+
+  return user;
+}

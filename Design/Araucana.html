@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Araucana — App de transporte patagónico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link id="font-link" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&family=Big+Shoulders+Display:wght@500..900&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Inter+Tight:wght@300..700&display=swap"/>
+<style>
+  html, body { margin: 0; padding: 0; background: #F1E9D8; font-family: 'Geist', -apple-system, system-ui, sans-serif; color: #1A2522; }
+  * { box-sizing: border-box; }
+  body { min-height: 100vh; overflow: hidden; }
+  #root { width: 100vw; height: 100vh; }
+  button { font-family: inherit; cursor: pointer; }
+</style>
+</head>
+<body style="font-family: &quot;Abril Fatface&quot;">
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="browser-window.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="tokens.jsx"></script>
+<script type="text/babel" src="icons.jsx"></script>
+<script type="text/babel" src="imagery.jsx"></script>
+<script type="text/babel" src="screens-mobile.jsx"></script>
+<script type="text/babel" src="screens-detail.jsx"></script>
+<script type="text/babel" src="landing.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "darkMode": false,
+  "typeSystem": "editorial"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const ts = TYPE_SYSTEMS[t.typeSystem] || TYPE_SYSTEMS.editorial;
+  const dark = t.darkMode;
+  const tk = dark ? ARAUCANA_DARK : ARAUCANA_LIGHT;
+  const displayFont = ts.display;
+  const bodyFont = ts.body;
+
+  // Set body bg + font globally
+  React.useEffect(() => {
+    document.body.style.background = tk.bg;
+    document.body.style.color = tk.ink;
+    document.body.style.fontFamily = bodyFont;
+  }, [dark, t.typeSystem]);
+
+  return (
+    <>
+      <ImageryDefs/>
+      <DesignCanvas>
+        <DCSection id="brand" title="Araucana · Sistema" subtitle="Marca, color, tipografía">
+          <DCArtboard id="brand-card" label="Identidad" width={520} height={680}>
+            <BrandCard dark={dark} displayFont={displayFont} bodyFont={bodyFont} ts={ts}/>
+          </DCArtboard>
+          <DCArtboard id="palette" label="Paleta · 7 Lagos" width={520} height={680}>
+            <PaletteCard dark={dark} displayFont={displayFont}/>
+          </DCArtboard>
+          <DCArtboard id="type" label="Tipografía · {ts.label}" width={520} height={680}>
+            <TypeCard dark={dark} displayFont={displayFont} bodyFont={bodyFont} ts={ts}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="onboarding" title="Onboarding" subtitle="Primer ingreso, 3 pantallas">
+          <DCArtboard id="onb-1" label="01 · Bienvenida" width={phoneW + 60} height={phoneH + 80}>
+            <OnboardingScreen dark={dark} slide={1} displayFont={displayFont}/>
+          </DCArtboard>
+          <DCArtboard id="onb-2" label="02 · Internacional" width={phoneW + 60} height={phoneH + 80}>
+            <OnboardingScreen dark={dark} slide={2} displayFont={displayFont}/>
+          </DCArtboard>
+          <DCArtboard id="onb-3" label="03 · Reservar" width={phoneW + 60} height={phoneH + 80}>
+            <OnboardingScreen dark={dark} slide={3} displayFont={displayFont}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="home" title="Home · 2 variantes" subtitle="A: Editorial cards · B: Map-first">
+          <DCArtboard id="home-a" label="A · Editorial" width={phoneW + 60} height={phoneH + 80}>
+            <HomeEditorial dark={dark} displayFont={displayFont}/>
+          </DCArtboard>
+          <DCArtboard id="home-b" label="B · Mapa primero" width={phoneW + 60} height={phoneH + 80}>
+            <HomeMapFirst dark={dark} displayFont={displayFont}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="detail" title="Detalle de ruta · 2 variantes" subtitle="A: Cinematic hero · B: Mapa + timeline">
+          <DCArtboard id="detail-a" label="A · Cinematic" width={phoneW + 60} height={phoneH + 80}>
+            <RouteDetailCinematic dark={dark} displayFont={displayFont}/>
+          </DCArtboard>
+          <DCArtboard id="detail-b" label="B · Mapa timeline" width={phoneW + 60} height={phoneH + 80}>
+            <RouteDetailMap dark={dark} displayFont={displayFont}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="flows" title="Flujos · resto de la app" subtitle="Mapa, Cruce a Chile, Reserva, Tickets">
+          <DCArtboard id="map" label="Mapa interactivo" width={phoneW + 60} height={phoneH + 80}>
+            <InteractiveMap dark={dark} displayFont={displayFont}/>
+          </DCArtboard>
+          <DCArtboard id="chile" label="Cruce a Chile" width={phoneW + 60} height={phoneH + 80}>
+            <ChileCrossing dark={dark} displayFont={displayFont}/>
+          </DCArtboard>
+          <DCArtboard id="checkout" label="Checkout · asiento" width={phoneW + 60} height={phoneH + 80}>
+            <CheckoutSeats dark={dark} displayFont={displayFont}/>
+          </DCArtboard>
+          <DCArtboard id="tickets" label="Mis viajes" width={phoneW + 60} height={phoneH + 80}>
+            <MyTickets dark={dark} displayFont={displayFont}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="web" title="Landing web" subtitle="Marketing site · araucana.com.ar">
+          <DCArtboard id="land" label="Home · desktop" width={1320} height={3400}>
+            <div style={{ borderRadius: 16, overflow: 'hidden', border: `1px solid ${tk.line}` }}>
+              <ChromeWindow url="araucana.com.ar" tabs={[{title:'Araucana — Viajar por la Patagonia'}]} width={1280} height={3360}>
+                <LandingPage dark={dark} displayFont={displayFont} bodyFont={bodyFont}/>
+              </ChromeWindow>
+            </div>
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection label="Apariencia">
+          <TweakToggle label="Modo oscuro" value={dark} onChange={v => setTweak('darkMode', v)}/>
+        </TweakSection>
+        <TweakSection label="Tipografía">
+          <TweakRadio
+            label="Sistema"
+            value={t.typeSystem}
+            options={[
+              { value: 'editorial', label: 'Editorial' },
+              { value: 'rugged', label: 'Rugged' },
+              { value: 'modern', label: 'Moderno' },
+            ]}
+            onChange={v => setTweak('typeSystem', v)}
+          />
+          <div style={{ padding: '12px 14px', fontSize: 11, color: '#888', lineHeight: 1.5 }}>
+            <div><strong>Editorial:</strong> Instrument Serif + Geist</div>
+            <div><strong>Rugged:</strong> Big Shoulders + Geist</div>
+            <div><strong>Moderno:</strong> Bricolage + Inter Tight</div>
+          </div>
+        </TweakSection>
+      </TweaksPanel>
+    </>
+  );
+}
+
+// ───── Design system cards ─────
+function BrandCard({ dark, displayFont, bodyFont, ts }) {
+  const tk = dark ? ARAUCANA_DARK : ARAUCANA_LIGHT;
+  return (
+    <div style={{ width: '100%', height: '100%', background: tk.bg, color: tk.ink, padding: 36, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: -40, right: -40, width: 240, height: 240, opacity: .08 }}>
+        <AraucaniaMark size={240} color={tk.primary}/>
+      </div>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.24em', color: tk.accent }}>IDENTIDAD</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginTop: 22 }}>
+        <AraucaniaMark size={60} color={tk.primary}/>
+        <div>
+          <div style={{ fontFamily: displayFont, fontSize: 44, fontWeight: 500, letterSpacing: '-.02em', lineHeight: 1 }}>Araucana</div>
+          <div style={{ fontSize: 11, letterSpacing: '.24em', color: tk.inkMuted, marginTop: 6, fontWeight: 600 }}>VIAJES · DESDE 2009</div>
+        </div>
+      </div>
+      <p style={{ fontFamily: displayFont, fontSize: 26, lineHeight: 1.15, margin: '32px 0 0', fontWeight: 500, letterSpacing: '-.01em', textWrap: 'balance' }}>
+        El placer de viajar por la cordillera de los siete lagos.
+      </p>
+      <div style={{ marginTop: 28, padding: '18px 20px', borderRadius: 18, background: tk.surface, border: `1px solid ${tk.line}` }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.2em', color: tk.inkMuted, marginBottom: 10 }}>PROPÓSITO</div>
+        <div style={{ fontSize: 14.5, lineHeight: 1.5, color: tk.inkSoft, textWrap: 'pretty' }}>
+          Conectar San Martín, Villa La Angostura y Bariloche con turistas y locales mediante transporte regular confiable, multilingüe y habilitado para cruzar a Chile.
+        </div>
+      </div>
+      <div style={{ marginTop: 18, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {['Patagonia andina', 'Trilingüe', 'Habilitación internacional', 'Familiar', 'Confiable'].map(c => (
+          <span key={c} style={{ padding: '7px 13px', borderRadius: 999, background: tk.primarySoft, color: tk.primaryDeep,
+            fontSize: 11.5, fontWeight: 600 }}>{c}</span>
+        ))}
+      </div>
+      <div style={{ position: 'absolute', left: 36, bottom: 28, right: 36, display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: tk.inkMuted, letterSpacing: '.06em' }}>
+        <span>Leg. 14241 · Disp. 924/05</span>
+        <span>SAN MARTÍN DE LOS ANDES · NEUQUÉN</span>
+      </div>
+    </div>
+  );
+}
+
+function PaletteCard({ dark, displayFont }) {
+  const tk = dark ? ARAUCANA_DARK : ARAUCANA_LIGHT;
+  const palette = [
+    { name: 'Araucaria', hex: tk.primary, role: 'Primario' },
+    { name: 'Sienna', hex: tk.accent, role: 'Acento' },
+    { name: 'Lago profundo', hex: tk.lake, role: 'Agua' },
+    { name: 'Musgo', hex: tk.moss, role: 'Bosque' },
+    { name: 'Cielo', hex: tk.sky, role: 'Aire' },
+    { name: 'Roca', hex: tk.rock, role: 'Tierra' },
+    { name: 'Fuego', hex: tk.fire, role: 'Atardecer' },
+    { name: 'Arena', hex: tk.bg, role: 'Fondo' },
+  ];
+  return (
+    <div style={{ width: '100%', height: '100%', background: tk.bg, color: tk.ink, padding: 36, overflow: 'hidden' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.24em', color: tk.accent }}>PALETA</div>
+      <h2 style={{ fontFamily: displayFont, fontSize: 36, fontWeight: 500, margin: '12px 0 6px', letterSpacing: '-.02em', lineHeight: 1.05 }}>
+        Inspirada en los 7 Lagos
+      </h2>
+      <p style={{ fontSize: 13, color: tk.inkMuted, margin: '0 0 22px', maxWidth: 380, lineHeight: 1.5 }}>
+        Azul profundo del lago. Verde araucaria. Sienna del logo. Cielo de la cordillera al amanecer.
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+        {palette.map(p => (
+          <div key={p.name} style={{ borderRadius: 14, overflow: 'hidden', border: `1px solid ${tk.line}` }}>
+            <div style={{ height: 64, background: p.hex }}/>
+            <div style={{ padding: '10px 12px', background: tk.surface }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={{ fontSize: 12.5, fontWeight: 600 }}>{p.name}</span>
+                <span style={{ fontSize: 9.5, color: tk.inkMuted, letterSpacing: '.08em' }}>{p.role.toUpperCase()}</span>
+              </div>
+              <div style={{ fontFamily: 'monospace', fontSize: 11, color: tk.inkMuted, marginTop: 2 }}>{p.hex}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TypeCard({ dark, displayFont, bodyFont, ts }) {
+  const tk = dark ? ARAUCANA_DARK : ARAUCANA_LIGHT;
+  return (
+    <div style={{ width: '100%', height: '100%', background: tk.bg, color: tk.ink, padding: 36, overflow: 'hidden' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.24em', color: tk.accent }}>TIPOGRAFÍA · {ts.label.toUpperCase()}</div>
+      <h2 style={{ fontFamily: displayFont, fontSize: 88, fontWeight: ts.weight.display, margin: '14px 0 0', letterSpacing: '-.03em', lineHeight: .92, color: tk.primary, textWrap: 'balance' }}>
+        Cordillera <em style={{ fontStyle: ts.displayItalic ? 'italic' : 'normal', color: tk.accent }}>andina</em>.
+      </h2>
+      <div style={{ marginTop: 28, fontSize: 13, fontFamily: bodyFont, color: tk.inkSoft, lineHeight: 1.5, maxWidth: 420 }}>
+        Cambia el sistema tipográfico desde el panel de Tweaks. Tres direcciones disponibles para evaluar la sensación general de la marca.
+      </div>
+      <div style={{ marginTop: 26, padding: '20px 22px', borderRadius: 16, background: tk.surface, border: `1px solid ${tk.line}` }}>
+        <div style={{ fontFamily: displayFont, fontSize: 36, fontWeight: 500, letterSpacing: '-.02em', lineHeight: 1 }}>Display 36</div>
+        <div style={{ fontFamily: displayFont, fontSize: 24, fontWeight: 500, letterSpacing: '-.01em', marginTop: 12 }}>Heading 24</div>
+        <div style={{ fontFamily: bodyFont, fontSize: 17, fontWeight: 400, marginTop: 14 }}>Body large 17 · Geist Regular</div>
+        <div style={{ fontFamily: bodyFont, fontSize: 14, fontWeight: 400, color: tk.inkSoft, marginTop: 10 }}>
+          Body 14 · La Araucana es una empresa de transporte familiar fundada en 2009.
+        </div>
+        <div style={{ fontFamily: bodyFont, fontSize: 11, fontWeight: 600, letterSpacing: '.16em', color: tk.accent, marginTop: 12 }}>OVERLINE · 11 / .16em</div>
+      </div>
+      <div style={{ marginTop: 20, fontFamily: ts.mono, fontSize: 11.5, color: tk.inkMuted }}>
+        display: {ts.display.split(',')[0].replace(/"/g, '')}<br/>
+        body: {ts.body.split(',')[0].replace(/"/g, '')}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
