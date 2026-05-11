@@ -1,0 +1,2 @@
+ALTER TABLE "Vehicle"
+ADD COLUMN "layoutMarkers" JSONB NOT NULL DEFAULT '[]';

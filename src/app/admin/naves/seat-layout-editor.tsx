@@ -8,10 +8,12 @@ import {
   removeSeatAtIndex,
   updateSeatNumber
 } from "@/lib/vehicles/seat-layout";
+import { toggleLayoutMarker, type VehicleLayoutMarker } from "@/lib/vehicles/layout-markers";
 import { type VehicleSeat } from "@/lib/vehicles/templates";
 
 type SeatLayoutEditorProps = {
   initialSeats: VehicleSeat[];
+  initialLayoutMarkers?: VehicleLayoutMarker[];
 };
 
 const blankSeat: VehicleSeat = {
@@ -24,12 +26,21 @@ function seatsToJson(seats: VehicleSeat[]) {
   return JSON.stringify(seats);
 }
 
-export function SeatLayoutEditor({ initialSeats }: SeatLayoutEditorProps) {
+function markersToJson(markers: VehicleLayoutMarker[]) {
+  return JSON.stringify(markers);
+}
+
+function markerMatches(marker: VehicleLayoutMarker, type: VehicleLayoutMarker["type"], row: number, column: number) {
+  return marker.type === type && marker.row === row && marker.column === column;
+}
+
+export function SeatLayoutEditor({ initialSeats, initialLayoutMarkers = [] }: SeatLayoutEditorProps) {
   const [seats, setSeats] = useState<VehicleSeat[]>(initialSeats.length ? initialSeats : [blankSeat]);
   const [draggedSeatIndex, setDraggedSeatIndex] = useState<number | null>(null);
   const [activeEmptyCell, setActiveEmptyCell] = useState<string | null>(null);
-  const [aisleCells, setAisleCells] = useState<Set<string>>(() => new Set());
+  const [layoutMarkers, setLayoutMarkers] = useState<VehicleLayoutMarker[]>(initialLayoutMarkers);
   const serializedSeats = useMemo(() => seatsToJson(seats), [seats]);
+  const serializedLayoutMarkers = useMemo(() => markersToJson(layoutMarkers), [layoutMarkers]);
   const { rows, columns } = getSeatCanvasSize(seats);
 
   function updateSeat(index: number, value: string) {
@@ -46,28 +57,28 @@ export function SeatLayoutEditor({ initialSeats }: SeatLayoutEditorProps) {
     }
 
     setSeats((currentSeats) => moveSeatToPosition(currentSeats, draggedSeatIndex, row, column));
+    setLayoutMarkers((currentMarkers) =>
+      currentMarkers.filter((marker) => !markerMatches(marker, "AISLE", row, column))
+    );
     setDraggedSeatIndex(null);
     setActiveEmptyCell(null);
   }
 
   function createSeat(row: number, column: number) {
-    const cellKey = `${row}-${column}`;
     setSeats((currentSeats) => addSeatAtPosition(currentSeats, row, column));
-    setAisleCells((currentAisles) => {
-      const nextAisles = new Set(currentAisles);
-      nextAisles.delete(cellKey);
-      return nextAisles;
-    });
+    setLayoutMarkers((currentMarkers) =>
+      currentMarkers.filter((marker) => !markerMatches(marker, "AISLE", row, column))
+    );
     setActiveEmptyCell(null);
   }
 
   function markAisle(row: number, column: number) {
-    const cellKey = `${row}-${column}`;
-    setAisleCells((currentAisles) => {
-      const nextAisles = new Set(currentAisles);
-      nextAisles.add(cellKey);
-      return nextAisles;
-    });
+    setLayoutMarkers((currentMarkers) => toggleLayoutMarker(currentMarkers, { type: "AISLE", row, column }));
+    setActiveEmptyCell(null);
+  }
+
+  function toggleDoor(row: number) {
+    setLayoutMarkers((currentMarkers) => toggleLayoutMarker(currentMarkers, { type: "DOOR", row, column: 0 }));
     setActiveEmptyCell(null);
   }
 
@@ -85,6 +96,7 @@ export function SeatLayoutEditor({ initialSeats }: SeatLayoutEditorProps) {
   return (
     <div className="seat-layout-editor span-2">
       <input type="hidden" name="seats" value={serializedSeats} />
+      <input type="hidden" name="layoutMarkers" value={serializedLayoutMarkers} />
       <div className="seat-layout-head">
         <div>
           <span>Distribucion editable</span>
@@ -96,112 +108,133 @@ export function SeatLayoutEditor({ initialSeats }: SeatLayoutEditorProps) {
           </button>
         </div>
       </div>
-      <div
-        className="vehicle-seat-map"
-        style={{ gridTemplateColumns: `repeat(${columns}, minmax(68px, 1fr))` }}
-      >
-        {Array.from({ length: rows * columns }, (_, index) => {
-          const row = Math.floor(index / columns) + 1;
-          const column = (index % columns) + 1;
-          const seatIndex = seats.findIndex((item) => item.row === row && item.column === column);
-          const seat = seatIndex >= 0 ? seats[seatIndex] : null;
-          const cellKey = `${row}-${column}`;
-          const isActiveEmptyCell = activeEmptyCell === cellKey;
-          const isMarkedAisle = aisleCells.has(cellKey);
-          const hasSeatBefore = seats.some((item) => item.row === row && item.column < column);
-          const hasSeatAfter = seats.some((item) => item.row === row && item.column > column);
+      <div className="vehicle-layout-grid">
+        <div className="vehicle-door-rail" aria-label="Puertas lado izquierdo">
+          {Array.from({ length: rows }, (_, index) => {
+            const row = index + 1;
+            const hasDoor = layoutMarkers.some((marker) => markerMatches(marker, "DOOR", row, 0));
 
-          return seat ? (
-            <div
-              className="vehicle-seat-chip"
-              draggable
-              key={`${row}-${column}`}
-              onDragEnd={() => setDraggedSeatIndex(null)}
-              onDragOver={(event) => event.preventDefault()}
-              onDragStart={() => setDraggedSeatIndex(seatIndex)}
-              onDrop={() => moveSeat(row, column)}
-            >
-              <span className="vehicle-seat-drag" aria-hidden="true">Mover</span>
-              <label>
-                <span>Numero</span>
-                <input
-                  aria-label={`Numero de asiento ${seat.number}`}
-                  value={seat.number}
-                  onChange={(event) => updateSeat(seatIndex, event.target.value)}
-                />
-              </label>
+            return (
               <button
-                aria-label={`Borrar asiento ${seat.number}`}
-                className="seat-delete-button"
+                aria-label={`${hasDoor ? "Quitar" : "Agregar"} puerta en fila ${row}`}
+                className={`vehicle-door-cell ${hasDoor ? "active" : ""}`}
+                key={`door-${row}`}
                 type="button"
-                onClick={() => removeSeat(seatIndex)}
+                onClick={() => toggleDoor(row)}
               >
-                ×
+                {hasDoor ? "Puerta" : "+"}
               </button>
-            </div>
-          ) : (
-            <div
-              className={`vehicle-seat-gap ${isActiveEmptyCell ? "active" : ""} ${isMarkedAisle ? "marked" : ""}`}
-              aria-label="Casillero vacio"
-              key={`${row}-${column}`}
-              onDragOver={(event) => event.preventDefault()}
-              onClick={() => setActiveEmptyCell((currentCell) => (currentCell === cellKey ? null : cellKey))}
-              onDrop={() => moveSeat(row, column)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  setActiveEmptyCell((currentCell) => (currentCell === cellKey ? null : cellKey));
-                }
-              }}
-              role="button"
-              tabIndex={0}
-            >
-              {isActiveEmptyCell ? (
-                <span className="empty-seat-actions">
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      createSeat(row, column);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
+            );
+          })}
+        </div>
+        <div
+          className="vehicle-seat-map"
+          style={{ gridTemplateColumns: `repeat(${columns}, minmax(68px, 1fr))` }}
+        >
+          {Array.from({ length: rows * columns }, (_, index) => {
+            const row = Math.floor(index / columns) + 1;
+            const column = (index % columns) + 1;
+            const seatIndex = seats.findIndex((item) => item.row === row && item.column === column);
+            const seat = seatIndex >= 0 ? seats[seatIndex] : null;
+            const cellKey = `${row}-${column}`;
+            const isActiveEmptyCell = activeEmptyCell === cellKey;
+            const isMarkedAisle = layoutMarkers.some((marker) => markerMatches(marker, "AISLE", row, column));
+            const hasSeatBefore = seats.some((item) => item.row === row && item.column < column);
+            const hasSeatAfter = seats.some((item) => item.row === row && item.column > column);
+
+            return seat ? (
+              <div
+                className="vehicle-seat-chip"
+                draggable
+                key={`${row}-${column}`}
+                onDragEnd={() => setDraggedSeatIndex(null)}
+                onDragOver={(event) => event.preventDefault()}
+                onDragStart={() => setDraggedSeatIndex(seatIndex)}
+                onDrop={() => moveSeat(row, column)}
+              >
+                <span className="vehicle-seat-drag" aria-hidden="true">Mover</span>
+                <label>
+                  <span>Numero</span>
+                  <input
+                    aria-label={`Numero de asiento ${seat.number}`}
+                    value={seat.number}
+                    onChange={(event) => updateSeat(seatIndex, event.target.value)}
+                  />
+                </label>
+                <button
+                  aria-label={`Borrar asiento ${seat.number}`}
+                  className="seat-delete-button"
+                  type="button"
+                  onClick={() => removeSeat(seatIndex)}
+                >
+                  ×
+                </button>
+              </div>
+            ) : (
+              <div
+                className={`vehicle-seat-gap ${isActiveEmptyCell ? "active" : ""} ${isMarkedAisle ? "marked" : ""}`}
+                aria-label="Casillero vacio"
+                key={`${row}-${column}`}
+                onDragOver={(event) => event.preventDefault()}
+                onClick={() => setActiveEmptyCell((currentCell) => (currentCell === cellKey ? null : cellKey))}
+                onDrop={() => moveSeat(row, column)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setActiveEmptyCell((currentCell) => (currentCell === cellKey ? null : cellKey));
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+              >
+                {isActiveEmptyCell ? (
+                  <span className="empty-seat-actions">
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(event) => {
+                        event.stopPropagation();
                         createSeat(row, column);
-                      }
-                    }}
-                  >
-                    Asiento
-                  </span>
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      markAisle(row, column);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          createSeat(row, column);
+                        }
+                      }}
+                    >
+                      Asiento
+                    </span>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(event) => {
+                        event.stopPropagation();
                         markAisle(row, column);
-                      }
-                    }}
-                  >
-                    Pasillo
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          markAisle(row, column);
+                        }
+                      }}
+                    >
+                      Pasillo
+                    </span>
                   </span>
-                </span>
-              ) : isMarkedAisle || (hasSeatBefore && hasSeatAfter) ? (
-                "Pasillo"
-              ) : (
-                "+"
-              )}
-            </div>
-          );
-        })}
+                ) : isMarkedAisle || (hasSeatBefore && hasSeatAfter) ? (
+                  "Pasillo"
+                ) : (
+                  "+"
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
       <p className="seat-layout-help">
-        Toca un casillero vacio para crear un asiento o marcar pasillo. Arrastra un asiento para cambiarlo de posicion.
+        Toca un casillero vacio para crear un asiento o marcar pasillo. Los cuadrados chicos de la izquierda marcan
+        puertas en el limite de la nave.
       </p>
     </div>
   );

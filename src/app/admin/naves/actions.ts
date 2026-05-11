@@ -6,6 +6,7 @@ import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
 import { prisma } from "@/lib/db/prisma";
 import { getVehicleTemplate, type VehicleSeat } from "@/lib/vehicles/templates";
 import { parseSeatLayout } from "@/lib/vehicles/validation";
+import { parseLayoutMarkers, type VehicleLayoutMarker } from "@/lib/vehicles/layout-markers";
 import { errorState, type AdminFieldErrors, type AdminFormState } from "../form-state";
 
 function value(formData: FormData, key: string) {
@@ -50,10 +51,17 @@ function vehicleData(formData: FormData) {
   }
 
   let seats: VehicleSeat[] = [];
+  let layoutMarkers: VehicleLayoutMarker[] = [];
   try {
     seats = parseSeatLayout(value(formData, "seats"));
   } catch (error) {
     fieldErrors.seats = error instanceof Error ? error.message : "La distribucion de asientos no es valida.";
+  }
+
+  try {
+    layoutMarkers = parseLayoutMarkers(value(formData, "layoutMarkers"));
+  } catch (error) {
+    fieldErrors.seats = error instanceof Error ? error.message : "Las marcas del plano no son validas.";
   }
 
   if (Object.keys(fieldErrors).length) {
@@ -67,6 +75,7 @@ function vehicleData(formData: FormData) {
       model,
       licensePlate: optionalValue(formData, "licensePlate"),
       templateKey,
+      layoutMarkers,
       isActive: formData.get("isActive") === "on"
     },
     seats

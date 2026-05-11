@@ -17,6 +17,7 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   sessions     Session[]
+  driverLocation DriverVehicleLocation?
 }
 
 model Session {
@@ -54,11 +55,32 @@ model Vehicle {
   model        String     @default("Operativo")
   licensePlate String?
   templateKey  String?
+  layoutMarkers Json       @default("[]")
   isActive     Boolean    @default(true)
   seats        Seat[]
   schedules    Schedule[]
+  driverLocations DriverVehicleLocation[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+}
+
+model DriverVehicleLocation {
+  id         String   @id @default(cuid())
+  driverId   String   @unique
+  driver     User     @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  vehicleId  String
+  vehicle    Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  latitude   Float
+  longitude  Float
+  accuracy   Float?
+  heading    Float?
+  speed      Float?
+  recordedAt DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([vehicleId])
+  @@index([recordedAt])
 }
 
 model Seat {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
-import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
+import { getCurrentReservationsUserOrRedirect } from "@/lib/auth/admin";
 import { getReservationByCode } from "@/lib/booking/repository";
 import { updatePassengerAction } from "../actions";
 import { PassengerForm } from "./passenger-form";
@@ -32,7 +32,7 @@ function formatStatus(status: string) {
 }
 
 export default async function AdminPassengerPage({ params }: AdminPassengerPageProps) {
-  await getCurrentAdminOrRedirect();
+  const user = await getCurrentReservationsUserOrRedirect();
   const { code } = await params;
   const reservation = await getReservationByCode(code.toUpperCase());
 
@@ -43,7 +43,7 @@ export default async function AdminPassengerPage({ params }: AdminPassengerPageP
   const passengerName = `${reservation.passenger.firstName} ${reservation.passenger.lastName}`;
 
   return (
-    <AdminShell title={passengerName}>
+    <AdminShell title={passengerName} role={user.role}>
       <div className="admin-edit-head">
         <div>
           <p className="eyebrow">Pasajero</p>

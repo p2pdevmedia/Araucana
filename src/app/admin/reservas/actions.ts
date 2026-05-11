@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
+import { getCurrentReservationsUserOrRedirect } from "@/lib/auth/admin";
 import { approveManualPayment, BookingError, updatePassengerForReservation } from "@/lib/booking/repository";
 import { passengerSchema } from "@/lib/booking/validation";
 import {
@@ -18,7 +18,7 @@ function value(formData: FormData, key: string) {
 }
 
 export async function approveManualPaymentAction(formData: FormData) {
-  await getCurrentAdminOrRedirect();
+  await getCurrentReservationsUserOrRedirect();
   const code = String(formData.get("code") ?? "").trim().toUpperCase();
 
   if (!code) {
@@ -40,7 +40,7 @@ export async function approveManualPaymentAction(formData: FormData) {
 }
 
 export async function updatePassengerAction(_state: AdminFormState, formData: FormData): Promise<AdminFormState> {
-  await getCurrentAdminOrRedirect();
+  await getCurrentReservationsUserOrRedirect();
   const code = value(formData, "code").toUpperCase();
 
   if (!code) {

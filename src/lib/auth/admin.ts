@@ -2,8 +2,9 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getUserFromToken } from "@/lib/auth/service";
 import { SESSION_COOKIE_NAME } from "@/lib/auth/session";
+import { AppRole, getDefaultPathForRole, roleCanAccess } from "@/lib/auth/roles";
 
-export async function getCurrentAdminOrRedirect() {
+async function getCurrentEmployeeOrRedirect(allowedRoles: AppRole[]) {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value ?? null;
   const user = await getUserFromToken(token);
@@ -12,9 +13,21 @@ export async function getCurrentAdminOrRedirect() {
     redirect("/login");
   }
 
-  if (user.role !== "ADMIN") {
-    redirect("/");
+  if (!roleCanAccess(user.role, allowedRoles)) {
+    redirect(getDefaultPathForRole(user.role));
   }
 
   return user;
+}
+
+export async function getCurrentAdminOrRedirect() {
+  return getCurrentEmployeeOrRedirect(["ADMIN"]);
+}
+
+export async function getCurrentReservationsUserOrRedirect() {
+  return getCurrentEmployeeOrRedirect(["ADMIN", "SECRETARY"]);
+}
+
+export async function getCurrentDriverOrRedirect() {
+  return getCurrentEmployeeOrRedirect(["DRIVER"]);
 }

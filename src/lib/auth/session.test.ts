@@ -6,6 +6,7 @@ import {
   isSessionExpired,
   toPublicUser
 } from "./session";
+import { getDefaultPathForRole } from "./roles";
 
 describe("session helpers", () => {
   it("hashes session tokens without returning the raw token", () => {
@@ -54,5 +55,34 @@ describe("session helpers", () => {
       name: "Kevin",
       role: "ADMIN"
     });
+  });
+
+  it("preserves operational employee roles in the public user shape", () => {
+    expect(
+      toPublicUser({
+        id: "user_2",
+        email: "secretaria@araucana.com",
+        name: "Secretaria",
+        role: "SECRETARY",
+        isActive: true
+      }).role
+    ).toBe("SECRETARY");
+
+    expect(
+      toPublicUser({
+        id: "user_3",
+        email: "chofer@araucana.com",
+        name: "Chofer",
+        role: "DRIVER",
+        isActive: true
+      }).role
+    ).toBe("DRIVER");
+  });
+
+  it("routes employees to their first allowed workspace after login", () => {
+    expect(getDefaultPathForRole("ADMIN")).toBe("/admin");
+    expect(getDefaultPathForRole("SECRETARY")).toBe("/admin/reservas");
+    expect(getDefaultPathForRole("DRIVER")).toBe("/chofer");
+    expect(getDefaultPathForRole("USER")).toBe("/");
   });
 });

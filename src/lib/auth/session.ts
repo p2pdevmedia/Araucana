@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
+import { AppRole, toPublicRole } from "./roles";
 
 export const SESSION_COOKIE_NAME = "araucana_session";
 
@@ -6,17 +7,13 @@ export type PublicUser = {
   id: string;
   email: string;
   name: string | null;
-  role: "ADMIN" | "USER";
+  role: AppRole;
 };
 
 type UserLike = Omit<PublicUser, "role"> & {
   role: string;
   isActive?: boolean;
 };
-
-function toPublicRole(role: string): PublicUser["role"] {
-  return role === "ADMIN" ? "ADMIN" : "USER";
-}
 
 export function generateSessionToken() {
   return randomBytes(32).toString("base64url");

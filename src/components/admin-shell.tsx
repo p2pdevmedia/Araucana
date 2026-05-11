@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AdminToast } from "@/app/admin/form-ui";
+import { AppRole } from "@/lib/auth/roles";
 import { BrandMark } from "./brand-mark";
 
 type AdminShellProps = {
@@ -8,18 +9,21 @@ type AdminShellProps = {
   eyebrow?: string;
   action?: React.ReactNode;
   notice?: string;
+  role?: AppRole;
 };
 
-const links = [
-  { href: "/admin", label: "Panel" },
-  { href: "/admin/rutas", label: "Rutas" },
-  { href: "/admin/salidas", label: "Salidas" },
-  { href: "/admin/naves", label: "Naves" },
-  { href: "/admin/reservas", label: "Reservas" },
-  { href: "/", label: "Web publica" }
+const links: Array<{ href: string; label: string; roles: AppRole[] }> = [
+  { href: "/admin", label: "Panel", roles: ["ADMIN"] },
+  { href: "/admin/rutas", label: "Rutas", roles: ["ADMIN"] },
+  { href: "/admin/salidas", label: "Salidas", roles: ["ADMIN"] },
+  { href: "/admin/naves", label: "Naves", roles: ["ADMIN"] },
+  { href: "/admin/reservas", label: "Reservas", roles: ["ADMIN", "SECRETARY"] },
+  { href: "/", label: "Web publica", roles: ["ADMIN", "SECRETARY"] }
 ];
 
-export function AdminShell({ children, title, eyebrow = "Operacion", action, notice }: AdminShellProps) {
+export function AdminShell({ children, title, eyebrow = "Operacion", action, notice, role = "ADMIN" }: AdminShellProps) {
+  const visibleLinks = links.filter((link) => link.roles.includes(role));
+
   return (
     <main className="admin-layout">
       <aside className="admin-sidebar">
@@ -31,7 +35,7 @@ export function AdminShell({ children, title, eyebrow = "Operacion", action, not
           </div>
         </div>
         <nav aria-label="Administracion">
-          {links.map((link) => (
+          {visibleLinks.map((link) => (
             <Link href={link.href} key={link.href}>
               {link.label}
             </Link>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/admin-shell";
-import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
+import { getCurrentReservationsUserOrRedirect } from "@/lib/auth/admin";
 import { listAdminReservations } from "@/lib/booking/repository";
 import { approveManualPaymentAction } from "./actions";
 
@@ -41,12 +41,12 @@ function whatsappHref(phone: string) {
 }
 
 export default async function AdminReservationsPage({ searchParams }: AdminReservationsPageProps) {
-  await getCurrentAdminOrRedirect();
+  const user = await getCurrentReservationsUserOrRedirect();
   const params = await searchParams;
   const reservations = await listAdminReservations();
 
   return (
-    <AdminShell title="Reservas" notice={params?.notice}>
+    <AdminShell title="Reservas" notice={params?.notice} role={user.role}>
       <table className="data-table">
         <thead>
           <tr>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import { AdminFormAlert, AdminSubmitButton, FieldError } from "../form-ui";
 import { initialAdminFormState, type AdminFormState } from "../form-state";
+import type { VehicleLayoutMarker } from "@/lib/vehicles/layout-markers";
 import { VEHICLE_TEMPLATES, type VehicleSeat } from "@/lib/vehicles/templates";
 import { SeatLayoutEditor } from "./seat-layout-editor";
 
@@ -16,6 +17,7 @@ type VehicleFormData = {
   model?: string;
   licensePlate?: string | null;
   templateKey?: string | null;
+  layoutMarkers?: unknown;
   isActive?: boolean;
   seats?: VehicleSeat[];
 };
@@ -35,6 +37,7 @@ export function VehicleForm({ action, vehicle, submitLabel }: VehicleFormProps) 
   const brandValue = selectedTemplate?.brand ?? vehicle?.brand ?? "";
   const modelValue = selectedTemplate?.model ?? vehicle?.model ?? "";
   const seatKey = `${templateKey}-${vehicle?.id ?? "new"}`;
+  const layoutMarkers = Array.isArray(vehicle?.layoutMarkers) ? (vehicle.layoutMarkers as VehicleLayoutMarker[]) : [];
 
   return (
     <form className="admin-form-grid" action={formAction}>
@@ -111,6 +114,7 @@ export function VehicleForm({ action, vehicle, submitLabel }: VehicleFormProps) 
       <SeatLayoutEditor
         key={seatKey}
         initialSeats={selectedTemplate?.seats ?? vehicle?.seats ?? []}
+        initialLayoutMarkers={selectedTemplate ? [] : layoutMarkers}
       />
       <FieldError id="seats-error" message={errors.seats} />
       <div className="form-actions span-2">

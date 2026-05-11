@@ -84,7 +84,10 @@ export function getOpenApiSpec(baseUrl = "https://araucana.app"): OpenApiSpec {
         }
       },
       "/api/v1/routes": {
-        get: adminPath("Lista rutas publicas activas.", "#/components/schemas/RoutesEnvelope")
+        get: {
+          summary: "Lista rutas publicas activas.",
+          responses: jsonResponse("#/components/schemas/RoutesEnvelope")
+        }
       },
       "/api/v1/routes/{slug}": {
         get: {

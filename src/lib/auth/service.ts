@@ -209,3 +209,12 @@ export async function requireAdminUser(request: Request) {
 
   return user;
 }
+
+export async function requireReservationsUser(request: Request) {
+  const user = await requireAuthenticatedUser(request);
+  if (user.role !== "ADMIN" && user.role !== "SECRETARY") {
+    throw new AuthorizationError("Se requiere acceso a reservas");
+  }
+
+  return user;
+}

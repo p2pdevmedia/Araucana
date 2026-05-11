@@ -1,5 +1,5 @@
 import { get } from "@vercel/blob";
-import { AuthorizationError, requireAdminUser } from "@/lib/auth/service";
+import { AuthorizationError, requireReservationsUser } from "@/lib/auth/service";
 import { getReservationByCode } from "@/lib/booking/repository";
 
 type ReceiptRouteContext = {
@@ -19,7 +19,7 @@ function contentDisposition(fileName?: string | null) {
 
 export async function GET(request: Request, context: ReceiptRouteContext) {
   try {
-    await requireAdminUser(request);
+    await requireReservationsUser(request);
   } catch (error) {
     if (error instanceof AuthorizationError) {
       return new Response("No autorizado", { status: 401 });

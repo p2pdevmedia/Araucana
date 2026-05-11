@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getDefaultPathForRole, type AppRole } from "@/lib/auth/roles";
 
 export function LoginForm() {
   const router = useRouter();
@@ -32,7 +33,8 @@ export function LoginForm() {
       return;
     }
 
-    router.push("/admin");
+    const payload = await response.json() as { user?: { role?: AppRole } };
+    router.push(getDefaultPathForRole(payload.user?.role ?? "USER"));
     router.refresh();
   }
 
