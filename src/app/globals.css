@@ -1123,7 +1123,7 @@ svg {
 
 .vehicle-layout-grid {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-columns: 42px minmax(0, 1fr) 42px;
   gap: 10px;
   align-items: stretch;
 }
@@ -1150,6 +1150,14 @@ svg {
   text-transform: uppercase;
   writing-mode: vertical-rl;
   transform: rotate(180deg);
+}
+
+.vehicle-door-rail.left .vehicle-door-cell {
+  justify-self: end;
+}
+
+.vehicle-door-rail.right .vehicle-door-cell {
+  justify-self: start;
 }
 
 .vehicle-door-cell.active {

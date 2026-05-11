@@ -77,8 +77,10 @@ export function SeatLayoutEditor({ initialSeats, initialLayoutMarkers = [] }: Se
     setActiveEmptyCell(null);
   }
 
-  function toggleDoor(row: number) {
-    setLayoutMarkers((currentMarkers) => toggleLayoutMarker(currentMarkers, { type: "DOOR", row, column: 0 }));
+  function toggleDoor(row: number, side: "left" | "right") {
+    setLayoutMarkers((currentMarkers) =>
+      toggleLayoutMarker(currentMarkers, { type: "DOOR", row, column: side === "left" ? 0 : -1 })
+    );
     setActiveEmptyCell(null);
   }
 
@@ -109,7 +111,7 @@ export function SeatLayoutEditor({ initialSeats, initialLayoutMarkers = [] }: Se
         </div>
       </div>
       <div className="vehicle-layout-grid">
-        <div className="vehicle-door-rail" aria-label="Puertas lado izquierdo">
+        <div className="vehicle-door-rail left" aria-label="Puertas lado izquierdo">
           {Array.from({ length: rows }, (_, index) => {
             const row = index + 1;
             const hasDoor = layoutMarkers.some((marker) => markerMatches(marker, "DOOR", row, 0));
@@ -120,7 +122,7 @@ export function SeatLayoutEditor({ initialSeats, initialLayoutMarkers = [] }: Se
                 className={`vehicle-door-cell ${hasDoor ? "active" : ""}`}
                 key={`door-${row}`}
                 type="button"
-                onClick={() => toggleDoor(row)}
+                onClick={() => toggleDoor(row, "left")}
               >
                 {hasDoor ? "Puerta" : "+"}
               </button>
@@ -231,10 +233,28 @@ export function SeatLayoutEditor({ initialSeats, initialLayoutMarkers = [] }: Se
             );
           })}
         </div>
+        <div className="vehicle-door-rail right" aria-label="Puertas lado derecho">
+          {Array.from({ length: rows }, (_, index) => {
+            const row = index + 1;
+            const hasDoor = layoutMarkers.some((marker) => markerMatches(marker, "DOOR", row, -1));
+
+            return (
+              <button
+                aria-label={`${hasDoor ? "Quitar" : "Agregar"} puerta derecha en fila ${row}`}
+                className={`vehicle-door-cell ${hasDoor ? "active" : ""}`}
+                key={`door-right-${row}`}
+                type="button"
+                onClick={() => toggleDoor(row, "right")}
+              >
+                {hasDoor ? "Puerta" : "+"}
+              </button>
+            );
+          })}
+        </div>
       </div>
       <p className="seat-layout-help">
-        Toca un casillero vacio para crear un asiento o marcar pasillo. Los cuadrados chicos de la izquierda marcan
-        puertas en el limite de la nave.
+        Toca un casillero vacio para crear un asiento o marcar pasillo. Los cuadrados chicos de los costados marcan
+        puertas en los limites de la nave.
       </p>
     </div>
   );

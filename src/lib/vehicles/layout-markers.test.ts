@@ -33,4 +33,10 @@ describe("vehicle layout markers", () => {
     expect(toggleLayoutMarker([], marker)).toEqual([marker]);
     expect(toggleLayoutMarker([marker], marker)).toEqual([]);
   });
+
+  test("accepts a right-side door marker on the vehicle edge", () => {
+    expect(parseLayoutMarkers(JSON.stringify([{ type: "DOOR", row: 1, column: -1 }]))).toEqual([
+      { type: "DOOR", row: 1, column: -1 }
+    ]);
+  });
 });

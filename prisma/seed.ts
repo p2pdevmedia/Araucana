@@ -37,6 +37,40 @@ async function main() {
     }
   });
 
+  await prisma.user.upsert({
+    where: { email: "secretaria@araucana.com" },
+    update: {
+      name: "Secretaria",
+      role: "SECRETARY",
+      isActive: true,
+      passwordHash: await hashPassword("reservasAraucana")
+    },
+    create: {
+      email: "secretaria@araucana.com",
+      name: "Secretaria",
+      role: "SECRETARY",
+      isActive: true,
+      passwordHash: await hashPassword("reservasAraucana")
+    }
+  });
+
+  await prisma.user.upsert({
+    where: { email: "chofer@araucana.com" },
+    update: {
+      name: "Chofer",
+      role: "DRIVER",
+      isActive: true,
+      passwordHash: await hashPassword("ubicacionAraucana")
+    },
+    create: {
+      email: "chofer@araucana.com",
+      name: "Chofer",
+      role: "DRIVER",
+      isActive: true,
+      passwordHash: await hashPassword("ubicacionAraucana")
+    }
+  });
+
   await prisma.vehicle.upsert({
     where: { id: VEHICLE_ID },
     update: {

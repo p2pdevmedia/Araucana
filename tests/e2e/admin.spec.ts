@@ -2,6 +2,10 @@ import { expect, test, type Page } from "@playwright/test";
 
 const adminEmail = "kevin@jefe.com";
 const adminPassword = "kieroMoverElBote";
+const secretaryEmail = "secretaria@araucana.com";
+const secretaryPassword = "reservasAraucana";
+const driverEmail = "chofer@araucana.com";
+const driverPassword = "ubicacionAraucana";
 
 const adminPages = [
   {
@@ -59,16 +63,20 @@ async function waitForReactFormHydration(page: Page) {
   });
 }
 
-async function logInAsAdmin(page: Page) {
+async function logIn(page: Page, email: string, password: string, expectedPath: RegExp) {
   await page.goto("/login");
   await expect(page.getByRole("heading", { name: "Entrar a la cabina Araucana." })).toBeVisible();
   await waitForReactFormHydration(page);
 
-  await page.getByLabel("Email").fill(adminEmail);
-  await page.getByLabel("Password").fill(adminPassword);
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Ingresar" }).click();
 
-  await expect(page).toHaveURL(/\/admin$/);
+  await expect(page).toHaveURL(expectedPath);
+}
+
+async function logInAsAdmin(page: Page) {
+  await logIn(page, adminEmail, adminPassword, /\/admin$/);
   await expect(page.getByText(`Ingresaste como ${adminEmail}`)).toBeVisible();
 }
 
@@ -124,5 +132,30 @@ test.describe("Administrador", () => {
     await expect(page.getByText("Araucana Test E2E")).toBeVisible();
     await expect(page.getByText("Fiat · Ducato Minibus 16 plazas")).toBeVisible();
     await expect(page.getByText("16 pasajeros")).toBeVisible();
+  });
+
+  test("limita a la secretaria a reservas", async ({ page }) => {
+    await logIn(page, secretaryEmail, secretaryPassword, /\/admin\/reservas$/);
+
+    await expect(page.getByRole("heading", { name: "Reservas" })).toBeVisible();
+    const navigation = page.getByRole("navigation", { name: "Administracion" });
+    await expect(navigation.getByRole("link", { name: "Reservas" })).toBeVisible();
+    await expect(navigation.getByRole("link", { name: "Rutas" })).toHaveCount(0);
+    await expect(navigation.getByRole("link", { name: "Salidas" })).toHaveCount(0);
+    await expect(navigation.getByRole("link", { name: "Naves" })).toHaveCount(0);
+
+    await page.goto("/admin/naves");
+    await expect(page).toHaveURL(/\/admin\/reservas$/);
+  });
+
+  test("lleva al chofer a seleccionar nave para compartir ubicacion", async ({ page }) => {
+    await logIn(page, driverEmail, driverPassword, /\/chofer$/);
+
+    await expect(page.getByRole("heading", { name: "Ubicacion de nave" })).toBeVisible();
+    await expect(page.getByLabel("Nave")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Compartir ubicacion" })).toBeVisible();
+
+    await page.goto("/admin/reservas");
+    await expect(page).toHaveURL(/\/chofer$/);
   });
 });

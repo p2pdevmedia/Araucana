@@ -44,7 +44,7 @@ export function parseLayoutMarkers(raw: string): VehicleLayoutMarker[] {
     }
 
     if (marker.type === "DOOR") {
-      if (marker.column !== 0) {
+      if (marker.column !== 0 && marker.column !== -1) {
         throw new Error("Las puertas deben estar en el borde de la nave.");
       }
     } else if (!isPositiveInteger(marker.column)) {
