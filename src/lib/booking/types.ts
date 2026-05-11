@@ -114,6 +114,7 @@ export type AdminReservationRowDto = {
   id: string;
   code: string;
   passenger: string;
+  passengerPhone: string;
   route: string;
   departureAt: Date;
   seatNumber: string;

@@ -29,6 +29,11 @@ function formatPaymentStatus(status: string | null) {
   return labels[status] ?? status;
 }
 
+function whatsappHref(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  return digits ? `https://wa.me/${digits}` : null;
+}
+
 export default async function AdminReservationsPage() {
   await getCurrentAdminOrRedirect();
   const reservations = await listAdminReservations();
@@ -40,6 +45,7 @@ export default async function AdminReservationsPage() {
           <tr>
             <th>Codigo</th>
             <th>Pasajero</th>
+            <th>WhatsApp</th>
             <th>Ruta</th>
             <th>Asiento</th>
             <th>Estado</th>
@@ -49,41 +55,61 @@ export default async function AdminReservationsPage() {
           </tr>
         </thead>
         <tbody>
-          {reservations.map((reservation) => (
-            <tr key={reservation.code}>
-              <td>{reservation.code}</td>
-              <td>
-                <Link className="table-link" href={`/admin/reservas/${reservation.code}`}>
-                  {reservation.passenger}
-                </Link>
-              </td>
-              <td>{reservation.route}</td>
-              <td>{reservation.seatNumber}</td>
-              <td>{formatReservationStatus(reservation.status)}</td>
-              <td>{formatPaymentStatus(reservation.paymentStatus)}</td>
-              <td>
-                {reservation.hasReceipt ? (
-                  <Link className="table-link" href={`/admin/reservas/${reservation.code}/comprobante`} target="_blank">
-                    {reservation.receiptFileName ?? "Ver comprobante"}
+          {reservations.map((reservation) => {
+            const whatsappUrl = whatsappHref(reservation.passengerPhone);
+
+            return (
+              <tr key={reservation.code}>
+                <td>{reservation.code}</td>
+                <td>
+                  <Link className="table-link" href={`/admin/reservas/${reservation.code}`}>
+                    {reservation.passenger}
                   </Link>
-                ) : (
-                  <span className="muted">Pendiente</span>
-                )}
-              </td>
-              <td>
-                {reservation.hasReceipt && reservation.paymentStatus !== "APPROVED" ? (
-                  <form action={approveManualPaymentAction}>
-                    <input type="hidden" name="code" value={reservation.code} />
-                    <button className="button table-action" type="submit">
-                      Validar pago
-                    </button>
-                  </form>
-                ) : (
-                  <span className="muted">-</span>
-                )}
-              </td>
-            </tr>
-          ))}
+                </td>
+                <td>
+                  {whatsappUrl ? (
+                    <a
+                      aria-label={`Enviar WhatsApp a ${reservation.passenger}`}
+                      className="whatsapp-link"
+                      href={whatsappUrl}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                      title={`Enviar WhatsApp a ${reservation.passenger}`}
+                    >
+                      W
+                    </a>
+                  ) : (
+                    <span className="muted">-</span>
+                  )}
+                </td>
+                <td>{reservation.route}</td>
+                <td>{reservation.seatNumber}</td>
+                <td>{formatReservationStatus(reservation.status)}</td>
+                <td>{formatPaymentStatus(reservation.paymentStatus)}</td>
+                <td>
+                  {reservation.hasReceipt ? (
+                    <Link className="table-link" href={`/admin/reservas/${reservation.code}/comprobante`} target="_blank">
+                      {reservation.receiptFileName ?? "Ver comprobante"}
+                    </Link>
+                  ) : (
+                    <span className="muted">Pendiente</span>
+                  )}
+                </td>
+                <td>
+                  {reservation.hasReceipt && reservation.paymentStatus !== "APPROVED" ? (
+                    <form action={approveManualPaymentAction}>
+                      <input type="hidden" name="code" value={reservation.code} />
+                      <button className="button table-action" type="submit">
+                        Validar pago
+                      </button>
+                    </form>
+                  ) : (
+                    <span className="muted">-</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </AdminShell>

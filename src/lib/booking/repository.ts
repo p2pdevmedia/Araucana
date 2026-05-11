@@ -715,6 +715,7 @@ export function createBookingRepository(client: BookingClient, deps: BookingRepo
         id: reservation.id,
         code: reservation.code,
         passenger: `${reservation.passenger.firstName} ${reservation.passenger.lastName}`,
+        passengerPhone: reservation.passenger.phone,
         route: `${reservation.schedule.route.from} -> ${reservation.schedule.route.to}`,
         departureAt: reservation.schedule.departureAt,
         seatNumber: reservation.seatNumber,

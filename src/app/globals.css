@@ -906,6 +906,23 @@ svg {
   text-underline-offset: 3px;
 }
 
+.whatsapp-link {
+  width: 36px;
+  min-height: 36px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #25d366;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.whatsapp-link:hover {
+  background: #1ea952;
+}
+
 .table-action {
   min-height: 36px;
   border-radius: 10px;

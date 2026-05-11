@@ -685,6 +685,7 @@ describe("booking repository", () => {
     await expect(repository.listAdminReservations()).resolves.toEqual([
       expect.objectContaining({
         code: "ARC-2611-PROOF",
+        passengerPhone: "+5492944000001",
         receiptFileName: "comprobante.jpg",
         receiptUploadedAt: new Date("2026-05-11T18:00:00.000Z"),
         hasReceipt: true
