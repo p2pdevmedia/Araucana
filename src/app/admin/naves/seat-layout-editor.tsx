@@ -140,14 +140,21 @@ export function SeatLayoutEditor({ initialSeats }: SeatLayoutEditorProps) {
               </button>
             </div>
           ) : (
-            <button
+            <div
               className={`vehicle-seat-gap ${isActiveEmptyCell ? "active" : ""} ${isMarkedAisle ? "marked" : ""}`}
               aria-label="Casillero vacio"
               key={`${row}-${column}`}
               onDragOver={(event) => event.preventDefault()}
               onClick={() => setActiveEmptyCell((currentCell) => (currentCell === cellKey ? null : cellKey))}
               onDrop={() => moveSeat(row, column)}
-              type="button"
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setActiveEmptyCell((currentCell) => (currentCell === cellKey ? null : cellKey));
+                }
+              }}
+              role="button"
+              tabIndex={0}
             >
               {isActiveEmptyCell ? (
                 <span className="empty-seat-actions">
@@ -189,7 +196,7 @@ export function SeatLayoutEditor({ initialSeats }: SeatLayoutEditorProps) {
               ) : (
                 "+"
               )}
-            </button>
+            </div>
           );
         })}
       </div>
