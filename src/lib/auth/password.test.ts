@@ -11,4 +11,10 @@ describe("password helpers", () => {
     await expect(verifyPassword(password, hash)).resolves.toBe(true);
     await expect(verifyPassword("otraPassword", hash)).resolves.toBe(false);
   });
+
+  it("ignores accidental surrounding whitespace when verifying passwords", async () => {
+    const hash = await hashPassword("kieroMoverElBote");
+
+    await expect(verifyPassword(" kieroMoverElBote ", hash)).resolves.toBe(true);
+  });
 });
