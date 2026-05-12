@@ -5,6 +5,7 @@ import { formatCurrency } from "@/lib/admin/salary";
 import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
 import { prisma } from "@/lib/db/prisma";
 import { createExpenseAction, createSalaryPaymentAction } from "./actions";
+import { AccountingDisclosure } from "./accounting-disclosure";
 import { ExpenseForm } from "./expense-form";
 import { SalaryPaymentForm } from "./salary-payment-form";
 
@@ -77,18 +78,19 @@ export default async function AccountingPage({ searchParams }: AccountingPagePro
       </section>
 
       <section className="admin-split">
-        <div className="plain-card admin-section">
-          <h2>Nuevo egreso</h2>
+        <AccountingDisclosure title="Nuevo egreso" buttonLabel="Agregar egreso">
           <ExpenseForm action={createExpenseAction} vehicles={vehicles} />
-        </div>
-        <div className="plain-card admin-section">
-          <h2>Pago de sueldo</h2>
-          {salaryUsers.length ? (
+        </AccountingDisclosure>
+        {salaryUsers.length ? (
+          <AccountingDisclosure title="Pago de sueldo" buttonLabel="Registrar pago">
             <SalaryPaymentForm action={createSalaryPaymentAction} users={salaryUsers} />
-          ) : (
+          </AccountingDisclosure>
+        ) : (
+          <div className="plain-card admin-section">
+            <h2>Pago de sueldo</h2>
             <p className="muted">Carga una secretaria o chofer activo para registrar pagos.</p>
-          )}
-        </div>
+          </div>
+        )}
       </section>
 
       <section className="plain-card admin-section">
