@@ -980,6 +980,69 @@ svg {
   box-shadow: 0 14px 30px rgba(32, 55, 43, 0.08);
 }
 
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.filter-bar label {
+  display: grid;
+  gap: 7px;
+  min-width: 180px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.filter-bar input,
+.filter-bar select {
+  min-height: 44px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: #fffaf1;
+  color: var(--ink);
+  padding: 0 13px;
+}
+
+.admin-split,
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.embedded-table {
+  margin-top: 18px;
+  box-shadow: none;
+}
+
+.report-panel h2 {
+  margin: 0 0 16px;
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 500;
+}
+
+.report-list {
+  display: grid;
+  gap: 10px;
+}
+
+.report-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.report-row strong {
+  white-space: nowrap;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -1444,6 +1507,8 @@ svg {
   .admin-layout,
   .admin-form-grid,
   .admin-grid,
+  .admin-split,
+  .report-grid,
   .bank-detail-grid,
   .stats-grid,
   .checkout-intro,

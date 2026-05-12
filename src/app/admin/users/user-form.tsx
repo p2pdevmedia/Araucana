@@ -14,6 +14,8 @@ type ManagedUserFormData = {
   email?: string;
   name?: string | null;
   isActive?: boolean;
+  monthlySalaryCents?: number | null;
+  salaryCurrency?: string;
 };
 
 type ManagedUserFormProps = {
@@ -70,6 +72,18 @@ export function ManagedUserForm({ action, role, user, submitLabel }: ManagedUser
           aria-describedby={errors.password ? "password-error" : undefined}
         />
         <FieldError id="password-error" message={errors.password} />
+      </label>
+      <label>
+        Sueldo mensual
+        <input
+          name="monthlySalary"
+          inputMode="decimal"
+          defaultValue={user?.monthlySalaryCents ? String(user.monthlySalaryCents / 100) : ""}
+          placeholder="Ej: 450000"
+          aria-invalid={Boolean(errors.monthlySalary)}
+          aria-describedby={errors.monthlySalary ? "monthlySalary-error" : undefined}
+        />
+        <FieldError id="monthlySalary-error" message={errors.monthlySalary} />
       </label>
       <label className="checkbox-row">
         <input name="isActive" type="checkbox" defaultChecked={user?.isActive ?? true} />

@@ -41,7 +41,9 @@ export async function EditManagedUserPage({ role, id }: EditManagedUserPageProps
       id: true,
       email: true,
       name: true,
-      isActive: true
+      isActive: true,
+      monthlySalaryCents: true,
+      salaryCurrency: true
     }
   });
 

@@ -20,6 +20,8 @@ const links: Array<{ href: string; label: string; roles: AppRole[] }> = [
   { href: "/admin/secretarias", label: "Secretarias", roles: ["ADMIN"] },
   { href: "/admin/choferes", label: "Choferes", roles: ["ADMIN"] },
   { href: "/admin/reservas", label: "Reservas", roles: ["ADMIN", "SECRETARY"] },
+  { href: "/admin/contabilidad", label: "Contabilidad", roles: ["ADMIN"] },
+  { href: "/admin/reportes", label: "Reportes", roles: ["ADMIN"] },
   { href: "/", label: "Web publica", roles: ["ADMIN", "SECRETARY"] }
 ];
 

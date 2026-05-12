@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/admin-shell";
 import { getManagedUserConfig, getManagedUserPath, type ManagedUserRole } from "@/lib/admin/users";
+import { formatCurrency } from "@/lib/admin/salary";
 import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
 import { prisma } from "@/lib/db/prisma";
 import { deleteManagedUserAction, setManagedUserActiveAction } from "./actions";
@@ -22,6 +23,8 @@ export async function ManagedUsersPage({ role, notice }: ManagedUsersPageProps) 
       email: true,
       name: true,
       isActive: true,
+      monthlySalaryCents: true,
+      salaryCurrency: true,
       createdAt: true
     }
   });
@@ -56,6 +59,7 @@ export async function ManagedUsersPage({ role, notice }: ManagedUsersPageProps) 
           <tr>
             <th>Nombre</th>
             <th>Email</th>
+            <th>Sueldo</th>
             <th>Alta</th>
             <th>Estado</th>
             <th>Acciones</th>
@@ -66,6 +70,7 @@ export async function ManagedUsersPage({ role, notice }: ManagedUsersPageProps) 
             <tr key={user.id}>
               <td>{user.name ?? "-"}</td>
               <td>{user.email}</td>
+              <td>{formatCurrency(user.monthlySalaryCents, user.salaryCurrency)}</td>
               <td>{user.createdAt.toLocaleDateString("es-AR")}</td>
               <td>
                 <span className={`status-pill ${user.isActive ? "active" : "inactive"}`}>
@@ -94,7 +99,7 @@ export async function ManagedUsersPage({ role, notice }: ManagedUsersPageProps) 
           ))}
           {users.length === 0 ? (
             <tr>
-              <td colSpan={5}>{emptyText}</td>
+              <td colSpan={6}>{emptyText}</td>
             </tr>
           ) : null}
         </tbody>

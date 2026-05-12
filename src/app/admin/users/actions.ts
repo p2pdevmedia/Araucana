@@ -6,6 +6,7 @@ import { Prisma } from "@prisma/client";
 import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
 import { hashPassword } from "@/lib/auth/password";
 import { prisma } from "@/lib/db/prisma";
+import { parseMonthlySalaryCents } from "@/lib/admin/salary";
 import {
   getManagedUserConfig,
   getManagedUserPath,
@@ -44,6 +45,7 @@ function userData(formData: FormData, options: { requirePassword: boolean }) {
   const email = value(formData, "email").toLowerCase();
   const name = value(formData, "name");
   const password = value(formData, "password");
+  const monthlySalary = value(formData, "monthlySalary");
   const fieldErrors: AdminFieldErrors = {};
 
   if (!email) {
@@ -60,6 +62,13 @@ function userData(formData: FormData, options: { requirePassword: boolean }) {
     fieldErrors.password = "La contrasena debe tener al menos 8 caracteres.";
   }
 
+  let monthlySalaryCents: number | null = null;
+  try {
+    monthlySalaryCents = parseMonthlySalaryCents(monthlySalary);
+  } catch (error) {
+    fieldErrors.monthlySalary = error instanceof Error ? error.message : "El sueldo mensual no es valido.";
+  }
+
   if (Object.keys(fieldErrors).length) {
     throw new UserValidationError("Revisa los campos marcados para guardar el usuario.", fieldErrors);
   }
@@ -68,6 +77,8 @@ function userData(formData: FormData, options: { requirePassword: boolean }) {
     email,
     name: name || null,
     password,
+    monthlySalaryCents,
+    salaryCurrency: "ARS",
     isActive: formData.get("isActive") === "on"
   };
 }
@@ -108,6 +119,8 @@ export async function createManagedUserAction(_state: AdminFormState, formData: 
         name: data.name,
         passwordHash: await hashPassword(data.password),
         role,
+        monthlySalaryCents: data.monthlySalaryCents,
+        salaryCurrency: data.salaryCurrency,
         isActive: data.isActive
       }
     });
@@ -141,6 +154,8 @@ export async function updateManagedUserAction(_state: AdminFormState, formData: 
       data: {
         email: data.email,
         name: data.name,
+        monthlySalaryCents: data.monthlySalaryCents,
+        salaryCurrency: data.salaryCurrency,
         isActive: data.isActive,
         ...(data.password ? { passwordHash: await hashPassword(data.password) } : {})
       }
