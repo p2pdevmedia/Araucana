@@ -109,6 +109,7 @@ function revalidateSchedulePaths(routeSlug?: string) {
   revalidatePath("/rutas");
 
   if (routeSlug) {
+    revalidatePath(`/rutas/${routeSlug}`);
     revalidatePath(`/reservar/${routeSlug}`);
   }
 }

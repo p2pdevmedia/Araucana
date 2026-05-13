@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
 import { getPublicRouteBySlug, listSchedulesForRoute } from "@/lib/booking/repository";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type RouteDetailPageProps = {
   params: Promise<{

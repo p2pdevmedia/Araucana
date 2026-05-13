@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { BookingError, createWebReservation } from "@/lib/booking/repository";
 import { createReservationSchema, type CreateReservationInput } from "@/lib/booking/validation";
 
@@ -49,6 +50,7 @@ export async function createReservationAction(input: CreateReservationInput): Pr
 
   try {
     const reservation = await createWebReservation(parsed.data);
+    revalidatePath(`/reservar/${reservation.route.slug}`);
 
     return {
       ok: true,

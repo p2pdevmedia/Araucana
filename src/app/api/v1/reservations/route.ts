@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { handleApiError, jsonError } from "@/lib/api/responses";
 import { BookingError, createWebReservation } from "@/lib/booking/repository";
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
     }
 
     const reservation = await createWebReservation(body.data);
+    revalidatePath(`/reservar/${reservation.route.slug}`);
 
     return NextResponse.json({ reservation }, { status: 201 });
   } catch (error) {

@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { getPublicRouteBySlug, getSeatMap, listSchedulesForRoute } from "@/lib/booking/repository";
 import { CheckoutForm } from "./checkout-form";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type ReservationPageProps = {
   params: Promise<{

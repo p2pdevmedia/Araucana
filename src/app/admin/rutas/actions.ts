@@ -128,9 +128,11 @@ function routeErrorState(error: unknown) {
 }
 
 function revalidateRoutePaths(slug?: string) {
+  revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath("/admin/rutas");
   revalidatePath("/admin/salidas");
+  revalidatePath("/cruce-a-chile");
   revalidatePath("/rutas");
 
   if (slug) {

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
 import { listPublicRoutes } from "@/lib/booking/repository";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 function formatDuration(minutes: number) {
   const hours = Math.floor(minutes / 60);
