@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import laninWinter from "../../lanin-invierno.jpeg";
+import laninSummer from "../../lanin-verano.jpeg";
 import { SiteFooter } from "@/components/site-footer";
 import { listPublicRoutes } from "@/lib/booking/repository";
 import { lakes } from "@/lib/travel-data";
@@ -32,6 +33,9 @@ export default async function HomePage() {
   const secondaryRoutes = featured ? routes.filter((route) => route.id !== featured.id).slice(0, 4) : [];
   const heroStyle = {
     "--hero-image": `url(${laninWinter.src})`
+  } as CSSProperties;
+  const crossingStyle = {
+    "--crossing-image": `url(${laninSummer.src})`
   } as CSSProperties;
 
   return (
@@ -191,7 +195,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="dark-band section">
+        <section className="dark-band crossing-band section" style={crossingStyle}>
           <div className="page-shell split">
             <div>
               <p className="eyebrow">Cruce internacional</p>

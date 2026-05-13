@@ -462,6 +462,32 @@ svg {
   color: var(--surface);
 }
 
+.crossing-band {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(8, 19, 17, 0.82) 0%, rgba(8, 19, 17, 0.58) 48%, rgba(8, 19, 17, 0.32) 100%),
+    linear-gradient(180deg, rgba(11, 23, 21, 0.08), rgba(11, 23, 21, 0.62)),
+    var(--crossing-image);
+  background-position: center;
+  background-size: cover;
+}
+
+.crossing-band .page-shell {
+  position: relative;
+  z-index: 1;
+}
+
+.crossing-band .plain-card {
+  color: var(--ink);
+  background: rgba(251, 246, 235, 0.94);
+  box-shadow: 0 24px 60px rgba(8, 19, 17, 0.22);
+}
+
+.crossing-band .plain-card .muted {
+  color: var(--ink-muted);
+}
+
 .dark-band .lead,
 .dark-band .muted {
   color: rgba(251, 246, 235, 0.78);
