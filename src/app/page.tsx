@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
+import laninWinter from "../../lanin-invierno.jpeg";
 import { SiteFooter } from "@/components/site-footer";
 import { listPublicRoutes } from "@/lib/booking/repository";
 import { lakes } from "@/lib/travel-data";
@@ -28,10 +30,13 @@ export default async function HomePage() {
   const routes = await listPublicRoutes();
   const featured = routes.find((route) => route.featured) ?? routes[0];
   const secondaryRoutes = featured ? routes.filter((route) => route.id !== featured.id).slice(0, 4) : [];
+  const heroStyle = {
+    "--hero-image": `url(${laninWinter.src})`
+  } as CSSProperties;
 
   return (
     <>
-      <section className="hero">
+      <section className="hero" style={heroStyle}>
         <div className="hero-inner">
           <div className="hero-copy">
             <p className="eyebrow">San Martin de los Andes · Villa La Angostura · Bariloche</p>
