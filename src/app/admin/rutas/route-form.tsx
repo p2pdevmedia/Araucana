@@ -43,7 +43,7 @@ export function RouteForm({ action, route, submitLabel }: RouteFormProps) {
         <input
           name="from"
           defaultValue={route?.from}
-          placeholder="SMA"
+          placeholder="San Martin de los Andes"
           required
           aria-invalid={Boolean(errors.from)}
           aria-describedby={errors.from ? "from-error" : undefined}
@@ -55,7 +55,7 @@ export function RouteForm({ action, route, submitLabel }: RouteFormProps) {
         <input
           name="to"
           defaultValue={route?.to}
-          placeholder="Bariloche"
+          placeholder="Villa Traful"
           required
           aria-invalid={Boolean(errors.to)}
           aria-describedby={errors.to ? "to-error" : undefined}
@@ -79,7 +79,7 @@ export function RouteForm({ action, route, submitLabel }: RouteFormProps) {
         <input
           name="slug"
           defaultValue={route?.slug}
-          placeholder="sma-bariloche"
+          placeholder="sma-villa-traful-verano-2026"
           aria-invalid={Boolean(errors.slug)}
           aria-describedby={errors.slug ? "slug-error" : undefined}
         />

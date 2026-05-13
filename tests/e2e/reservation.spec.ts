@@ -29,11 +29,11 @@ async function waitForReactFormHydration(page: Page) {
 }
 
 test.describe("Reserva web", () => {
-  test("permite completar una reserva de asiento para Siete Lagos", async ({ page }) => {
-    await page.goto("/rutas/sma-bariloche-7-lagos");
+  test("permite completar una reserva de asiento para Villa Traful", async ({ page }) => {
+    await page.goto("/rutas/sma-villa-traful-verano-2026");
     await page.getByRole("link", { name: "Reservar asiento" }).click();
 
-    await expect(page).toHaveURL(/\/reservar\/sma-bariloche-7-lagos$/);
+    await expect(page).toHaveURL(/\/reservar\/sma-villa-traful-verano-2026$/);
     await waitForReactFormHydration(page);
 
     await page.getByLabel("Salida").selectOption({ index: 0 });

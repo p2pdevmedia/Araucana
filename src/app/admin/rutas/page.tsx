@@ -11,6 +11,10 @@ type AdminRoutesPageProps = {
 };
 
 function formatPrice(cents: number, currency: string) {
+  if (cents <= 0) {
+    return "Consultar";
+  }
+
   return new Intl.NumberFormat("es-AR", {
     style: "currency",
     currency,

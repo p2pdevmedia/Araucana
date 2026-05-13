@@ -27,8 +27,8 @@ export default function AppFlowPage() {
               <div className="ticket-preview">
                 <p className="eyebrow">Paso 2 de 4</p>
                 <h2>Elegí tu asiento</h2>
-                <p>SMA → Bariloche · Mar 12 nov · 08:30</p>
-                <p className="price">$18.900</p>
+                <p>SMA → Villa Traful · 02 ene · 10:00</p>
+                <p className="price">Consultar</p>
               </div>
             </div>
           </div>

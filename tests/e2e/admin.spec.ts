@@ -11,12 +11,12 @@ const adminPages = [
   {
     path: "/admin",
     heading: "Panel de turismo y transporte",
-    content: ["Rutas publicadas", /Salidas pr.ximas/, "Reservas ejemplo", adminEmail]
+    content: ["Rutas publicadas", /Salidas pr.ximas/, "Reservas activas", adminEmail]
   },
   {
     path: "/admin/rutas",
     heading: "Rutas",
-    content: ["Ruta", "Via", "Frecuencia", "Precio", "SMA", "Bariloche"]
+    content: ["Ruta", "Via", "Frecuencia", "Precio", "San Martin de los Andes", "Villa Traful"]
   },
   {
     path: "/admin/salidas",
@@ -31,7 +31,7 @@ const adminPages = [
   {
     path: "/admin/reservas",
     heading: "Reservas",
-    content: ["Codigo", "Pasajero", "Camila Vidal", "Confirmada"]
+    content: ["Codigo", "Pasajero", "Ruta", "Estado"]
   }
 ];
 
@@ -104,8 +104,8 @@ test.describe("Administrador", () => {
 
     await page.goto("/admin/rutas");
     await page.getByRole("link", { name: "Abrir" }).first().click();
-    await expect(page).toHaveURL(/\/rutas\/sma-bariloche-7-lagos$/);
-    await expect(page.getByRole("heading", { name: /SMA.*Bariloche/ })).toBeVisible();
+    await expect(page).toHaveURL(/\/rutas\/sma-villa-traful-verano-2026$/);
+    await expect(page.getByRole("heading", { name: /San Martin de los Andes.*Villa Traful/ })).toBeVisible();
 
     await page.goto("/admin");
     await page.getByRole("button", { name: "Salir" }).click();

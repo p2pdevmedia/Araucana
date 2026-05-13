@@ -15,7 +15,7 @@ export function SiteFooter() {
         <div className="split">
           <p className="lead">
             San Martin de los Andes, Neuquen. Transporte turistico regular,
-            salidas a los 7 Lagos y cruces internacionales a Chile.
+            salidas de verano a Villa Traful, Villa La Angostura y Hua Hum.
           </p>
           <div className="inline-actions">
             <Link className="ghost-button" href="/rutas">

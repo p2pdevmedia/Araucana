@@ -20,6 +20,10 @@ function formatDuration(minutes: number) {
 }
 
 function formatPrice(cents: number, currency: string) {
+  if (cents <= 0) {
+    return "Consultar";
+  }
+
   return new Intl.NumberFormat("es-AR", {
     style: "currency",
     currency,
@@ -43,14 +47,13 @@ export default async function HomePage() {
       <section className="hero" style={heroStyle}>
         <div className="hero-inner">
           <div className="hero-copy">
-            <p className="eyebrow">San Martin de los Andes · Villa La Angostura · Bariloche</p>
+            <p className="eyebrow">San Martin de los Andes · Villa Traful · Hua Hum</p>
             <h1 className="display-title">
               El placer de viajar por <em>la cordillera.</em>
             </h1>
             <p className="lead">
-              Transporte turistico regular por la Patagonia andina, salidas por
-              el Camino de los 7 Lagos y cruces internacionales a Chile con
-              asistencia documental.
+              Transporte turistico regular por la Patagonia andina, salidas de
+              verano hacia Villa Traful, Villa La Angostura y Hua Hum.
             </p>
             <div className="hero-actions">
               <Link className="cream-button" href="/rutas" prefetch={true}>
@@ -69,11 +72,11 @@ export default async function HomePage() {
             </label>
             <label className="dock-field">
               <span>Hacia</span>
-              <strong>Bariloche</strong>
+              <strong>Villa Traful</strong>
             </label>
             <label className="dock-field">
               <span>Fecha</span>
-              <strong>Mar 12 nov</strong>
+              <strong>02 ene - 01 mar</strong>
             </label>
             <label className="dock-field">
               <span>Pasajeros</span>
@@ -94,7 +97,7 @@ export default async function HomePage() {
               <h2 className="section-title">Somos de San Martin.</h2>
             </div>
             <p className="lead">
-              Hace 16 anos conectamos la region con viajeros que vienen a
+              Conectamos la region con viajeros que vienen a
               descubrir lagos, bosques, frontera y montana.
             </p>
           </div>
@@ -108,8 +111,8 @@ export default async function HomePage() {
               <span>rutas activas</span>
             </div>
             <div className="stat-card">
-              <strong>3</strong>
-              <span>pasos fronterizos</span>
+              <strong>59</strong>
+              <span>dias de temporada</span>
             </div>
           </div>
         </section>
@@ -168,18 +171,18 @@ export default async function HomePage() {
           <div className="feature-grid">
             <div>
               <p className="eyebrow">El itinerario</p>
-              <h2 className="section-title">Siete espejos de agua, una ruta.</h2>
+              <h2 className="section-title">Camino a Villa Traful.</h2>
               <p className="lead">
-                Lacar, Machonico, Falkner, Villarino, Escondido, Correntoso y
-                Espejo. Paradas estrategicas, asistencia a bordo y llegada a
-                Bariloche por el corredor mas buscado de la Patagonia.
+                San Martin, Catrite, Rio Hermoso, Lago Hermoso, Falkner,
+                Pichi Traful y Villa Traful. Paradas claras para una temporada
+                de verano simple de reservar.
               </p>
               <div className="inline-actions">
-                <Link className="button" href="/rutas/sma-bariloche-7-lagos" prefetch={true}>
+                <Link className="button" href="/rutas/sma-villa-traful-verano-2026" prefetch={true}>
                   Ver detalle
                 </Link>
-                <Link className="ghost-button" href="/cruce-a-chile" prefetch={true}>
-                  Cruce a Chile
+                <Link className="ghost-button" href="/rutas/sma-hua-hum-verano-2026" prefetch={true}>
+                  Hua Hum
                 </Link>
               </div>
             </div>
@@ -199,14 +202,13 @@ export default async function HomePage() {
           <div className="page-shell split">
             <div>
               <p className="eyebrow">Cruce internacional</p>
-              <h2 className="section-title">Cruza los Andes con habilitacion.</h2>
+              <h2 className="section-title">Verano entre lagos.</h2>
               <p className="lead">
-                Pasos Mamuil Malal, Hua Hum y Cardenal Samore. Te acompanamos
-                en aduana y centralizamos la informacion de documentos para que
-                la experiencia sea simple.
+                Villa Traful, Villa La Angostura y Hua Hum reunidos en una
+                grilla diaria para mostrar reservas, asientos y operacion.
               </p>
-              <Link className="cream-button" href="/cruce-a-chile" prefetch={true}>
-                Ver documentacion
+              <Link className="cream-button" href="/rutas" prefetch={true}>
+                Ver salidas
               </Link>
             </div>
             <div className="plain-card">

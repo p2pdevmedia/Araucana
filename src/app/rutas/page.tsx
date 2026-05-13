@@ -16,6 +16,10 @@ function formatDuration(minutes: number) {
 }
 
 function formatPrice(cents: number, currency: string) {
+  if (cents <= 0) {
+    return "Consultar";
+  }
+
   return new Intl.NumberFormat("es-AR", {
     style: "currency",
     currency,
@@ -52,18 +56,20 @@ export default async function RoutesPage() {
         <form className="form-panel" action="/rutas">
           <label>
             Origen
-            <select name="from" defaultValue="SMA">
-              <option value="SMA">San Martin de los Andes</option>
-              <option value="Bariloche">Bariloche</option>
+            <select name="from" defaultValue="San Martin de los Andes">
+              <option value="San Martin de los Andes">San Martin de los Andes</option>
+              <option value="Villa Traful">Villa Traful</option>
               <option value="Villa La Angostura">Villa La Angostura</option>
+              <option value="Hua Hum">Hua Hum</option>
             </select>
           </label>
           <label>
             Destino
-            <select name="to" defaultValue="Bariloche">
-              <option value="Bariloche">Bariloche</option>
+            <select name="to" defaultValue="Villa Traful">
+              <option value="Villa Traful">Villa Traful</option>
               <option value="Villa La Angostura">Villa La Angostura</option>
-              <option value="Pucon">Pucon (Chile)</option>
+              <option value="San Martin de los Andes">San Martin de los Andes</option>
+              <option value="Hua Hum">Hua Hum</option>
             </select>
           </label>
           <button className="button" type="submit">

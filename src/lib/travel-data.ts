@@ -18,119 +18,200 @@ export type TravelRoute = {
   featured?: boolean;
   description: string;
   stops: RouteStop[];
+  departureTime: string;
+  arrivalTime: string;
+  serviceStart: string;
+  serviceEnd: string;
 };
+
+function stop(name: string, time: string, minutes: number, note: string): RouteStop {
+  return { name, km: 0, minutes, note: `${note} ${time}` };
+}
 
 export const lakes: RouteStop[] = [
   { name: "Lacar", km: 0, minutes: 0, note: "San Martin de los Andes" },
-  { name: "Machonico", km: 38, minutes: 45, note: "Ingreso al corredor" },
-  { name: "Falkner", km: 56, minutes: 70, note: "Mirador y cascada" },
-  { name: "Villarino", km: 60, minutes: 78, note: "Bosque andino" },
-  { name: "Escondido", km: 62, minutes: 82, note: "Parada tecnica" },
-  { name: "Correntoso", km: 91, minutes: 130, note: "Villa La Angostura" },
-  { name: "Espejo", km: 99, minutes: 145, note: "Ultimo lago" }
+  { name: "Catrite", km: 0, minutes: 0, note: "Primera parada hacia Traful" },
+  { name: "Rio Hermoso", km: 0, minutes: 30, note: "Puente y acceso al corredor" },
+  { name: "Lago Hermoso", km: 0, minutes: 37, note: "Acceso Lago Hermoso" },
+  { name: "Falkner", km: 0, minutes: 51, note: "Parada del Camino de los 7 Lagos" },
+  { name: "Pichi Traful", km: 0, minutes: 69, note: "Acceso Pichi Traful" },
+  { name: "Villa Traful", km: 0, minutes: 135, note: "Destino lacustre" }
 ];
 
 export const routes: TravelRoute[] = [
   {
-    id: "r1",
-    slug: "sma-bariloche-7-lagos",
-    from: "SMA",
-    to: "Bariloche",
-    via: "Camino de los 7 Lagos",
-    duration: "4h 30m",
-    price: 18900,
-    frequency: "Diaria · 08:30 y 14:00",
+    id: "route-sma-villa-traful-2026",
+    slug: "sma-villa-traful-verano-2026",
+    from: "San Martin de los Andes",
+    to: "Villa Traful",
+    via: "Ruta 40 - 7 Lagos",
+    duration: "2h 15m",
+    price: 0,
+    frequency: "Todos los dias · 10:00",
     category: "Argentina",
     featured: true,
+    departureTime: "10:00",
+    arrivalTime: "12:15",
+    serviceStart: "2026-01-02",
+    serviceEnd: "2026-03-01",
     description:
-      "La ruta signature de Araucana: San Martin, Villa La Angostura y Bariloche unidos por Ruta 40, lagos, miradores y guia bilingue.",
-    stops: lakes
-  },
-  {
-    id: "r2",
-    slug: "sma-villa-la-angostura",
-    from: "SMA",
-    to: "Villa La Angostura",
-    via: "Ruta 40",
-    duration: "2h 30m",
-    price: 9800,
-    frequency: "Diaria · 09:00 y 16:30",
-    category: "Argentina",
-    description:
-      "Conexion directa entre San Martin y Villa La Angostura, ideal para moverse por el corredor de los lagos.",
-    stops: lakes.slice(0, 7)
-  },
-  {
-    id: "r3",
-    slug: "bariloche-sma-7-lagos",
-    from: "Bariloche",
-    to: "SMA",
-    via: "Camino de los 7 Lagos",
-    duration: "4h 30m",
-    price: 18900,
-    frequency: "Diaria · 09:00 y 15:30",
-    category: "Argentina",
-    description:
-      "Regreso desde Bariloche a San Martin con paradas programadas y asistencia a bordo.",
-    stops: [...lakes].reverse()
-  },
-  {
-    id: "r4",
-    slug: "sma-pucon-mamuil-malal",
-    from: "SMA",
-    to: "Pucon (CL)",
-    via: "Paso Mamuil Malal",
-    duration: "5h 15m",
-    price: 32400,
-    frequency: "Lun · Mie · Vie · 07:00",
-    category: "Chile",
-    description:
-      "Cruce internacional a Chile con asistencia documental y acompanamiento en aduana.",
+      "Servicio diario de verano desde San Martin de los Andes hasta Villa Traful, con paradas en Catrite, Rio Hermoso, Lago Hermoso, Falkner, Pichi Traful, Ruta Provincial 65 y Puerto Arrayan. Tarifa a confirmar.",
     stops: [
-      { name: "SMA", km: 0, minutes: 0, note: "Salida" },
-      { name: "Junin de los Andes", km: 42, minutes: 45, note: "Parada breve" },
-      { name: "Mamuil Malal", km: 110, minutes: 150, note: "Aduana" },
-      { name: "Pucon", km: 210, minutes: 315, note: "Destino" }
+      stop("S. M. Andes", "10:00", 0, "Sale"),
+      stop("Catrite", "10:00", 0, "Pasa"),
+      stop("Pte. Rio Hermoso", "10:30", 30, "Pasa"),
+      stop("Acceso Lago Hermoso", "10:37", 37, "Pasa"),
+      stop("Falkner", "10:51", 51, "Pasa"),
+      stop("Acceso Pichi Traful", "11:09", 69, "Pasa"),
+      stop("Emp. Ruta Prov. 65", "11:38", 98, "Pasa"),
+      stop("Puerto Arrayan", "11:54", 114, "Pasa"),
+      stop("Villa Traful", "12:15", 135, "Llega")
     ]
   },
   {
-    id: "r5",
-    slug: "bariloche-puerto-varas-samore",
-    from: "Bariloche",
-    to: "Puerto Varas (CL)",
-    via: "Paso Cardenal Samore",
-    duration: "7h",
-    price: 38900,
-    frequency: "Mar · Jue · Sab · 06:30",
-    category: "Chile",
+    id: "route-villa-traful-sma-2026",
+    slug: "villa-traful-sma-verano-2026",
+    from: "Villa Traful",
+    to: "San Martin de los Andes",
+    via: "Ruta 40 - 7 Lagos",
+    duration: "2h 15m",
+    price: 0,
+    frequency: "Todos los dias · 17:30",
+    category: "Argentina",
+    departureTime: "17:30",
+    arrivalTime: "19:45",
+    serviceStart: "2026-01-02",
+    serviceEnd: "2026-03-01",
     description:
-      "Cruce andino desde Bariloche hacia la zona de los lagos chilenos, con asistencia de frontera.",
+      "Regreso diario de verano desde Villa Traful a San Martin de los Andes por Puerto Arrayan, Ruta Provincial 65, Pichi Traful, Falkner y Lago Hermoso. Tarifa a confirmar.",
     stops: [
-      { name: "Bariloche", km: 0, minutes: 0, note: "Salida" },
-      { name: "Villa La Angostura", km: 83, minutes: 85, note: "Conexion" },
-      { name: "Cardenal Samore", km: 130, minutes: 210, note: "Aduana" },
-      { name: "Puerto Varas", km: 320, minutes: 420, note: "Destino" }
+      stop("Villa Traful", "17:30", 0, "Sale"),
+      stop("Puerto Arrayan", "17:51", 21, "Pasa"),
+      stop("Emp. Ruta Prov. 65", "18:07", 37, "Pasa"),
+      stop("Acceso Pichi Traful", "18:35", 65, "Pasa"),
+      stop("Falkner", "18:45", 75, "Pasa"),
+      stop("Acceso Lago Hermoso", "19:08", 98, "Pasa"),
+      stop("Pte. Rio Hermoso", "19:15", 105, "Pasa"),
+      stop("S. M. Andes", "19:45", 135, "Llega")
+    ]
+  },
+  {
+    id: "route-vla-villa-traful-2026",
+    slug: "villa-la-angostura-villa-traful-verano-2026",
+    from: "Villa La Angostura",
+    to: "Villa Traful",
+    via: "Ruta 40 - Ruta Provincial 65",
+    duration: "1h 30m",
+    price: 0,
+    frequency: "Todos los dias · 11:00",
+    category: "Argentina",
+    departureTime: "11:00",
+    arrivalTime: "12:30",
+    serviceStart: "2026-01-02",
+    serviceEnd: "2026-03-01",
+    description:
+      "Servicio diario de verano desde Villa La Angostura hacia Villa Traful por Lago Espejo, Ruca Malen, empalme Ruta Provincial 65 y Puerto Arrayan. Tarifa a confirmar.",
+    stops: [
+      stop("Villa La Angostura", "11:00", 0, "Sale"),
+      stop("Lago Espejo", "11:20", 20, "Pasa"),
+      stop("Ruca Malen", "11:40", 40, "Pasa"),
+      stop("Emp. Ruta Prov. 65", "11:53", 53, "Pasa"),
+      stop("Puerto Arrayan", "12:09", 69, "Pasa"),
+      stop("Villa Traful", "12:30", 90, "Llega")
+    ]
+  },
+  {
+    id: "route-villa-traful-vla-2026",
+    slug: "villa-traful-villa-la-angostura-verano-2026",
+    from: "Villa Traful",
+    to: "Villa La Angostura",
+    via: "Ruta Provincial 65 - Ruta 40",
+    duration: "1h 30m",
+    price: 0,
+    frequency: "Todos los dias · 17:30",
+    category: "Argentina",
+    departureTime: "17:30",
+    arrivalTime: "19:00",
+    serviceStart: "2026-01-02",
+    serviceEnd: "2026-03-01",
+    description:
+      "Regreso diario de verano desde Villa Traful hacia Villa La Angostura por Puerto Arrayan, Ruta Provincial 65, Ruca Malen y Lago Espejo. Tarifa a confirmar.",
+    stops: [
+      stop("Villa Traful", "17:30", 0, "Sale"),
+      stop("Puerto Arrayan", "17:51", 21, "Pasa"),
+      stop("Emp. Ruta Prov. 65", "18:07", 37, "Pasa"),
+      stop("Ruca Malen", "18:20", 50, "Pasa"),
+      stop("Lago Espejo", "18:40", 70, "Pasa"),
+      stop("Villa La Angostura", "19:00", 90, "Llega")
+    ]
+  },
+  {
+    id: "route-sma-hua-hum-2026",
+    slug: "sma-hua-hum-verano-2026",
+    from: "San Martin de los Andes",
+    to: "Hua Hum",
+    via: "Lago Lacar - Yuco",
+    duration: "1h 30m",
+    price: 0,
+    frequency: "Todos los dias · 10:30",
+    category: "Argentina",
+    departureTime: "10:30",
+    arrivalTime: "12:00",
+    serviceStart: "2026-01-02",
+    serviceEnd: "2026-03-01",
+    description:
+      "Servicio diario de verano desde San Martin de los Andes hacia Hua Hum con parada en Yuco. Tarifa a confirmar.",
+    stops: [
+      stop("S. M. Andes", "10:30", 0, "Sale"),
+      stop("Yuco", "11:30", 60, "Pasa"),
+      stop("Hua Hum", "12:00", 90, "Llega")
+    ]
+  },
+  {
+    id: "route-hua-hum-sma-2026",
+    slug: "hua-hum-sma-verano-2026",
+    from: "Hua Hum",
+    to: "San Martin de los Andes",
+    via: "Yuco - Lago Lacar",
+    duration: "1h 30m",
+    price: 0,
+    frequency: "Todos los dias · 17:00",
+    category: "Argentina",
+    departureTime: "17:00",
+    arrivalTime: "18:30",
+    serviceStart: "2026-01-02",
+    serviceEnd: "2026-03-01",
+    description:
+      "Regreso diario de verano desde Hua Hum a San Martin de los Andes con parada en Yuco. Tarifa a confirmar.",
+    stops: [
+      stop("Hua Hum", "17:00", 0, "Sale"),
+      stop("Yuco", "17:30", 30, "Pasa"),
+      stop("S. M. Andes", "18:30", 90, "Llega")
     ]
   }
 ];
 
-export const schedules = [
-  { route: "SMA → Bariloche", date: "Mar 12 nov", time: "08:30", seats: 14, status: "Abierta" },
-  { route: "SMA → Bariloche", date: "Mar 12 nov", time: "14:00", seats: 9, status: "Abierta" },
-  { route: "SMA → Pucon", date: "Mie 13 nov", time: "07:00", seats: 18, status: "Documentacion" },
-  { route: "SMA → Villa La Angostura", date: "Sab 14 nov", time: "09:00", seats: 24, status: "Abierta" },
-  { route: "SMA → Villa La Angostura", date: "Sab 14 nov", time: "16:30", seats: 24, status: "Abierta" },
-  { route: "Bariloche → SMA", date: "Dom 15 nov", time: "09:00", seats: 24, status: "Abierta" },
-  { route: "Bariloche → SMA", date: "Dom 15 nov", time: "15:30", seats: 24, status: "Abierta" },
-  { route: "Bariloche → Puerto Varas", date: "Mar 17 nov", time: "06:30", seats: 24, status: "Documentacion" }
-];
+export const schedules = routes.map((route) => ({
+  route: `${route.from} -> ${route.to}`,
+  date: "02 ene - 01 mar 2026",
+  time: route.departureTime,
+  seats: 24,
+  status: "Abierta"
+}));
 
-export const reservations = [
-  { code: "ARC-2511-A6X", passenger: "Camila Vidal", route: "SMA → Bariloche", seat: "16", status: "Confirmada" },
-  { code: "ARC-2511-B9K", passenger: "Martin Keller", route: "SMA → Pucon", seat: "08", status: "Docs pendientes" }
-];
+export const reservations: Array<{
+  code: string;
+  passenger: string;
+  route: string;
+  seat: string;
+  status: string;
+}> = [];
 
 export function formatPrice(price: number) {
+  if (price <= 0) {
+    return "Consultar";
+  }
+
   return new Intl.NumberFormat("es-AR", {
     style: "currency",
     currency: "ARS",

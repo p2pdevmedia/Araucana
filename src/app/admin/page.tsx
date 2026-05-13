@@ -36,7 +36,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           <strong>{schedules.length}</strong>
         </div>
         <div className="admin-card">
-          <span className="muted">Reservas ejemplo</span>
+          <span className="muted">Reservas activas</span>
           <strong>{reservations.length}</strong>
         </div>
       </section>
