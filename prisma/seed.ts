@@ -181,6 +181,36 @@ async function main() {
       routeKey: "r4",
       departureAt: new Date("2026-11-13T07:00:00-03:00"),
       status: "DOCUMENTATION"
+    },
+    {
+      id: "sched-sma-vla-20261114-0900",
+      routeKey: "r2",
+      departureAt: new Date("2026-11-14T09:00:00-03:00"),
+      status: "OPEN"
+    },
+    {
+      id: "sched-sma-vla-20261114-1630",
+      routeKey: "r2",
+      departureAt: new Date("2026-11-14T16:30:00-03:00"),
+      status: "OPEN"
+    },
+    {
+      id: "sched-bariloche-sma-20261115-0900",
+      routeKey: "r3",
+      departureAt: new Date("2026-11-15T09:00:00-03:00"),
+      status: "OPEN"
+    },
+    {
+      id: "sched-bariloche-sma-20261115-1530",
+      routeKey: "r3",
+      departureAt: new Date("2026-11-15T15:30:00-03:00"),
+      status: "OPEN"
+    },
+    {
+      id: "sched-bariloche-puerto-varas-20261117-0630",
+      routeKey: "r5",
+      departureAt: new Date("2026-11-17T06:30:00-03:00"),
+      status: "DOCUMENTATION"
     }
   ];
 

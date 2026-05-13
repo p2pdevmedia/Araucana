@@ -29,7 +29,7 @@ export function SiteFooter() {
             </Link>
           </div>
         </div>
-        <p className="muted">Leg. 14241 · Disp. 924/05 · ES · EN · DE</p>
+        <p className="muted">Leg. 14241 · Disp. 924/05</p>
       </div>
     </footer>
   );

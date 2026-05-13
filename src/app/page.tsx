@@ -89,7 +89,7 @@ export default async function HomePage() {
               descubrir lagos, bosques, frontera y montana.
             </p>
           </div>
-          <div className="stats-grid">
+          <div className="stats-grid home-stats-grid">
             <div className="stat-card">
               <strong>16</strong>
               <span>anos de operacion</span>
@@ -101,10 +101,6 @@ export default async function HomePage() {
             <div className="stat-card">
               <strong>3</strong>
               <span>pasos fronterizos</span>
-            </div>
-            <div className="stat-card">
-              <strong>ES · EN · DE</strong>
-              <span>atencion y guias</span>
             </div>
           </div>
         </section>

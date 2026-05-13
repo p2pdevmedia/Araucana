@@ -314,6 +314,10 @@ svg {
   grid-template-columns: repeat(4, 1fr);
 }
 
+.home-stats-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
 .stat-card,
 .route-card,
 .plain-card,

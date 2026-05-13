@@ -117,7 +117,12 @@ export const routes: TravelRoute[] = [
 export const schedules = [
   { route: "SMA → Bariloche", date: "Mar 12 nov", time: "08:30", seats: 14, status: "Abierta" },
   { route: "SMA → Bariloche", date: "Mar 12 nov", time: "14:00", seats: 9, status: "Abierta" },
-  { route: "SMA → Pucon", date: "Mie 13 nov", time: "07:00", seats: 18, status: "Documentacion" }
+  { route: "SMA → Pucon", date: "Mie 13 nov", time: "07:00", seats: 18, status: "Documentacion" },
+  { route: "SMA → Villa La Angostura", date: "Sab 14 nov", time: "09:00", seats: 24, status: "Abierta" },
+  { route: "SMA → Villa La Angostura", date: "Sab 14 nov", time: "16:30", seats: 24, status: "Abierta" },
+  { route: "Bariloche → SMA", date: "Dom 15 nov", time: "09:00", seats: 24, status: "Abierta" },
+  { route: "Bariloche → SMA", date: "Dom 15 nov", time: "15:30", seats: 24, status: "Abierta" },
+  { route: "Bariloche → Puerto Varas", date: "Mar 17 nov", time: "06:30", seats: 24, status: "Documentacion" }
 ];
 
 export const reservations = [
