@@ -469,7 +469,7 @@ svg {
     linear-gradient(90deg, rgba(8, 19, 17, 0.82) 0%, rgba(8, 19, 17, 0.58) 48%, rgba(8, 19, 17, 0.32) 100%),
     linear-gradient(180deg, rgba(11, 23, 21, 0.08), rgba(11, 23, 21, 0.62)),
     var(--crossing-image);
-  background-position: center;
+  background-position: center top;
   background-size: cover;
 }
 

@@ -74,7 +74,7 @@ export default async function RoutesPage() {
         <section className="section" id="salidas">
           <div className="route-grid">
             {routes.map((route) => (
-              <Link className={`route-card ${route.featured ? "featured" : ""}`} href={`/rutas/${route.slug}`} key={route.id}>
+              <Link className={`route-card ${route.featured ? "featured" : ""}`} href={`/rutas/${route.slug}`} key={route.id} prefetch={true}>
                 <div className="route-media" />
                 <div className="route-body">
                   <span className="route-kicker">{route.category}</span>

@@ -32,7 +32,7 @@ export default async function ChileCrossingPage() {
                 Centralizamos rutas, documentacion y asistencia de frontera
                 para que el pasajero sepa que necesita antes de viajar.
               </p>
-              <Link className="cream-button" href="/rutas">
+              <Link className="cream-button" href="/rutas" prefetch={true}>
                 Ver salidas a Chile
               </Link>
             </div>
@@ -59,7 +59,7 @@ export default async function ChileCrossingPage() {
         <section className="page-shell section">
           <div className="route-grid">
             {chileRoutes.map((route) => (
-              <Link className="route-card" href={`/rutas/${route.slug}`} key={route.id}>
+              <Link className="route-card" href={`/rutas/${route.slug}`} key={route.id} prefetch={true}>
                 <div className="route-media" />
                 <div className="route-body">
                   <span className="route-kicker">Chile</span>

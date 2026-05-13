@@ -53,10 +53,10 @@ export default async function HomePage() {
               asistencia documental.
             </p>
             <div className="hero-actions">
-              <Link className="cream-button" href="/rutas">
+              <Link className="cream-button" href="/rutas" prefetch={true}>
                 Ver rutas y horarios
               </Link>
-              <Link className="ghost-button" href="/rutas">
+              <Link className="ghost-button" href="/rutas" prefetch={true}>
                 Reservar online
               </Link>
             </div>
@@ -120,14 +120,14 @@ export default async function HomePage() {
               <p className="eyebrow">Rutas regulares</p>
               <h2 className="section-title">Una cordillera de posibilidades.</h2>
             </div>
-            <Link className="button" href="/rutas">
+            <Link className="button" href="/rutas" prefetch={true}>
               Ver todas
             </Link>
           </div>
 
           {featured ? (
             <div className="route-grid">
-              <Link className="route-card featured" href={`/rutas/${featured.slug}`}>
+              <Link className="route-card featured" href={`/rutas/${featured.slug}`} prefetch={true}>
                 <div className="route-media" />
                 <div className="route-body">
                   <span className="route-kicker">Ruta signature</span>
@@ -143,7 +143,7 @@ export default async function HomePage() {
               </Link>
 
               {secondaryRoutes.map((route) => (
-                <Link className="route-card" href={`/rutas/${route.slug}`} key={route.id}>
+                <Link className="route-card" href={`/rutas/${route.slug}`} key={route.id} prefetch={true}>
                   <div className="route-media" />
                   <div className="route-body">
                     <span className="route-kicker">{route.category}</span>
@@ -175,10 +175,10 @@ export default async function HomePage() {
                 Bariloche por el corredor mas buscado de la Patagonia.
               </p>
               <div className="inline-actions">
-                <Link className="button" href="/rutas/sma-bariloche-7-lagos">
+                <Link className="button" href="/rutas/sma-bariloche-7-lagos" prefetch={true}>
                   Ver detalle
                 </Link>
-                <Link className="ghost-button" href="/cruce-a-chile">
+                <Link className="ghost-button" href="/cruce-a-chile" prefetch={true}>
                   Cruce a Chile
                 </Link>
               </div>
@@ -205,7 +205,7 @@ export default async function HomePage() {
                 en aduana y centralizamos la informacion de documentos para que
                 la experiencia sea simple.
               </p>
-              <Link className="cream-button" href="/cruce-a-chile">
+              <Link className="cream-button" href="/cruce-a-chile" prefetch={true}>
                 Ver documentacion
               </Link>
             </div>
@@ -216,7 +216,7 @@ export default async function HomePage() {
                 Elegi ruta, salida y asiento desde la web para completar tu
                 reserva en pocos pasos, con ticket y QR listos para embarcar.
               </p>
-              <Link className="button" href="/rutas">
+              <Link className="button" href="/rutas" prefetch={true}>
                 Reservar online
               </Link>
             </div>

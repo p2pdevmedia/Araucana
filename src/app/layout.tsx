@@ -26,17 +26,17 @@ export default function RootLayout({
               </span>
             </Link>
             <div className="nav-links">
-              <Link href="/rutas">Rutas</Link>
-              <Link href="/rutas/sma-bariloche-7-lagos">7 Lagos</Link>
-              <Link href="/cruce-a-chile">Cruce a Chile</Link>
-              <Link href="/rutas">Reservas</Link>
+              <Link href="/rutas" prefetch={true}>Rutas</Link>
+              <Link href="/rutas/sma-bariloche-7-lagos" prefetch={true}>7 Lagos</Link>
+              <Link href="/cruce-a-chile" prefetch={true}>Cruce a Chile</Link>
+              <Link href="/rutas" prefetch={true}>Reservas</Link>
               <Link href="/soporte">Soporte</Link>
             </div>
             <div className="nav-actions">
               <Link className="ghost-button" href="/login">
                 Admin
               </Link>
-              <Link className="cream-button" href="/rutas">
+              <Link className="cream-button" href="/rutas" prefetch={true}>
                 Reservar
               </Link>
             </div>

@@ -83,10 +83,10 @@ export default async function RouteDetailPage({ params }: RouteDetailPageProps) 
               </h1>
               <p className="lead">{route.description}</p>
               <div className="hero-actions">
-                <Link className="cream-button" href={`/reservar/${route.slug}`}>
+                <Link className="cream-button" href={`/reservar/${route.slug}`} prefetch={true}>
                   Reservar asiento
                 </Link>
-                <Link className="ghost-button" href="/rutas">
+                <Link className="ghost-button" href="/rutas" prefetch={true}>
                   Volver a rutas
                 </Link>
               </div>
@@ -108,7 +108,7 @@ export default async function RouteDetailPage({ params }: RouteDetailPageProps) 
                 <span>Desde</span>
                 <strong>{formatPrice(route.priceCents, route.currency)}</strong>
               </div>
-              <Link className="button" href={`/reservar/${route.slug}`}>
+              <Link className="button" href={`/reservar/${route.slug}`} prefetch={true}>
                 Continuar
               </Link>
             </div>
