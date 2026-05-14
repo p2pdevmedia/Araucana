@@ -5,6 +5,7 @@ import { demoRoutes } from "./demo-routes";
 const prisma = new PrismaClient();
 
 const VEHICLE_ID = "veh-araucana-24";
+const CHAPELCO_ROUTE_ID = "route-chapelco";
 
 function parseDurationMin(duration: string) {
   const hoursMatch = duration.match(/(\d+)\s*h/);
@@ -187,6 +188,42 @@ async function seedRoutesAndSchedules() {
       })
     });
   }
+
+  await prisma.travelRoute.upsert({
+    where: { slug: "chapelco" },
+    update: {
+      from: "San Martin de los Andes",
+      to: "Chapelco",
+      via: "Traslado hotel - Cerro Chapelco - hotel",
+      durationMin: 90,
+      priceCents: 2500000,
+      currency: "ARS",
+      category: "Invierno",
+      description: "Traslado diario a Chapelco con busqueda por hotel y regreso incluido.",
+      featured: true,
+      isActive: true,
+      bookingMode: "CHAPELCO",
+      specialType: "CHAPELCO",
+      stops: []
+    },
+    create: {
+      id: CHAPELCO_ROUTE_ID,
+      slug: "chapelco",
+      from: "San Martin de los Andes",
+      to: "Chapelco",
+      via: "Traslado hotel - Cerro Chapelco - hotel",
+      durationMin: 90,
+      priceCents: 2500000,
+      currency: "ARS",
+      category: "Invierno",
+      description: "Traslado diario a Chapelco con busqueda por hotel y regreso incluido.",
+      featured: true,
+      isActive: true,
+      bookingMode: "CHAPELCO",
+      specialType: "CHAPELCO",
+      stops: []
+    }
+  });
 }
 
 async function main() {

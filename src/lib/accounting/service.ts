@@ -78,12 +78,14 @@ export function reservationToIncome(reservation: AccountingReservationRecord) {
     id: reservation.id,
     source: "reservation" as const,
     code: reservation.code,
-    description: `${reservation.code} · ${reservation.schedule.route.from} a ${reservation.schedule.route.to}`,
+    description: `${reservation.code} · ${reservation.schedule?.route.from ?? reservation.route?.from ?? "Ruta"} a ${
+      reservation.schedule?.route.to ?? reservation.route?.to ?? "sin datos"
+    }`,
     amountCents: reservation.totalCents,
     currency: reservation.currency,
     occurredAt: approvedPayment ? approvedPayment.updatedAt : reservation.createdAt,
-    vehicleId: reservation.schedule.vehicle.id,
-    vehicleName: reservation.schedule.vehicle.name
+    vehicleId: reservation.schedule?.vehicle.id ?? "sin-nave",
+    vehicleName: reservation.schedule?.vehicle.name ?? "Sin nave asignada"
   };
 }
 
@@ -215,6 +217,12 @@ export async function getAccountingReport(options: {
           select: {
             status: true,
             updatedAt: true
+          }
+        },
+        route: {
+          select: {
+            from: true,
+            to: true
           }
         },
         schedule: {

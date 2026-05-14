@@ -22,6 +22,8 @@ const route: PublicRouteDto = {
   priceCents: 1890000,
   price: 18900,
   currency: "ARS",
+  bookingMode: "SEATED",
+  specialType: null,
   stops: []
 };
 

@@ -746,6 +746,115 @@ svg {
   grid-column: 1 / -1;
 }
 
+.chapelco-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.slot-button {
+  min-height: 64px;
+  display: grid;
+  gap: 4px;
+  align-content: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: #fffaf1;
+  color: var(--ink);
+  text-align: center;
+}
+
+.slot-button strong {
+  color: var(--primary-deep);
+  font-size: 18px;
+}
+
+.slot-button span {
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.slot-button.selected {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+.slot-button.selected strong,
+.slot-button.selected span {
+  color: var(--surface);
+}
+
+.pickup-fields,
+.coordinate-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.coordinate-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.chapelco-map {
+  position: relative;
+  min-height: 260px;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(31, 91, 79, 0.14) 1px, transparent 1px),
+    linear-gradient(rgba(31, 91, 79, 0.14) 1px, transparent 1px),
+    radial-gradient(circle at 42% 48%, rgba(209, 92, 62, 0.18), transparent 18%),
+    #edf6f0;
+  background-size: 38px 38px, 38px 38px, auto, auto;
+}
+
+.chapelco-admin-map {
+  position: relative;
+  min-height: 180px;
+  margin: 14px 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(31, 91, 79, 0.12) 1px, transparent 1px),
+    linear-gradient(rgba(31, 91, 79, 0.12) 1px, transparent 1px),
+    #edf6f0;
+  background-size: 34px 34px;
+}
+
+.manifest-block {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.chapelco-map::before {
+  content: "Click en el mapa para ubicar el hotel";
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: rgba(255, 250, 241, 0.92);
+  color: var(--primary-deep);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.map-marker {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+  border: 3px solid #fffaf1;
+  border-radius: 50%;
+  background: #d15c3e;
+  box-shadow: 0 8px 18px rgba(26, 37, 34, 0.22);
+}
+
 .seat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(54px, 1fr));
@@ -1653,7 +1762,9 @@ svg {
   }
 
   .checkout-fields,
-  .checkout-stats {
+  .checkout-stats,
+  .chapelco-slot-grid,
+  .coordinate-grid {
     grid-template-columns: 1fr;
   }
 

@@ -26,6 +26,8 @@ type RouteRecord = {
   durationMin: number;
   priceCents: number;
   currency: string;
+  bookingMode: string;
+  specialType?: string | null;
   stops?: unknown;
   _count?: {
     schedules: number;
@@ -93,18 +95,31 @@ type TicketRecord = {
 type ReservationRecord = {
   id: string;
   code: string;
-  scheduleId: string;
+  scheduleId: string | null;
+  routeId?: string | null;
   passengerId: string;
-  seatId: string;
-  seatNumber: string;
+  seatId: string | null;
+  seatNumber: string | null;
+  passengerCount: number;
+  bookingMode: string;
   status: string;
   totalCents: number;
   currency: string;
   createdAt: Date;
-  schedule: ScheduleRecord;
+  schedule?: ScheduleRecord | null;
+  route?: RouteRecord | null;
   passenger: PassengerRecord;
   payment?: PaymentRecord | null;
   ticket?: TicketRecord | null;
+  chapelcoDetails?: {
+    serviceDate: Date;
+    ascentSlot: string;
+    pickupName: string;
+    pickupAddress: string;
+    pickupLatitude: number;
+    pickupLongitude: number;
+    pickupNotes?: string | null;
+  } | null;
 };
 
 type BookingTransactionClient = {
@@ -226,6 +241,8 @@ function mapRoute(route: RouteRecord): PublicRouteDto {
     priceCents: route.priceCents,
     price: centsToPrice(route.priceCents),
     currency: route.currency,
+    bookingMode: route.bookingMode,
+    specialType: route.specialType,
     stops: route.stops
   };
 }
@@ -249,11 +266,21 @@ function mapSchedule(schedule: ScheduleRecord): ScheduleOptionDto {
 }
 
 function mapReservation(reservation: ReservationRecord): ReservationDetailDto {
-  const route = mapRoute(reservation.schedule.route);
+  const routeRecord = reservation.schedule?.route ?? reservation.route;
+
+  if (!routeRecord) {
+    throw new BookingError("ROUTE_NOT_FOUND", "Reservation route not found");
+  }
+
+  const route = mapRoute(routeRecord);
+  const departureAt = reservation.schedule?.departureAt ?? reservation.chapelcoDetails?.serviceDate ?? reservation.createdAt;
+  const arrivalAt = reservation.schedule?.arrivalAt ?? departureAt;
 
   return {
     id: reservation.id,
     code: reservation.code,
+    bookingMode: reservation.bookingMode,
+    passengerCount: reservation.passengerCount,
     status: reservation.status,
     seatNumber: reservation.seatNumber,
     totalCents: reservation.totalCents,
@@ -262,14 +289,14 @@ function mapReservation(reservation: ReservationRecord): ReservationDetailDto {
     createdAt: reservation.createdAt,
     route,
     schedule: {
-      id: reservation.schedule.id,
+      id: reservation.schedule?.id ?? "",
       route,
-      departureAt: reservation.schedule.departureAt,
-      arrivalAt: reservation.schedule.arrivalAt,
-      status: reservation.schedule.status,
-      priceCents: reservation.schedule.route.priceCents,
-      price: centsToPrice(reservation.schedule.route.priceCents),
-      currency: reservation.schedule.route.currency
+      departureAt,
+      arrivalAt,
+      status: reservation.schedule?.status ?? reservation.status,
+      priceCents: routeRecord.priceCents,
+      price: centsToPrice(routeRecord.priceCents),
+      currency: routeRecord.currency
     },
     passenger: {
       firstName: reservation.passenger.firstName,
@@ -300,6 +327,17 @@ function mapReservation(reservation: ReservationRecord): ReservationDetailDto {
       ? {
           code: reservation.ticket.code,
           qrPayload: reservation.ticket.qrPayload
+        }
+      : null,
+    chapelcoDetails: reservation.chapelcoDetails
+      ? {
+          serviceDate: reservation.chapelcoDetails.serviceDate,
+          ascentSlot: reservation.chapelcoDetails.ascentSlot,
+          pickupName: reservation.chapelcoDetails.pickupName,
+          pickupAddress: reservation.chapelcoDetails.pickupAddress,
+          pickupLatitude: reservation.chapelcoDetails.pickupLatitude,
+          pickupLongitude: reservation.chapelcoDetails.pickupLongitude,
+          pickupNotes: reservation.chapelcoDetails.pickupNotes
         }
       : null
   };
@@ -332,9 +370,11 @@ function reservationInclude() {
         }
       }
     },
+    route: true,
     passenger: true,
     payment: true,
-    ticket: true
+    ticket: true,
+    chapelcoDetails: true
   };
 }
 
@@ -470,9 +510,12 @@ export function createBookingRepository(client: BookingClient, deps: BookingRepo
               data: {
                 code,
                 scheduleId: schedule.id,
+                routeId: schedule.routeId,
                 passengerId: passenger.id,
                 seatId: seat.id,
                 seatNumber: seat.number,
+                passengerCount: 1,
+                bookingMode: "SEATED",
                 status: "PENDING_PAYMENT",
                 totalCents: schedule.route.priceCents,
                 currency: schedule.route.currency
@@ -716,9 +759,17 @@ export function createBookingRepository(client: BookingClient, deps: BookingRepo
         code: reservation.code,
         passenger: `${reservation.passenger.firstName} ${reservation.passenger.lastName}`,
         passengerPhone: reservation.passenger.phone,
-        route: `${reservation.schedule.route.from} -> ${reservation.schedule.route.to}`,
-        departureAt: reservation.schedule.departureAt,
+        route: reservation.schedule
+          ? `${reservation.schedule.route.from} -> ${reservation.schedule.route.to}`
+          : reservation.route
+            ? `${reservation.route.from} -> ${reservation.route.to}`
+            : "Ruta sin datos",
+        departureAt: reservation.schedule?.departureAt ?? reservation.chapelcoDetails?.serviceDate ?? reservation.createdAt,
         seatNumber: reservation.seatNumber,
+        bookingMode: reservation.bookingMode,
+        passengerCount: reservation.passengerCount,
+        chapelcoPickupName: reservation.chapelcoDetails?.pickupName ?? null,
+        chapelcoAscentSlot: reservation.chapelcoDetails?.ascentSlot ?? null,
         status: reservation.status,
         paymentStatus: reservation.payment?.status ?? null,
         hasReceipt: Boolean(reservation.payment?.receiptBlobPathname),

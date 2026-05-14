@@ -41,6 +41,7 @@ export default async function AdminPassengerPage({ params }: AdminPassengerPageP
   }
 
   const passengerName = `${reservation.passenger.firstName} ${reservation.passenger.lastName}`;
+  const isChapelco = reservation.bookingMode === "CHAPELCO";
 
   return (
     <AdminShell title={passengerName} role={user.role}>
@@ -66,13 +67,25 @@ export default async function AdminPassengerPage({ params }: AdminPassengerPageP
               </strong>
             </div>
             <div>
-              <span>Salida</span>
-              <strong>{formatDateTime(reservation.schedule.departureAt)}</strong>
+              <span>{isChapelco ? "Fecha" : "Salida"}</span>
+              <strong>
+                {isChapelco && reservation.chapelcoDetails
+                  ? `${formatDateTime(reservation.chapelcoDetails.serviceDate)} · ${reservation.chapelcoDetails.ascentSlot}`
+                  : formatDateTime(reservation.schedule.departureAt)}
+              </strong>
             </div>
             <div>
-              <span>Asiento</span>
-              <strong>{reservation.seatNumber}</strong>
+              <span>{isChapelco ? "Cupo" : "Asiento"}</span>
+              <strong>{isChapelco ? `${reservation.passengerCount} personas` : reservation.seatNumber}</strong>
             </div>
+            {isChapelco && reservation.chapelcoDetails ? (
+              <div>
+                <span>Busqueda</span>
+                <strong>
+                  {reservation.chapelcoDetails.pickupName} · {reservation.chapelcoDetails.pickupAddress}
+                </strong>
+              </div>
+            ) : null}
             <div>
               <span>Estado</span>
               <strong>{formatStatus(reservation.status)}</strong>

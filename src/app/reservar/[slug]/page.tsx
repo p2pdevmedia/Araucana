@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
 import { getPublicRouteBySlug, getSeatMap, listSchedulesForRoute } from "@/lib/booking/repository";
+import { getChapelcoAvailability } from "@/lib/chapelco/repository";
 import { CheckoutForm } from "./checkout-form";
+import { ChapelcoCheckoutForm } from "./chapelco-checkout-form";
 
 export const revalidate = 300;
 
@@ -38,12 +40,65 @@ function isBookableSchedule(status: string) {
   return status === "OPEN" || status === "DOCUMENTATION";
 }
 
+function todayInputValue() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Argentina/Salta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date());
+}
+
 export default async function ReservationPage({ params }: ReservationPageProps) {
   const { slug } = await params;
   const route = await getPublicRouteBySlug(slug);
 
   if (!route) {
     notFound();
+  }
+
+  if (route.bookingMode === "CHAPELCO") {
+    const availability = await getChapelcoAvailability(route.id, todayInputValue());
+
+    return (
+      <>
+        <main className="page-shell section">
+          <div className="section-head checkout-head">
+            <div>
+              <p className="eyebrow">Reserva web</p>
+              <h1 className="section-title">
+                {route.from} - {route.to}
+              </h1>
+            </div>
+            <div className="route-summary plain-card">
+              <span>{route.via}</span>
+              <strong>{formatPrice(route.priceCents, route.currency)} por persona</strong>
+            </div>
+          </div>
+
+          <section className="checkout-intro">
+            <div>
+              <p className="eyebrow">{route.category}</p>
+              <h2 className="route-title">Reserva tu traslado</h2>
+              <p className="lead">{route.description}</p>
+            </div>
+            <div className="stats-grid checkout-stats">
+              <div className="stat-card">
+                <strong>08:30 · 09:00 · 10:30 · 12:00</strong>
+                <span>Subidas</span>
+              </div>
+              <div className="stat-card">
+                <strong>17:00</strong>
+                <span>Bajadas desde</span>
+              </div>
+            </div>
+          </section>
+
+          <ChapelcoCheckoutForm route={route} initialAvailability={availability} />
+        </main>
+        <SiteFooter />
+      </>
+    );
   }
 
   const schedules = await listSchedulesForRoute(route.id);

@@ -22,6 +22,7 @@ model User {
   driverLocation DriverVehicleLocation?
   driverLocationSamples DriverLocationSample[]
   accountingEntries AccountingEntry[]
+  chapelcoDuties ChapelcoVehicleDuty[]
 }
 
 model Session {
@@ -46,8 +47,12 @@ model TravelRoute {
   description String
   featured    Boolean    @default(false)
   isActive    Boolean    @default(true)
+  bookingMode String     @default("SEATED")
+  specialType String?
   stops       Json
   schedules   Schedule[]
+  directReservations Reservation[]
+  chapelcoOperationDays ChapelcoOperationDay[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
@@ -66,6 +71,7 @@ model Vehicle {
   driverLocations DriverVehicleLocation[]
   driverLocationSamples DriverLocationSample[]
   accountingEntries AccountingEntry[]
+  chapelcoDuties ChapelcoVehicleDuty[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }
@@ -199,24 +205,32 @@ model Passenger {
 model Reservation {
   id          String     @id @default(cuid())
   code        String     @unique
-  scheduleId  String
-  schedule    Schedule   @relation(fields: [scheduleId], references: [id])
+  scheduleId  String?
+  schedule    Schedule?  @relation(fields: [scheduleId], references: [id])
+  routeId     String?
+  route       TravelRoute? @relation(fields: [routeId], references: [id], onDelete: SetNull)
   passengerId String
   passenger   Passenger  @relation(fields: [passengerId], references: [id])
-  seatId      String
-  seat        Seat       @relation(fields: [seatId], references: [id])
-  seatNumber  String
+  seatId      String?
+  seat        Seat?      @relation(fields: [seatId], references: [id])
+  seatNumber  String?
+  passengerCount Int     @default(1)
+  bookingMode String     @default("SEATED")
   status      String     @default("PENDING_PAYMENT")
   totalCents  Int
   currency    String     @default("ARS")
   payment     Payment?
   ticket      Ticket?
+  chapelcoDetails ChapelcoReservationDetails?
+  chapelcoStops ChapelcoManifestStop[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
   @@unique([scheduleId, seatNumber])
   @@unique([scheduleId, seatId])
   @@index([code])
+  @@index([routeId])
+  @@index([bookingMode])
 }
 
 model Payment {
@@ -245,4 +259,96 @@ model Ticket {
   code          String      @unique
   qrPayload     String
   createdAt     DateTime    @default(now())
+}
+
+model ChapelcoReservationDetails {
+  id              String      @id @default(cuid())
+  reservationId   String      @unique
+  reservation     Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  serviceDate     DateTime
+  ascentSlot      String
+  pickupName      String
+  pickupAddress   String
+  pickupLatitude  Float
+  pickupLongitude Float
+  pickupNotes     String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([serviceDate, ascentSlot])
+}
+
+model ChapelcoOperationDay {
+  id            String                 @id @default(cuid())
+  routeId       String
+  route         TravelRoute            @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  serviceDate   DateTime
+  status        String                 @default("OPEN")
+  vehicleDuties ChapelcoVehicleDuty[]
+  runs          ChapelcoRun[]
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  @@unique([routeId, serviceDate])
+  @@index([serviceDate])
+}
+
+model ChapelcoVehicleDuty {
+  id             String               @id @default(cuid())
+  operationDayId String
+  operationDay   ChapelcoOperationDay @relation(fields: [operationDayId], references: [id], onDelete: Cascade)
+  vehicleId      String
+  vehicle        Vehicle              @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driverId       String?
+  driver         User?                @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  capacity       Int
+  status         String               @default("ACTIVE")
+  notes          String?
+  runs           ChapelcoRun[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@unique([operationDayId, vehicleId])
+  @@index([driverId])
+}
+
+model ChapelcoRun {
+  id             String                 @id @default(cuid())
+  operationDayId String
+  operationDay   ChapelcoOperationDay   @relation(fields: [operationDayId], references: [id], onDelete: Cascade)
+  vehicleDutyId  String
+  vehicleDuty    ChapelcoVehicleDuty    @relation(fields: [vehicleDutyId], references: [id], onDelete: Cascade)
+  direction      String
+  ascentSlot     String?
+  sequence       Int                    @default(1)
+  status         String                 @default("PLANNED")
+  stops          ChapelcoManifestStop[]
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@index([operationDayId, direction, ascentSlot])
+  @@index([vehicleDutyId])
+}
+
+model ChapelcoManifestStop {
+  id              String      @id @default(cuid())
+  runId           String
+  run             ChapelcoRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  reservationId   String
+  reservation     Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  stopOrder       Int
+  passengerCount  Int
+  pickupName      String
+  pickupAddress   String
+  pickupLatitude  Float
+  pickupLongitude Float
+  status          String      @default("PENDING")
+  driverNotes     String?
+  checkedAt       DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([runId, reservationId])
+  @@index([reservationId])
+  @@index([runId, stopOrder])
 }

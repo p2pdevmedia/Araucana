@@ -1,0 +1,51 @@
+INSERT INTO "TravelRoute" (
+  "id",
+  "slug",
+  "from",
+  "to",
+  "via",
+  "durationMin",
+  "priceCents",
+  "currency",
+  "category",
+  "description",
+  "featured",
+  "isActive",
+  "bookingMode",
+  "specialType",
+  "stops",
+  "createdAt",
+  "updatedAt"
+)
+VALUES (
+  'route-chapelco',
+  'chapelco',
+  'San Martin de los Andes',
+  'Chapelco',
+  'Traslado hotel - Cerro Chapelco - hotel',
+  90,
+  2500000,
+  'ARS',
+  'Invierno',
+  'Traslado diario a Chapelco con busqueda por hotel y regreso incluido.',
+  true,
+  true,
+  'CHAPELCO',
+  'CHAPELCO',
+  '[]',
+  CURRENT_TIMESTAMP,
+  CURRENT_TIMESTAMP
+)
+ON CONFLICT ("slug") DO UPDATE
+SET
+  "from" = EXCLUDED."from",
+  "to" = EXCLUDED."to",
+  "via" = EXCLUDED."via",
+  "durationMin" = EXCLUDED."durationMin",
+  "category" = EXCLUDED."category",
+  "description" = EXCLUDED."description",
+  "featured" = EXCLUDED."featured",
+  "isActive" = EXCLUDED."isActive",
+  "bookingMode" = EXCLUDED."bookingMode",
+  "specialType" = EXCLUDED."specialType",
+  "updatedAt" = CURRENT_TIMESTAMP;

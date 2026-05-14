@@ -17,6 +17,8 @@ export type PublicRouteDto = {
   priceCents: number;
   price: number;
   currency: string;
+  bookingMode: string;
+  specialType?: string | null;
   stops?: unknown;
 };
 
@@ -85,8 +87,10 @@ export type TicketDto = {
 export type ReservationDetailDto = {
   id: string;
   code: string;
+  bookingMode: string;
+  passengerCount: number;
   status: ReservationStatus | string;
-  seatNumber: string;
+  seatNumber: string | null;
   totalCents: number;
   total: number;
   currency: string;
@@ -96,6 +100,15 @@ export type ReservationDetailDto = {
   passenger: PassengerDto;
   payment: PaymentDto | null;
   ticket: TicketDto | null;
+  chapelcoDetails?: {
+    serviceDate: Date;
+    ascentSlot: string;
+    pickupName: string;
+    pickupAddress: string;
+    pickupLatitude: number;
+    pickupLongitude: number;
+    pickupNotes?: string | null;
+  } | null;
 };
 
 export type AdminScheduleRowDto = {
@@ -117,7 +130,11 @@ export type AdminReservationRowDto = {
   passengerPhone: string;
   route: string;
   departureAt: Date;
-  seatNumber: string;
+  seatNumber: string | null;
+  bookingMode: string;
+  passengerCount: number;
+  chapelcoPickupName?: string | null;
+  chapelcoAscentSlot?: string | null;
   status: string;
   paymentStatus: string | null;
   hasReceipt: boolean;

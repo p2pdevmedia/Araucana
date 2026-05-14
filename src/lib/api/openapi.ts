@@ -154,6 +154,44 @@ export function getOpenApiSpec(baseUrl = "https://araucana.app"): OpenApiSpec {
           responses: jsonResponse("#/components/schemas/ReservationEnvelope")
         }
       },
+      "/api/v1/chapelco/availability": {
+        get: {
+          summary: "Consulta cupos Chapelco por fecha y horario.",
+          parameters: [
+            { name: "routeId", in: "query", required: true, schema: { type: "string" } },
+            { name: "date", in: "query", required: true, schema: { type: "string", format: "date" } }
+          ],
+          responses: jsonResponse("#/components/schemas/ChapelcoAvailabilityEnvelope")
+        }
+      },
+      "/api/v1/driver/chapelco": {
+        get: {
+          summary: "Devuelve manifiestos Chapelco del chofer autenticado.",
+          security: bearerSecurity,
+          parameters: [{ name: "date", in: "query", required: false, schema: { type: "string", format: "date" } }],
+          responses: jsonResponse("#/components/schemas/ChapelcoDriverManifestEnvelope")
+        },
+        patch: {
+          summary: "Actualiza estado de una parada Chapelco del chofer autenticado.",
+          security: bearerSecurity,
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["stopId", "status"],
+                  properties: {
+                    stopId: { type: "string" },
+                    status: { type: "string", enum: ["PENDING", "BOARDED", "NO_SHOW", "TRANSPORTED"] }
+                  }
+                }
+              }
+            }
+          },
+          responses: jsonResponse("#/components/schemas/ChapelcoStopEnvelope")
+        }
+      },
       "/api/v1/admin/routes": {
         get: adminPath("Lista rutas para administracion.", "#/components/schemas/RoutesEnvelope"),
         post: {
@@ -277,6 +315,27 @@ export function getOpenApiSpec(baseUrl = "https://araucana.app"): OpenApiSpec {
         VehiclesEnvelope: { type: "object", properties: { vehicles: { type: "array", items: { type: "object" } } } },
         ReservationEnvelope: { type: "object", properties: { reservation: { type: "object" } } },
         AdminReservationsEnvelope: { type: "object", properties: { reservations: { type: "array", items: { type: "object" } } } },
+        ChapelcoAvailabilityEnvelope: {
+          type: "object",
+          properties: {
+            routeId: { type: "string" },
+            serviceDate: { type: "string", format: "date" },
+            slots: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  slot: { type: "string", enum: ["08:30", "09:00", "10:30", "12:00"] },
+                  totalCapacity: { type: "integer" },
+                  reservedPeople: { type: "integer" },
+                  availablePeople: { type: "integer" }
+                }
+              }
+            }
+          }
+        },
+        ChapelcoDriverManifestEnvelope: { type: "object", properties: { date: { type: "string" }, runs: { type: "array", items: { type: "object" } } } },
+        ChapelcoStopEnvelope: { type: "object", properties: { stop: { type: "object" } } },
         DeleteEnvelope: {
           type: "object",
           properties: {

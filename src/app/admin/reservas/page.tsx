@@ -90,7 +90,11 @@ export default async function AdminReservationsPage({ searchParams }: AdminReser
                   )}
                 </td>
                 <td>{reservation.route}</td>
-                <td>{reservation.seatNumber}</td>
+                <td>
+                  {reservation.bookingMode === "CHAPELCO"
+                    ? `${reservation.passengerCount} personas${reservation.chapelcoAscentSlot ? ` · ${reservation.chapelcoAscentSlot}` : ""}`
+                    : reservation.seatNumber}
+                </td>
                 <td>{formatReservationStatus(reservation.status)}</td>
                 <td>{formatPaymentStatus(reservation.paymentStatus)}</td>
                 <td>

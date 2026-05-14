@@ -48,6 +48,10 @@ export type AccountingReservationRecord = {
     status: string;
     updatedAt: Date;
   } | null;
+  route?: {
+    from: string;
+    to: string;
+  } | null;
   schedule: {
     id: string;
     vehicle: {
@@ -58,7 +62,7 @@ export type AccountingReservationRecord = {
       from: string;
       to: string;
     };
-  };
+  } | null;
 };
 
 export type AccountingExpenseRecord = {

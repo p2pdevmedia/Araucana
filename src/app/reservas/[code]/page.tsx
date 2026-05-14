@@ -73,6 +73,7 @@ export default async function ReservationConfirmationPage({ params }: Reservatio
   }
 
   const passengerName = `${reservation.passenger.firstName} ${reservation.passenger.lastName}`;
+  const isChapelco = reservation.bookingMode === "CHAPELCO";
 
   return (
     <>
@@ -97,16 +98,38 @@ export default async function ReservationConfirmationPage({ params }: Reservatio
             </h2>
             <div className="summary-list">
               <div>
-                <span>Salida</span>
-                <strong>{formatDateTime(reservation.schedule.departureAt)}</strong>
+                <span>{isChapelco ? "Fecha" : "Salida"}</span>
+                <strong>
+                  {isChapelco && reservation.chapelcoDetails
+                    ? `${formatDateTime(reservation.chapelcoDetails.serviceDate)} · ${reservation.chapelcoDetails.ascentSlot}`
+                    : formatDateTime(reservation.schedule.departureAt)}
+                </strong>
               </div>
               <div>
-                <span>Pasajero</span>
+                <span>{isChapelco ? "Responsable" : "Pasajero"}</span>
                 <strong>{passengerName}</strong>
               </div>
               <div>
-                <span>Asiento</span>
-                <strong>Asiento {reservation.seatNumber}</strong>
+                <span>{isChapelco ? "Cupo" : "Asiento"}</span>
+                <strong>{isChapelco ? `${reservation.passengerCount} personas` : `Asiento ${reservation.seatNumber}`}</strong>
+              </div>
+              {isChapelco && reservation.chapelcoDetails ? (
+                <div>
+                  <span>Busqueda</span>
+                  <strong>
+                    {reservation.chapelcoDetails.pickupName} · {reservation.chapelcoDetails.pickupAddress}
+                  </strong>
+                </div>
+              ) : null}
+              {isChapelco && reservation.chapelcoDetails?.pickupNotes ? (
+                <div>
+                  <span>Observaciones</span>
+                  <strong>{reservation.chapelcoDetails.pickupNotes}</strong>
+                </div>
+              ) : null}
+              <div>
+                <span>Regreso</span>
+                <strong>{isChapelco ? "Incluido desde las 17:00" : "Segun ruta"}</strong>
               </div>
               <div>
                 <span>Estado de pago</span>
