@@ -224,8 +224,10 @@ svg {
     linear-gradient(90deg, rgba(8, 19, 17, 0.76) 0%, rgba(8, 19, 17, 0.42) 52%, rgba(8, 19, 17, 0.2) 100%),
     linear-gradient(180deg, rgba(11, 23, 21, 0.2), rgba(11, 23, 21, 0.8)),
     var(--hero-image);
-  background-position: center;
-  background-size: cover;
+  background-color: var(--primary-deep);
+  background-position: center, center, center;
+  background-repeat: no-repeat;
+  background-size: cover, cover, auto 100%;
 }
 
 .hero::before {

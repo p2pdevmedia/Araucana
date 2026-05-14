@@ -27,8 +27,6 @@ export default function RootLayout({
             </Link>
             <div className="nav-links">
               <Link href="/rutas" prefetch={true}>Rutas</Link>
-              <Link href="/rutas/sma-villa-traful-verano-2026" prefetch={true}>Villa Traful</Link>
-              <Link href="/rutas/sma-hua-hum-verano-2026" prefetch={true}>Hua Hum</Link>
               <Link href="/rutas" prefetch={true}>Reservas</Link>
               <Link href="/soporte">Soporte</Link>
             </div>

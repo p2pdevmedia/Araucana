@@ -3,10 +3,17 @@ import type { CSSProperties } from "react";
 import laninWinter from "../../lanin-invierno.jpeg";
 import laninSummer from "../../lanin-verano.jpeg";
 import { SiteFooter } from "@/components/site-footer";
-import { listPublicRoutes } from "@/lib/booking/repository";
-import { lakes } from "@/lib/travel-data";
+import { listPublicRoutes, listSchedulesForRoute } from "@/lib/booking/repository";
+import type { PublicRouteDto, ScheduleOptionDto } from "@/lib/booking/types";
 
 export const revalidate = 300;
+
+type RouteStop = {
+  name: string;
+  km: number;
+  minutes: number;
+  note: string;
+};
 
 function formatDuration(minutes: number) {
   const hours = Math.floor(minutes / 60);
@@ -31,10 +38,91 @@ function formatPrice(cents: number, currency: string) {
   }).format(cents / 100);
 }
 
+function normalizeStops(stops: unknown): RouteStop[] {
+  if (!Array.isArray(stops)) {
+    return [];
+  }
+
+  return stops
+    .map((stop) => {
+      if (!stop || typeof stop !== "object") {
+        return null;
+      }
+
+      const item = stop as { name?: unknown; km?: unknown; minutes?: unknown; note?: unknown };
+      return {
+        name: String(item.name ?? ""),
+        km: Number(item.km ?? 0),
+        minutes: Number(item.minutes ?? 0),
+        note: String(item.note ?? "")
+      };
+    })
+    .filter((stop): stop is RouteStop => Boolean(stop?.name));
+}
+
+function formatDate(date: Date) {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "short",
+    timeZone: "America/Argentina/Salta"
+  }).format(date);
+}
+
+function formatTime(date: Date) {
+  return new Intl.DateTimeFormat("es-AR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "America/Argentina/Salta"
+  }).format(date);
+}
+
+function dateKey(date: Date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "America/Argentina/Salta"
+  }).format(date);
+}
+
+function scheduleSummary(schedules: ScheduleOptionDto[]) {
+  if (!schedules.length) {
+    return {
+      dateRange: "Sin salidas",
+      dayCount: 0,
+      firstTime: "Sin horario"
+    };
+  }
+
+  const sorted = [...schedules].sort((left, right) => left.departureAt.getTime() - right.departureAt.getTime());
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+
+  return {
+    dateRange: `${formatDate(first.departureAt)} - ${formatDate(last.departureAt)}`,
+    dayCount: new Set(sorted.map((schedule) => dateKey(schedule.departureAt))).size,
+    firstTime: formatTime(first.departureAt)
+  };
+}
+
+function destinationEyebrow(routes: PublicRouteDto[]) {
+  const names = Array.from(new Set(routes.flatMap((route) => [route.from, route.to]))).slice(0, 3);
+  return names.length ? names.join(" · ") : "Rutas publicadas";
+}
+
 export default async function HomePage() {
   const routes = await listPublicRoutes();
+  const schedulePairs = await Promise.all(routes.map(async (route) => [route.id, await listSchedulesForRoute(route.id)] as const));
+  const schedulesByRoute = new Map(schedulePairs);
+  const allSchedules = schedulePairs.flatMap(([, schedules]) => schedules);
   const featured = routes.find((route) => route.featured) ?? routes[0];
   const secondaryRoutes = featured ? routes.filter((route) => route.id !== featured.id).slice(0, 4) : [];
+  const featuredSchedules = featured ? (schedulesByRoute.get(featured.id) ?? []) : [];
+  const featuredSummary = scheduleSummary(featuredSchedules);
+  const globalSummary = scheduleSummary(allSchedules);
+  const featuredStops = featured ? normalizeStops(featured.stops) : [];
+  const secondaryCtaRoute = secondaryRoutes[0];
   const heroStyle = {
     "--hero-image": `url(${laninWinter.src})`
   } as CSSProperties;
@@ -47,13 +135,13 @@ export default async function HomePage() {
       <section className="hero" style={heroStyle}>
         <div className="hero-inner">
           <div className="hero-copy">
-            <p className="eyebrow">San Martin de los Andes · Villa Traful · Hua Hum</p>
+            <p className="eyebrow">{destinationEyebrow(routes)}</p>
             <h1 className="display-title">
               El placer de viajar por <em>la cordillera.</em>
             </h1>
             <p className="lead">
-              Transporte turistico regular por la Patagonia andina, salidas de
-              verano hacia Villa Traful, Villa La Angostura y Hua Hum.
+              Transporte turistico regular por la Patagonia andina, con salidas,
+              paradas y disponibilidad publicadas desde la base de datos.
             </p>
             <div className="hero-actions">
               <Link className="cream-button" href="/rutas" prefetch={true}>
@@ -68,19 +156,19 @@ export default async function HomePage() {
           <form className="booking-dock" action="/rutas">
             <label className="dock-field">
               <span>Desde</span>
-              <strong>San Martin de los Andes</strong>
+              <strong>{featured?.from ?? "Origen"}</strong>
             </label>
             <label className="dock-field">
               <span>Hacia</span>
-              <strong>Villa Traful</strong>
+              <strong>{featured?.to ?? "Destino"}</strong>
             </label>
             <label className="dock-field">
-              <span>Fecha</span>
-              <strong>02 ene - 01 mar</strong>
+              <span>Temporada</span>
+              <strong>{featuredSummary.dateRange}</strong>
             </label>
             <label className="dock-field">
-              <span>Pasajeros</span>
-              <strong>2 adultos</strong>
+              <span>Primera salida</span>
+              <strong>{featuredSummary.firstTime}</strong>
             </label>
             <button className="button" type="submit">
               Buscar
@@ -111,8 +199,8 @@ export default async function HomePage() {
               <span>rutas activas</span>
             </div>
             <div className="stat-card">
-              <strong>59</strong>
-              <span>dias de temporada</span>
+              <strong>{globalSummary.dayCount}</strong>
+              <span>dias con salidas</span>
             </div>
           </div>
         </section>
@@ -133,79 +221,86 @@ export default async function HomePage() {
               <Link className="route-card featured" href={`/rutas/${featured.slug}`} prefetch={true}>
                 <div className="route-media" />
                 <div className="route-body">
-                  <span className="route-kicker">Ruta signature</span>
+                  <span className="route-kicker">Ruta destacada</span>
                   <h3 className="route-title">
                     {featured.from} → {featured.to}
                   </h3>
                   <p className="muted">{featured.via}</p>
                   <div className="route-meta">
-                    <span>{formatDuration(featured.durationMin)}</span>
+                    <span>{formatDuration(featured.durationMin)} · {featuredSchedules.length} salidas</span>
                     <span className="price">{formatPrice(featured.priceCents, featured.currency)}</span>
                   </div>
                 </div>
               </Link>
 
-              {secondaryRoutes.map((route) => (
-                <Link className="route-card" href={`/rutas/${route.slug}`} key={route.id} prefetch={true}>
-                  <div className="route-media" />
-                  <div className="route-body">
-                    <span className="route-kicker">{route.category}</span>
-                    <h3 className="route-title">
-                      {route.from} → {route.to}
-                    </h3>
-                    <p className="muted">{route.via}</p>
-                    <div className="route-meta">
-                      <span>{formatDuration(route.durationMin)}</span>
-                      <span className="price">{formatPrice(route.priceCents, route.currency)}</span>
+              {secondaryRoutes.map((route) => {
+                const routeSchedules = schedulesByRoute.get(route.id) ?? [];
+
+                return (
+                  <Link className="route-card" href={`/rutas/${route.slug}`} key={route.id} prefetch={true}>
+                    <div className="route-media" />
+                    <div className="route-body">
+                      <span className="route-kicker">{route.category}</span>
+                      <h3 className="route-title">
+                        {route.from} → {route.to}
+                      </h3>
+                      <p className="muted">{route.via}</p>
+                      <div className="route-meta">
+                        <span>{formatDuration(route.durationMin)} · {routeSchedules.length} salidas</span>
+                        <span className="price">{formatPrice(route.priceCents, route.currency)}</span>
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           ) : (
             <p className="lead">No hay rutas activas publicadas por ahora.</p>
           )}
         </section>
 
-        <section className="page-shell section">
-          <div className="feature-grid">
-            <div>
-              <p className="eyebrow">El itinerario</p>
-              <h2 className="section-title">Camino a Villa Traful.</h2>
-              <p className="lead">
-                San Martin, Catrite, Rio Hermoso, Lago Hermoso, Falkner,
-                Pichi Traful y Villa Traful. Paradas claras para una temporada
-                de verano simple de reservar.
-              </p>
-              <div className="inline-actions">
-                <Link className="button" href="/rutas/sma-villa-traful-verano-2026" prefetch={true}>
-                  Ver detalle
-                </Link>
-                <Link className="ghost-button" href="/rutas/sma-hua-hum-verano-2026" prefetch={true}>
-                  Hua Hum
-                </Link>
+        {featured ? (
+          <section className="page-shell section">
+            <div className="feature-grid">
+              <div>
+                <p className="eyebrow">El itinerario</p>
+                <h2 className="section-title">
+                  {featured.from} a {featured.to}.
+                </h2>
+                <p className="lead">{featured.description}</p>
+                <div className="inline-actions">
+                  <Link className="button" href={`/rutas/${featured.slug}`} prefetch={true}>
+                    Ver detalle
+                  </Link>
+                  {secondaryCtaRoute ? (
+                    <Link className="ghost-button" href={`/rutas/${secondaryCtaRoute.slug}`} prefetch={true}>
+                      Otra ruta
+                    </Link>
+                  ) : null}
+                </div>
+              </div>
+              <div className="lake-grid">
+                {featuredStops.map((stop, index) => (
+                  <div className="lake-card" key={`${stop.name}-${index}`}>
+                    <small>0{index + 1} · +{stop.minutes}m</small>
+                    <strong>{stop.name}</strong>
+                    <p className="muted">{stop.note}</p>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="lake-grid">
-              {lakes.map((lake, index) => (
-                <div className="lake-card" key={lake.name}>
-                  <small>0{index + 1} · km {lake.km}</small>
-                  <strong>{lake.name}</strong>
-                  <p className="muted">{lake.note}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
 
         <section className="dark-band crossing-band section" style={crossingStyle}>
           <div className="page-shell split">
             <div>
-              <p className="eyebrow">Cruce internacional</p>
-              <h2 className="section-title">Verano entre lagos.</h2>
+              <p className="eyebrow">Salidas publicadas</p>
+              <h2 className="section-title">{globalSummary.dateRange}</h2>
               <p className="lead">
-                Villa Traful, Villa La Angostura y Hua Hum reunidos en una
-                grilla diaria para mostrar reservas, asientos y operacion.
+                La grilla de rutas, horarios, disponibilidad y paradas se lee
+                desde la base de datos para mantener la demo alineada con el
+                panel de administracion.
               </p>
               <Link className="cream-button" href="/rutas" prefetch={true}>
                 Ver salidas

@@ -1,11 +1,11 @@
-export type RouteStop = {
+export type DemoRouteStop = {
   name: string;
   km: number;
   minutes: number;
   note: string;
 };
 
-export type TravelRoute = {
+export type DemoRoute = {
   id: string;
   slug: string;
   from: string;
@@ -13,32 +13,20 @@ export type TravelRoute = {
   via: string;
   duration: string;
   price: number;
-  frequency: string;
   category: "Argentina" | "Chile";
   featured?: boolean;
   description: string;
-  stops: RouteStop[];
+  stops: DemoRouteStop[];
   departureTime: string;
-  arrivalTime: string;
   serviceStart: string;
   serviceEnd: string;
 };
 
-function stop(name: string, time: string, minutes: number, note: string): RouteStop {
+function stop(name: string, time: string, minutes: number, note: string): DemoRouteStop {
   return { name, km: 0, minutes, note: `${note} ${time}` };
 }
 
-export const lakes: RouteStop[] = [
-  { name: "Lacar", km: 0, minutes: 0, note: "San Martin de los Andes" },
-  { name: "Catrite", km: 0, minutes: 0, note: "Primera parada hacia Traful" },
-  { name: "Rio Hermoso", km: 0, minutes: 30, note: "Puente y acceso al corredor" },
-  { name: "Lago Hermoso", km: 0, minutes: 37, note: "Acceso Lago Hermoso" },
-  { name: "Falkner", km: 0, minutes: 51, note: "Parada del Camino de los 7 Lagos" },
-  { name: "Pichi Traful", km: 0, minutes: 69, note: "Acceso Pichi Traful" },
-  { name: "Villa Traful", km: 0, minutes: 135, note: "Destino lacustre" }
-];
-
-export const routes: TravelRoute[] = [
+export const demoRoutes: DemoRoute[] = [
   {
     id: "route-sma-villa-traful-2026",
     slug: "sma-villa-traful-verano-2026",
@@ -47,11 +35,9 @@ export const routes: TravelRoute[] = [
     via: "Ruta 40 - 7 Lagos",
     duration: "2h 15m",
     price: 0,
-    frequency: "Todos los dias · 10:00",
     category: "Argentina",
     featured: true,
     departureTime: "10:00",
-    arrivalTime: "12:15",
     serviceStart: "2026-01-02",
     serviceEnd: "2026-03-01",
     description:
@@ -76,10 +62,8 @@ export const routes: TravelRoute[] = [
     via: "Ruta 40 - 7 Lagos",
     duration: "2h 15m",
     price: 0,
-    frequency: "Todos los dias · 17:30",
     category: "Argentina",
     departureTime: "17:30",
-    arrivalTime: "19:45",
     serviceStart: "2026-01-02",
     serviceEnd: "2026-03-01",
     description:
@@ -103,10 +87,8 @@ export const routes: TravelRoute[] = [
     via: "Ruta 40 - Ruta Provincial 65",
     duration: "1h 30m",
     price: 0,
-    frequency: "Todos los dias · 11:00",
     category: "Argentina",
     departureTime: "11:00",
-    arrivalTime: "12:30",
     serviceStart: "2026-01-02",
     serviceEnd: "2026-03-01",
     description:
@@ -128,10 +110,8 @@ export const routes: TravelRoute[] = [
     via: "Ruta Provincial 65 - Ruta 40",
     duration: "1h 30m",
     price: 0,
-    frequency: "Todos los dias · 17:30",
     category: "Argentina",
     departureTime: "17:30",
-    arrivalTime: "19:00",
     serviceStart: "2026-01-02",
     serviceEnd: "2026-03-01",
     description:
@@ -153,10 +133,8 @@ export const routes: TravelRoute[] = [
     via: "Lago Lacar - Yuco",
     duration: "1h 30m",
     price: 0,
-    frequency: "Todos los dias · 10:30",
     category: "Argentina",
     departureTime: "10:30",
-    arrivalTime: "12:00",
     serviceStart: "2026-01-02",
     serviceEnd: "2026-03-01",
     description:
@@ -175,10 +153,8 @@ export const routes: TravelRoute[] = [
     via: "Yuco - Lago Lacar",
     duration: "1h 30m",
     price: 0,
-    frequency: "Todos los dias · 17:00",
     category: "Argentina",
     departureTime: "17:00",
-    arrivalTime: "18:30",
     serviceStart: "2026-01-02",
     serviceEnd: "2026-03-01",
     description:
@@ -190,35 +166,3 @@ export const routes: TravelRoute[] = [
     ]
   }
 ];
-
-export const schedules = routes.map((route) => ({
-  route: `${route.from} -> ${route.to}`,
-  date: "02 ene - 01 mar 2026",
-  time: route.departureTime,
-  seats: 24,
-  status: "Abierta"
-}));
-
-export const reservations: Array<{
-  code: string;
-  passenger: string;
-  route: string;
-  seat: string;
-  status: string;
-}> = [];
-
-export function formatPrice(price: number) {
-  if (price <= 0) {
-    return "Consultar";
-  }
-
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0
-  }).format(price);
-}
-
-export function getRouteBySlug(slug: string) {
-  return routes.find((route) => route.slug === slug);
-}

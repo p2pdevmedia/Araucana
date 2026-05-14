@@ -55,7 +55,7 @@ export function RouteForm({ action, route, submitLabel }: RouteFormProps) {
         <input
           name="to"
           defaultValue={route?.to}
-          placeholder="Villa Traful"
+          placeholder="Destino"
           required
           aria-invalid={Boolean(errors.to)}
           aria-describedby={errors.to ? "to-error" : undefined}
@@ -79,7 +79,7 @@ export function RouteForm({ action, route, submitLabel }: RouteFormProps) {
         <input
           name="slug"
           defaultValue={route?.slug}
-          placeholder="sma-villa-traful-verano-2026"
+          placeholder="origen-destino-temporada"
           aria-invalid={Boolean(errors.slug)}
           aria-describedby={errors.slug ? "slug-error" : undefined}
         />

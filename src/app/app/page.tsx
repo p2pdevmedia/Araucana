@@ -1,7 +1,39 @@
 import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
+import { listPublicRoutes, listSchedulesForRoute } from "@/lib/booking/repository";
 
-export default function AppFlowPage() {
+function formatDateTime(date: Date) {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "America/Argentina/Salta"
+  }).format(date);
+}
+
+function formatPrice(cents: number, currency: string) {
+  if (cents <= 0) {
+    return "Consultar";
+  }
+
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0
+  }).format(cents / 100);
+}
+
+export default async function AppFlowPage() {
+  const routes = await listPublicRoutes();
+  const route = routes.find((item) => item.featured) ?? routes[0];
+  const schedules = route ? await listSchedulesForRoute(route.id) : [];
+  const nextSchedule = schedules[0];
+  const previewRoute = route ? `${route.from} -> ${route.to}` : "Ruta sin publicar";
+  const previewSchedule = nextSchedule ? formatDateTime(nextSchedule.departureAt) : "Sin salidas";
+  const previewPrice = route ? formatPrice(route.priceCents, route.currency) : "Consultar";
+
   return (
     <>
       <main className="page-shell section">
@@ -27,8 +59,10 @@ export default function AppFlowPage() {
               <div className="ticket-preview">
                 <p className="eyebrow">Paso 2 de 4</p>
                 <h2>Elegí tu asiento</h2>
-                <p>SMA → Villa Traful · 02 ene · 10:00</p>
-                <p className="price">Consultar</p>
+                <p>
+                  {previewRoute} · {previewSchedule}
+                </p>
+                <p className="price">{previewPrice}</p>
               </div>
             </div>
           </div>

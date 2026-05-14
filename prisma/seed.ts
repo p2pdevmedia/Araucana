@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../src/lib/auth/password";
-import { routes } from "../src/lib/travel-data";
+import { demoRoutes } from "./demo-routes";
 
 const prisma = new PrismaClient();
 
@@ -149,7 +149,7 @@ async function clearDemoBookingData() {
 }
 
 async function seedRoutesAndSchedules() {
-  for (const route of routes) {
+  for (const route of demoRoutes) {
     const durationMin = parseDurationMin(route.duration);
 
     await prisma.travelRoute.create({

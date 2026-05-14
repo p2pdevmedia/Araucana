@@ -13,8 +13,6 @@ describe("high intent route prefetching", () => {
     const source = readAppFile("layout.tsx");
 
     expect(source).toContain('<Link href="/rutas" prefetch={true}>Rutas</Link>');
-    expect(source).toContain('<Link href="/rutas/sma-villa-traful-verano-2026" prefetch={true}>Villa Traful</Link>');
-    expect(source).toContain('<Link href="/rutas/sma-hua-hum-verano-2026" prefetch={true}>Hua Hum</Link>');
     expect(source).toContain('<Link className="cream-button" href="/rutas" prefetch={true}>');
   });
 

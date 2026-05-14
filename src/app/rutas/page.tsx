@@ -39,6 +39,8 @@ async function getRoutesWithScheduleCount() {
 
 export default async function RoutesPage() {
   const routes = await getRoutesWithScheduleCount();
+  const origins = Array.from(new Set(routes.map((route) => route.from)));
+  const destinations = Array.from(new Set(routes.map((route) => route.to)));
 
   return (
     <>
@@ -56,20 +58,22 @@ export default async function RoutesPage() {
         <form className="form-panel" action="/rutas">
           <label>
             Origen
-            <select name="from" defaultValue="San Martin de los Andes">
-              <option value="San Martin de los Andes">San Martin de los Andes</option>
-              <option value="Villa Traful">Villa Traful</option>
-              <option value="Villa La Angostura">Villa La Angostura</option>
-              <option value="Hua Hum">Hua Hum</option>
+            <select name="from" defaultValue={origins[0]}>
+              {origins.map((origin) => (
+                <option value={origin} key={origin}>
+                  {origin}
+                </option>
+              ))}
             </select>
           </label>
           <label>
             Destino
-            <select name="to" defaultValue="Villa Traful">
-              <option value="Villa Traful">Villa Traful</option>
-              <option value="Villa La Angostura">Villa La Angostura</option>
-              <option value="San Martin de los Andes">San Martin de los Andes</option>
-              <option value="Hua Hum">Hua Hum</option>
+            <select name="to" defaultValue={destinations[0]}>
+              {destinations.map((destination) => (
+                <option value={destination} key={destination}>
+                  {destination}
+                </option>
+              ))}
             </select>
           </label>
           <button className="button" type="submit">
