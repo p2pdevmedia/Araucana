@@ -1152,6 +1152,44 @@ svg {
   padding: 0 13px;
 }
 
+.pagination-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 18px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pagination-bar > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-bar .ghost-button {
+  min-height: 38px;
+  border-radius: 10px;
+  padding: 0 12px;
+}
+
+.pagination-bar .ghost-button[aria-disabled="true"] {
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+.pagination-page {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  color: var(--ink-muted);
+}
+
 .admin-split,
 .report-grid {
   display: grid;
