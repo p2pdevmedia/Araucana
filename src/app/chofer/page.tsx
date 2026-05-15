@@ -5,10 +5,12 @@ import { LogoutButton } from "../admin/logout-button";
 import { DriverLocationPanel } from "./driver-location-panel";
 import { ChapelcoDriverPanel } from "./chapelco-driver-panel";
 import { getDriverChapelcoManifest, todayServiceDateKey } from "@/lib/chapelco/repository";
+import { getDriverScheduleDashboard } from "@/lib/driver/schedules";
+import { DriverRouteSchedulesPanel } from "./driver-route-schedules-panel";
 
 export default async function DriverPage() {
   const user = await getCurrentDriverOrRedirect();
-  const [vehicles, currentLocation, chapelcoRuns] = await Promise.all([
+  const [vehicles, currentLocation, chapelcoRuns, scheduleDashboard] = await Promise.all([
     prisma.vehicle.findMany({
       where: {
         isActive: true
@@ -32,7 +34,8 @@ export default async function DriverPage() {
         vehicleId: true
       }
     }),
-    getDriverChapelcoManifest(user.id, todayServiceDateKey())
+    getDriverChapelcoManifest(user.id, todayServiceDateKey()),
+    getDriverScheduleDashboard()
   ]);
 
   return (
@@ -57,6 +60,7 @@ export default async function DriverPage() {
       </div>
 
       <DriverLocationPanel vehicles={vehicles} initialVehicleId={currentLocation?.vehicleId} />
+      <DriverRouteSchedulesPanel routes={scheduleDashboard.routes} schedules={scheduleDashboard.schedules} />
       <ChapelcoDriverPanel runs={chapelcoRuns} />
     </main>
   );

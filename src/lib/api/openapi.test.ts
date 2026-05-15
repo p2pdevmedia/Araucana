@@ -23,6 +23,7 @@ describe("openapi spec", () => {
     expect(spec.paths["/api/v1/admin/vehicles/{id}"].patch).toBeDefined();
     expect(spec.paths["/api/v1/admin/reservations/{code}/approve-payment"].post).toBeDefined();
     expect(spec.paths["/api/v1/chapelco/availability"].get).toBeDefined();
+    expect(spec.paths["/api/v1/driver/bootstrap"].get.security).toEqual([{ bearerAuth: [] }]);
     expect(spec.paths["/api/v1/driver/chapelco"].get.security).toEqual([{ bearerAuth: [] }]);
     expect(spec.paths["/api/v1/driver/chapelco"].patch).toBeDefined();
     expect(spec.components.securitySchemes.bearerAuth).toEqual({

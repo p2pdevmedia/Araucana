@@ -6,7 +6,24 @@ struct APIClient {
 
     private let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        let fractionalFormatter = ISO8601DateFormatter()
+        fractionalFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let standardFormatter = ISO8601DateFormatter()
+        standardFormatter.formatOptions = [.withInternetDateTime]
+
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let value = try container.decode(String.self)
+
+            if let date = fractionalFormatter.date(from: value) ?? standardFormatter.date(from: value) {
+                return date
+            }
+
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Fecha ISO invalida: \(value)"
+            )
+        }
         return decoder
     }()
 
@@ -116,4 +133,3 @@ enum DriverAPIError: LocalizedError {
         }
     }
 }
-

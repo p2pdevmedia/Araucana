@@ -17,8 +17,7 @@ Iphone/AraucanaChofer/AraucanaChofer.xcodeproj
 - Bundle ID: `com.araucana.chofer`.
 - Login real contra `POST /api/v1/auth/login`.
 - Recupera usuario con `GET /api/v1/auth/me`.
-- Recupera datos de chofer con `GET /api/v1/driver/bootstrap`.
-- Recupera rutas activas con `GET /api/v1/routes`.
+- Recupera datos de chofer, rutas de trabajo, salidas proximas y pasajeros con `GET /api/v1/driver/bootstrap`.
 
 ## Desarrollo local
 

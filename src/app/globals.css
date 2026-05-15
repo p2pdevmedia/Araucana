@@ -1253,6 +1253,15 @@ svg {
   background: var(--surface);
 }
 
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.table-scroll .data-table {
+  min-width: 680px;
+}
+
 .data-table th,
 .data-table td {
   padding: 14px 16px;
@@ -1307,6 +1316,54 @@ svg {
   margin: 0;
   font-family: var(--display);
   font-size: 28px;
+  font-weight: 500;
+}
+
+.driver-schedule-detail {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.driver-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.driver-summary-grid div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 250, 241, 0.66);
+}
+
+.driver-summary-grid span {
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.driver-summary-grid strong {
+  color: var(--primary-deep);
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.driver-summary-grid small,
+.driver-empty-state {
+  color: var(--ink-muted);
+}
+
+.manifest-block h3 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 24px;
   font-weight: 500;
 }
 
@@ -1712,6 +1769,7 @@ svg {
   .admin-split,
   .report-grid,
   .bank-detail-grid,
+  .driver-summary-grid,
   .stats-grid,
   .checkout-intro,
   .checkout-layout,

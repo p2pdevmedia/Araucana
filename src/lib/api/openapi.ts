@@ -164,6 +164,13 @@ export function getOpenApiSpec(baseUrl = "https://araucana.app"): OpenApiSpec {
           responses: jsonResponse("#/components/schemas/ChapelcoAvailabilityEnvelope")
         }
       },
+      "/api/v1/driver/bootstrap": {
+        get: {
+          summary: "Devuelve datos iniciales del chofer, rutas de trabajo, salidas proximas y pasajeros.",
+          security: bearerSecurity,
+          responses: jsonResponse("#/components/schemas/DriverBootstrapEnvelope")
+        }
+      },
       "/api/v1/driver/chapelco": {
         get: {
           summary: "Devuelve manifiestos Chapelco del chofer autenticado.",
@@ -284,7 +291,7 @@ export function getOpenApiSpec(baseUrl = "https://araucana.app"): OpenApiSpec {
             id: { type: "string" },
             email: { type: "string", format: "email" },
             name: { type: ["string", "null"] },
-            role: { type: "string", enum: ["ADMIN", "USER"] }
+            role: { type: "string", enum: ["ADMIN", "SECRETARY", "DRIVER", "USER"] }
           }
         },
         UserEnvelope: { type: "object", properties: { user: { $ref: "#/components/schemas/User" } } },
@@ -341,6 +348,16 @@ export function getOpenApiSpec(baseUrl = "https://araucana.app"): OpenApiSpec {
         },
         ChapelcoDriverManifestEnvelope: { type: "object", properties: { date: { type: "string" }, runs: { type: "array", items: { type: "object" } } } },
         ChapelcoStopEnvelope: { type: "object", properties: { stop: { type: "object" } } },
+        DriverBootstrapEnvelope: {
+          type: "object",
+          properties: {
+            user: { $ref: "#/components/schemas/User" },
+            vehicles: { type: "array", items: { type: "object" } },
+            routes: { type: "array", items: { type: "object" } },
+            schedules: { type: "array", items: { type: "object" } },
+            currentLocation: { type: ["object", "null"] }
+          }
+        },
         DeleteEnvelope: {
           type: "object",
           properties: {

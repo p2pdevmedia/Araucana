@@ -154,6 +154,9 @@ test.describe("Administrador", () => {
     await expect(page.getByRole("heading", { name: "Ubicacion de nave" })).toBeVisible();
     await expect(page.getByLabel("Nave")).toBeVisible();
     await expect(page.getByRole("button", { name: "Compartir ubicacion" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Salidas proximas" })).toBeVisible();
+    await expect(page.getByLabel("Ruta")).toBeVisible();
+    await expect(page.getByLabel("Salida")).toBeVisible();
 
     await page.goto("/admin/reservas");
     await expect(page).toHaveURL(/\/chofer$/);

@@ -4,7 +4,6 @@ import Foundation
 final class DriverSession: ObservableObject {
     @Published private(set) var user: APIUser?
     @Published private(set) var bootstrap: DriverBootstrap?
-    @Published private(set) var routes: [TravelRoute] = []
     @Published var apiBaseURL: String
     @Published var isLoading = false
     @Published var errorMessage: String?
@@ -56,7 +55,6 @@ final class DriverSession: ObservableObject {
         token = nil
         user = nil
         bootstrap = nil
-        routes = []
         errorMessage = nil
         UserDefaults.standard.removeObject(forKey: StorageKey.token)
     }
@@ -70,8 +68,7 @@ final class DriverSession: ObservableObject {
             let client = try makeClient(authenticated: true)
             async let userRequest = client.me()
             async let bootstrapRequest = client.driverBootstrap()
-            async let routesRequest = client.routes()
-            let (loadedUser, loadedBootstrap, loadedRoutes) = try await (userRequest, bootstrapRequest, routesRequest)
+            let (loadedUser, loadedBootstrap) = try await (userRequest, bootstrapRequest)
 
             guard loadedUser.role == "DRIVER" else {
                 throw DriverAPIError.api("Este usuario no tiene rol de chofer.")
@@ -79,7 +76,6 @@ final class DriverSession: ObservableObject {
 
             user = loadedUser
             bootstrap = loadedBootstrap
-            routes = loadedRoutes
         } catch {
             errorMessage = error.localizedDescription
             if case DriverAPIError.unauthorized = error {
@@ -101,4 +97,3 @@ private enum StorageKey {
     static let token = "araucana.driver.token"
     static let apiBaseURL = "araucana.api.baseURL"
 }
-
