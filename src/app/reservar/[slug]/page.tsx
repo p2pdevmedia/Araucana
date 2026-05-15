@@ -49,6 +49,16 @@ function todayInputValue() {
   }).format(new Date());
 }
 
+function initialChapelcoServiceDate(route: { serviceStartDate?: string | null }) {
+  const today = todayInputValue();
+
+  if (route.serviceStartDate && today < route.serviceStartDate) {
+    return route.serviceStartDate;
+  }
+
+  return today;
+}
+
 export default async function ReservationPage({ params }: ReservationPageProps) {
   const { slug } = await params;
   const route = await getPublicRouteBySlug(slug);
@@ -58,7 +68,7 @@ export default async function ReservationPage({ params }: ReservationPageProps) 
   }
 
   if (route.bookingMode === "CHAPELCO") {
-    const availability = await getChapelcoAvailability(route.id, todayInputValue());
+    const availability = await getChapelcoAvailability(route.id, initialChapelcoServiceDate(route));
 
     return (
       <>

@@ -83,6 +83,13 @@ export async function createChapelcoReservationAction(
       };
     }
 
+    if (error instanceof ChapelcoError && error.code === "CHAPELCO_SERVICE_INACTIVE") {
+      return {
+        ok: false,
+        message: "Chapelco no esta activo para esa fecha. Elegi una fecha dentro de la temporada."
+      };
+    }
+
     return {
       ok: false,
       message: "No pudimos crear la reserva. Intentalo nuevamente."

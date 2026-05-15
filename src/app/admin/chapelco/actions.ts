@@ -3,13 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentReservationsUserOrRedirect } from "@/lib/auth/admin";
-import { chapelcoAscentSlots, type ChapelcoAscentSlot } from "@/lib/chapelco/constants";
-import {
-  addChapelcoVehicleDuty,
-  assignReservationToRun,
-  createChapelcoRun,
-  upsertChapelcoOperationDay
-} from "@/lib/chapelco/repository";
+import { CHAPELCO_BOOKING_MODE } from "@/lib/chapelco/constants";
+import { prisma } from "@/lib/db/prisma";
 
 function value(formData: FormData, key: string) {
   const entry = formData.get(key);
@@ -20,65 +15,45 @@ function chapelcoRedirect(date: string, notice: string) {
   redirect(`/admin/chapelco?date=${encodeURIComponent(date)}&notice=${encodeURIComponent(notice)}`);
 }
 
-function ascentSlotOrNull(value: string): ChapelcoAscentSlot | null {
-  return chapelcoAscentSlots.includes(value as ChapelcoAscentSlot) ? (value as ChapelcoAscentSlot) : null;
+function serviceDateFromKey(dateKey: string) {
+  return new Date(`${dateKey}T00:00:00.000Z`);
 }
 
-export async function upsertOperationDayAction(formData: FormData) {
+function isDateKey(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+export async function updateChapelcoSeasonAction(formData: FormData) {
   await getCurrentReservationsUserOrRedirect();
   const routeId = value(formData, "routeId");
-  const serviceDate = value(formData, "serviceDate");
+  const serviceDate = value(formData, "serviceDate") || value(formData, "serviceStartDate");
+  const serviceStartDate = value(formData, "serviceStartDate");
+  const serviceEndDate = value(formData, "serviceEndDate");
 
-  await upsertChapelcoOperationDay({
-    routeId,
-    serviceDate,
-    status: value(formData, "status") || "OPEN"
+  if (!routeId || !isDateKey(serviceStartDate) || !isDateKey(serviceEndDate)) {
+    chapelcoRedirect(serviceDate, "Completa fecha inicio y fecha fin de Chapelco.");
+  }
+
+  if (serviceDateFromKey(serviceStartDate) > serviceDateFromKey(serviceEndDate)) {
+    chapelcoRedirect(serviceDate, "La fecha inicio no puede ser posterior a la fecha fin.");
+  }
+
+  const updated = await prisma.travelRoute.updateMany({
+    where: {
+      id: routeId,
+      bookingMode: CHAPELCO_BOOKING_MODE
+    },
+    data: {
+      serviceStartDate: serviceDateFromKey(serviceStartDate),
+      serviceEndDate: serviceDateFromKey(serviceEndDate)
+    }
   });
 
-  revalidatePath("/admin/chapelco");
-  chapelcoRedirect(serviceDate, "Operativo Chapelco guardado.");
-}
-
-export async function addVehicleDutyAction(formData: FormData) {
-  await getCurrentReservationsUserOrRedirect();
-  const serviceDate = value(formData, "serviceDate");
-
-  await addChapelcoVehicleDuty({
-    operationDayId: value(formData, "operationDayId"),
-    vehicleId: value(formData, "vehicleId"),
-    driverId: value(formData, "driverId") || null,
-    capacity: Number(value(formData, "capacity")),
-    notes: value(formData, "notes") || null
-  });
+  if (updated.count === 0) {
+    chapelcoRedirect(serviceDate, "No encontramos la ruta Chapelco para actualizar.");
+  }
 
   revalidatePath("/admin/chapelco");
-  chapelcoRedirect(serviceDate, "Nave agregada al operativo.");
-}
-
-export async function createRunAction(formData: FormData) {
-  await getCurrentReservationsUserOrRedirect();
-  const serviceDate = value(formData, "serviceDate");
-
-  await createChapelcoRun({
-    operationDayId: value(formData, "operationDayId"),
-    vehicleDutyId: value(formData, "vehicleDutyId"),
-    direction: value(formData, "direction") === "DOWN" ? "DOWN" : "UP",
-    ascentSlot: ascentSlotOrNull(value(formData, "ascentSlot"))
-  });
-
-  revalidatePath("/admin/chapelco");
-  chapelcoRedirect(serviceDate, "Recorrido creado.");
-}
-
-export async function assignReservationAction(formData: FormData) {
-  await getCurrentReservationsUserOrRedirect();
-  const serviceDate = value(formData, "serviceDate");
-
-  await assignReservationToRun({
-    runId: value(formData, "runId"),
-    reservationId: value(formData, "reservationId")
-  });
-
-  revalidatePath("/admin/chapelco");
-  chapelcoRedirect(serviceDate, "Reserva asignada.");
+  revalidatePath("/reservar/chapelco");
+  chapelcoRedirect(serviceDate, "Temporada Chapelco guardada.");
 }

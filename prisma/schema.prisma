@@ -49,6 +49,8 @@ model TravelRoute {
   isActive    Boolean    @default(true)
   bookingMode String     @default("SEATED")
   specialType String?
+  serviceStartDate DateTime?
+  serviceEndDate   DateTime?
   stops       Json
   schedules   Schedule[]
   directReservations Reservation[]

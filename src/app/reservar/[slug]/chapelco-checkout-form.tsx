@@ -89,7 +89,8 @@ export function ChapelcoCheckoutForm({ route, initialAvailability }: ChapelcoChe
   const [isSubmitting, setIsSubmitting] = useState(false);
   const selectedAvailability = availability.slots.find((slot) => slot.slot === ascentSlot);
   const totalCents = useMemo(() => route.priceCents * passengerCount, [passengerCount, route.priceCents]);
-  const hasCapacity = selectedAvailability ? selectedAvailability.availablePeople >= passengerCount : false;
+  const hasCapacity = availability.isServiceActive && selectedAvailability ? selectedAvailability.availablePeople >= passengerCount : false;
+  const minServiceDate = route.serviceStartDate && route.serviceStartDate > todayInputValue() ? route.serviceStartDate : todayInputValue();
 
   useEffect(() => {
     let cancelled = false;
@@ -140,6 +141,10 @@ export function ChapelcoCheckoutForm({ route, initialAvailability }: ChapelcoChe
       nextErrors.serviceDate = "Selecciona una fecha.";
     }
 
+    if (!availability.isServiceActive) {
+      nextErrors.serviceDate = "Chapelco no esta activo para esa fecha.";
+    }
+
     if (passengerCount < 1) {
       nextErrors.passengerCount = "Ingresa al menos una persona.";
     }
@@ -152,7 +157,7 @@ export function ChapelcoCheckoutForm({ route, initialAvailability }: ChapelcoChe
       nextErrors.pickupAddress = "Ingresa la direccion.";
     }
 
-    if (!hasCapacity) {
+    if (availability.isServiceActive && !hasCapacity) {
       nextErrors.passengerCount = "No quedan cupos suficientes para ese horario.";
     }
 
@@ -196,9 +201,22 @@ export function ChapelcoCheckoutForm({ route, initialAvailability }: ChapelcoChe
           </div>
           <label>
             Fecha
-            <input type="date" value={serviceDate} onChange={(event) => setServiceDate(event.target.value)} disabled={isSubmitting} />
+            <input
+              type="date"
+              value={serviceDate}
+              min={minServiceDate}
+              max={route.serviceEndDate ?? undefined}
+              onChange={(event) => setServiceDate(event.target.value)}
+              disabled={isSubmitting}
+            />
             {fieldError(fieldErrors, "serviceDate")}
           </label>
+          {!availability.isServiceActive ? (
+            <p className="muted">
+              Servicio activo del {availability.serviceStartDate ?? "inicio no configurado"} al{" "}
+              {availability.serviceEndDate ?? "fin no configurado"}.
+            </p>
+          ) : null}
           <div className="chapelco-slot-grid">
             {chapelcoAscentSlots.map((slot) => {
               const slotAvailability = availability.slots.find((item) => item.slot === slot);
@@ -210,7 +228,7 @@ export function ChapelcoCheckoutForm({ route, initialAvailability }: ChapelcoChe
                   type="button"
                   key={slot}
                   onClick={() => setAscentSlot(slot)}
-                  disabled={isSubmitting || available <= 0}
+                  disabled={isSubmitting || !availability.isServiceActive || available <= 0}
                 >
                   <strong>{slot}</strong>
                   <span>{available} cupos</span>

@@ -19,6 +19,8 @@ export type PublicRouteDto = {
   currency: string;
   bookingMode: string;
   specialType?: string | null;
+  serviceStartDate?: string | null;
+  serviceEndDate?: string | null;
   stops?: unknown;
 };
 

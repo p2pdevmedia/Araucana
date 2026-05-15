@@ -13,7 +13,6 @@ import {
   blockingReservedPeopleForSlot,
   canReservePeople,
   reservedPeopleForSlot,
-  vehicleCapacityCountsForSlot,
   vehicleCanServeSlot
 } from "./availability";
 import {
@@ -51,6 +50,17 @@ function serviceDateKey(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
+function optionalServiceDateKey(date?: Date | null) {
+  return date ? serviceDateKey(date) : null;
+}
+
+function chapelcoServiceIsActiveForDate(
+  route: { serviceStartDate?: Date | null; serviceEndDate?: Date | null } | null,
+  serviceDate: Date
+) {
+  return Boolean(route?.serviceStartDate && route.serviceEndDate && serviceDate >= route.serviceStartDate && serviceDate <= route.serviceEndDate);
+}
+
 function normalizePickupNotes(value?: string | null) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
@@ -81,25 +91,6 @@ function reservationSlots(
     );
 }
 
-function capacityEntries(
-  activeVehicles: Array<{ id: string; _count: { seats: number } }>,
-  vehicleDuties?: Array<{ vehicleId: string; capacity: number; runs: Array<{ ascentSlot: string | null }> }>
-) {
-  const dutyByVehicleId = new Map(vehicleDuties?.map((duty) => [duty.vehicleId, duty]) ?? []);
-
-  return activeVehicles.map((vehicle) => {
-    const duty = dutyByVehicleId.get(vehicle.id);
-
-    return {
-      capacity: duty?.capacity ?? vehicle._count.seats,
-      assignedSlots:
-        duty?.runs
-          .map((run) => asChapelcoSlot(run.ascentSlot))
-          .filter((slot): slot is ChapelcoAscentSlot => Boolean(slot)) ?? []
-    };
-  });
-}
-
 function stopStatusAllowed(direction: string, status: ChapelcoManifestStatus) {
   if (direction === "UP") {
     return status === "PENDING" || status === "BOARDED" || status === "NO_SHOW";
@@ -120,24 +111,16 @@ export async function getChapelcoRouteBySlug(slug: string) {
 
 export async function getChapelcoAvailability(routeId: string, serviceDate: string): Promise<ChapelcoAvailabilityDto> {
   const date = serviceDateFromKey(serviceDate);
-  const [operationDay, activeVehicles, reservations] = await Promise.all([
-    prisma.chapelcoOperationDay.findUnique({
+  const [route, activeVehicles, reservations] = await Promise.all([
+    prisma.travelRoute.findFirst({
       where: {
-        routeId_serviceDate: {
-          routeId,
-          serviceDate: date
-        }
+        id: routeId,
+        bookingMode: CHAPELCO_BOOKING_MODE,
+        isActive: true
       },
-      include: {
-        vehicleDuties: {
-          where: { status: "ACTIVE" },
-          include: {
-            runs: {
-              where: { direction: "UP" },
-              select: { ascentSlot: true }
-            }
-          }
-        }
+      select: {
+        serviceStartDate: true,
+        serviceEndDate: true
       }
     }),
     prisma.vehicle.findMany({
@@ -168,24 +151,24 @@ export async function getChapelcoAvailability(routeId: string, serviceDate: stri
     })
   ]);
   const slotsReserved = reservationSlots(reservations);
-  const fleetCapacityEntries = capacityEntries(activeVehicles, operationDay?.vehicleDuties);
+  const isServiceActive = chapelcoServiceIsActiveForDate(route, date);
+  const fleetCapacity = isServiceActive ? activeVehicles.reduce((total, vehicle) => total + vehicle._count.seats, 0) : 0;
 
   return {
     routeId,
     serviceDate,
+    serviceStartDate: optionalServiceDateKey(route?.serviceStartDate),
+    serviceEndDate: optionalServiceDateKey(route?.serviceEndDate),
+    isServiceActive,
     slots: chapelcoAscentSlots.map((slot) => {
-      const totalCapacity = fleetCapacityEntries.reduce(
-        (total, entry) => (vehicleCapacityCountsForSlot(entry.assignedSlots, slot) ? total + entry.capacity : total),
-        0
-      );
       const reservedPeople = reservedPeopleForSlot(slotsReserved, slot);
       const blockingReservedPeople = blockingReservedPeopleForSlot(slotsReserved, slot);
 
       return {
         slot,
-        totalCapacity,
+        totalCapacity: fleetCapacity,
         reservedPeople,
-        availablePeople: availablePeople(totalCapacity, blockingReservedPeople)
+        availablePeople: availablePeople(fleetCapacity, blockingReservedPeople)
       };
     })
   };
@@ -208,40 +191,19 @@ export async function createChapelcoReservation(input: ChapelcoReservationInput)
       throw new ChapelcoError("CHAPELCO_ROUTE_NOT_FOUND", "Chapelco route not found");
     }
 
-    const [operationDay, activeVehicles] = await Promise.all([
-      tx.chapelcoOperationDay.findUnique({
-        where: {
-          routeId_serviceDate: {
-            routeId: route.id,
-            serviceDate: date
-          }
-        },
-        include: {
-          vehicleDuties: {
-            where: { status: "ACTIVE" },
-            include: {
-              runs: {
-                where: { direction: "UP" },
-                select: { ascentSlot: true }
-              }
-            }
-          }
+    if (!chapelcoServiceIsActiveForDate(route, date)) {
+      throw new ChapelcoError("CHAPELCO_SERVICE_INACTIVE", "Chapelco service is not active for selected date");
+    }
+
+    const activeVehicles = await tx.vehicle.findMany({
+      where: { isActive: true },
+      include: {
+        _count: {
+          select: { seats: true }
         }
-      }),
-      tx.vehicle.findMany({
-        where: { isActive: true },
-        include: {
-          _count: {
-            select: { seats: true }
-          }
-        }
-      })
-    ]);
-    const totalCapacity = capacityEntries(activeVehicles, operationDay?.vehicleDuties).reduce(
-      (total, entry) =>
-        vehicleCapacityCountsForSlot(entry.assignedSlots, parsed.ascentSlot) ? total + entry.capacity : total,
-      0
-    );
+      }
+    });
+    const totalCapacity = activeVehicles.reduce((total, vehicle) => total + vehicle._count.seats, 0);
     const existingReservations = await tx.reservation.findMany({
       where: {
         routeId: route.id,

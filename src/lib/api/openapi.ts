@@ -299,7 +299,9 @@ export function getOpenApiSpec(baseUrl = "https://araucana.app"): OpenApiSpec {
             via: { type: "string" },
             durationMin: { type: "integer" },
             priceCents: { type: "integer" },
-            currency: { type: "string" }
+            currency: { type: "string" },
+            serviceStartDate: { type: "string", format: "date", nullable: true },
+            serviceEndDate: { type: "string", format: "date", nullable: true }
           }
         },
         RouteEnvelope: { type: "object", properties: { route: { $ref: "#/components/schemas/Route" } } },
@@ -320,6 +322,9 @@ export function getOpenApiSpec(baseUrl = "https://araucana.app"): OpenApiSpec {
           properties: {
             routeId: { type: "string" },
             serviceDate: { type: "string", format: "date" },
+            serviceStartDate: { type: "string", format: "date", nullable: true },
+            serviceEndDate: { type: "string", format: "date", nullable: true },
+            isServiceActive: { type: "boolean" },
             slots: {
               type: "array",
               items: {

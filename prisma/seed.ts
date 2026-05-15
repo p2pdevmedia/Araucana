@@ -204,6 +204,8 @@ async function seedRoutesAndSchedules() {
       isActive: true,
       bookingMode: "CHAPELCO",
       specialType: "CHAPELCO",
+      serviceStartDate: new Date("2026-06-01T00:00:00.000Z"),
+      serviceEndDate: new Date("2026-10-15T00:00:00.000Z"),
       stops: []
     },
     create: {
@@ -221,6 +223,8 @@ async function seedRoutesAndSchedules() {
       isActive: true,
       bookingMode: "CHAPELCO",
       specialType: "CHAPELCO",
+      serviceStartDate: new Date("2026-06-01T00:00:00.000Z"),
+      serviceEndDate: new Date("2026-10-15T00:00:00.000Z"),
       stops: []
     }
   });

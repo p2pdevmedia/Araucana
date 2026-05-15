@@ -10,6 +10,9 @@ export type ChapelcoAvailabilitySlotDto = {
 export type ChapelcoAvailabilityDto = {
   routeId: string;
   serviceDate: string;
+  serviceStartDate?: string | null;
+  serviceEndDate?: string | null;
+  isServiceActive: boolean;
   slots: ChapelcoAvailabilitySlotDto[];
 };
 

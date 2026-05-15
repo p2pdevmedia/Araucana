@@ -28,6 +28,8 @@ type RouteRecord = {
   currency: string;
   bookingMode: string;
   specialType?: string | null;
+  serviceStartDate?: Date | null;
+  serviceEndDate?: Date | null;
   stops?: unknown;
   _count?: {
     schedules: number;
@@ -180,6 +182,10 @@ function centsToPrice(cents: number) {
   return cents / 100;
 }
 
+function dateKey(date?: Date | null) {
+  return date ? date.toISOString().slice(0, 10) : null;
+}
+
 function isUniqueConstraintError(error: unknown): error is { code: string; meta?: { target?: unknown } } {
   return (
     typeof error === "object" &&
@@ -243,6 +249,8 @@ function mapRoute(route: RouteRecord): PublicRouteDto {
     currency: route.currency,
     bookingMode: route.bookingMode,
     specialType: route.specialType,
+    serviceStartDate: dateKey(route.serviceStartDate),
+    serviceEndDate: dateKey(route.serviceEndDate),
     stops: route.stops
   };
 }

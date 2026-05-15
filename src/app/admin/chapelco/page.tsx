@@ -2,7 +2,7 @@ import { AdminShell } from "@/components/admin-shell";
 import { getCurrentReservationsUserOrRedirect } from "@/lib/auth/admin";
 import { prisma } from "@/lib/db/prisma";
 import { CHAPELCO_BOOKING_MODE } from "@/lib/chapelco/constants";
-import { getChapelcoAvailability, listChapelcoOperationDay } from "@/lib/chapelco/repository";
+import { getChapelcoAvailability } from "@/lib/chapelco/repository";
 import { OperationBoard } from "./operation-board";
 
 type ChapelcoAdminPageProps = {
@@ -44,8 +44,7 @@ export default async function ChapelcoAdminPage({ searchParams }: ChapelcoAdminP
     );
   }
 
-  const [operationDay, vehicles, drivers, reservations, availability] = await Promise.all([
-    listChapelcoOperationDay(route.id, serviceDate),
+  const [vehicles, reservations, availability] = await Promise.all([
     prisma.vehicle.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
@@ -53,18 +52,6 @@ export default async function ChapelcoAdminPage({ searchParams }: ChapelcoAdminP
         _count: {
           select: { seats: true }
         }
-      }
-    }),
-    prisma.user.findMany({
-      where: {
-        role: "DRIVER",
-        isActive: true
-      },
-      orderBy: [{ name: "asc" }, { email: "asc" }],
-      select: {
-        id: true,
-        name: true,
-        email: true
       }
     }),
     prisma.reservation.findMany({
@@ -108,10 +95,10 @@ export default async function ChapelcoAdminPage({ searchParams }: ChapelcoAdminP
     <AdminShell title="Chapelco" notice={params?.notice} role={user.role}>
       <OperationBoard
         routeId={route.id}
+        serviceStartDate={route.serviceStartDate}
+        serviceEndDate={route.serviceEndDate}
         serviceDate={serviceDate}
-        operationDay={operationDay}
         vehicles={vehicles}
-        drivers={drivers}
         reservations={reservations}
         availability={availability}
       />
