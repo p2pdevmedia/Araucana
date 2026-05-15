@@ -134,9 +134,36 @@ export function OperationBoard({
         ))}
       </section>
 
+      <section className="plain-card admin-section">
+        <h2>Naves disponibles para Chapelco</h2>
+        <p className="muted">
+          Chapelco toma automaticamente todas las naves activas cargadas en la seccion Naves. No hace falta cargarlas por
+          temporada.
+        </p>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Nave</th>
+              <th>Cupos</th>
+              <th>Estado Chapelco</th>
+            </tr>
+          </thead>
+          <tbody>
+            {vehicles.map((vehicle) => (
+              <tr key={vehicle.id}>
+                <td>{vehicle.name}</td>
+                <td>{vehicle._count.seats}</td>
+                <td>Disponible automaticamente</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
       {operationDay ? (
         <section className="plain-card admin-section">
-          <h2>Agregar nave</h2>
+          <h2>Ajustar nave para este dia</h2>
+          <p className="muted">Usa esto solo si queres cambiar chofer, capacidad o notas para la fecha seleccionada.</p>
           <form className="admin-form-grid" action={addVehicleDutyAction}>
             <input type="hidden" name="operationDayId" value={operationDay.id} />
             <input type="hidden" name="serviceDate" value={serviceDate} />

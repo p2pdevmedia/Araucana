@@ -1,7 +1,9 @@
 import { describe, expect, test } from "vitest";
 import {
   availablePeople,
+  blockingReservedPeopleForSlot,
   canReservePeople,
+  reservedPeopleForSlot,
   vehicleCanServeSlot,
   vehicleCapacityCountsForSlot
 } from "./availability";
@@ -36,5 +38,17 @@ describe("capacity rules", () => {
 
   test("never returns negative availability", () => {
     expect(availablePeople(19, 25)).toBe(0);
+  });
+
+  test("counts same-slot reservations separately from adjacent blocking reservations", () => {
+    const reservations = [
+      { ascentSlot: "08:30" as const, passengerCount: 10 },
+      { ascentSlot: "09:00" as const, passengerCount: 5 },
+      { ascentSlot: "10:30" as const, passengerCount: 3 }
+    ];
+
+    expect(reservedPeopleForSlot(reservations, "09:00")).toBe(5);
+    expect(blockingReservedPeopleForSlot(reservations, "09:00")).toBe(18);
+    expect(blockingReservedPeopleForSlot(reservations, "12:00")).toBe(3);
   });
 });

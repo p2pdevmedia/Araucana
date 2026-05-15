@@ -22,3 +22,22 @@ export function availablePeople(totalCapacity: number, reservedPeople: number) {
 export function canReservePeople(totalCapacity: number, reservedPeople: number, passengerCount: number) {
   return passengerCount > 0 && reservedPeople + passengerCount <= totalCapacity;
 }
+
+export type ChapelcoReservedSlot = {
+  ascentSlot: ChapelcoAscentSlot;
+  passengerCount: number;
+};
+
+export function reservedPeopleForSlot(reservations: ChapelcoReservedSlot[], slot: ChapelcoAscentSlot) {
+  return reservations.reduce(
+    (total, reservation) => (reservation.ascentSlot === slot ? total + reservation.passengerCount : total),
+    0
+  );
+}
+
+export function blockingReservedPeopleForSlot(reservations: ChapelcoReservedSlot[], slot: ChapelcoAscentSlot) {
+  return reservations.reduce(
+    (total, reservation) => (slotConflicts(reservation.ascentSlot, slot) ? total + reservation.passengerCount : total),
+    0
+  );
+}
