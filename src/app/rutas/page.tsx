@@ -27,20 +27,38 @@ function formatPrice(cents: number, currency: string) {
   }).format(cents / 100);
 }
 
-async function getRoutesWithScheduleCount() {
+function scheduleDateKey(date: Date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Argentina/Salta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(date);
+}
+
+async function getRoutesWithScheduleCount(date?: string) {
   const routes = await listPublicRoutes();
   const schedules = await Promise.all(routes.map((route) => listSchedulesForRoute(route.id)));
 
   return routes.map((route, index) => ({
     ...route,
-    scheduleCount: schedules[index]?.length ?? 0
+    scheduleCount: (schedules[index] ?? []).filter((schedule) => !date || scheduleDateKey(schedule.departureAt) === date).length
   }));
 }
 
-export default async function RoutesPage() {
-  const routes = await getRoutesWithScheduleCount();
-  const origins = Array.from(new Set(routes.map((route) => route.from)));
-  const destinations = Array.from(new Set(routes.map((route) => route.to)));
+type RoutesPageProps = {
+  searchParams?: Promise<{ from?: string; to?: string; date?: string }>;
+};
+
+export default async function RoutesPage({ searchParams }: RoutesPageProps) {
+  const params = await searchParams;
+  const from = params?.from?.trim() ?? "";
+  const to = params?.to?.trim() ?? "";
+  const date = params?.date?.trim() ?? "";
+  const allRoutes = await getRoutesWithScheduleCount(date || undefined);
+  const routes = allRoutes.filter((route) => (!from || route.from === from) && (!to || route.to === to));
+  const origins = Array.from(new Set(allRoutes.map((route) => route.from)));
+  const destinations = Array.from(new Set(allRoutes.map((route) => route.to)));
 
   return (
     <>
@@ -55,10 +73,11 @@ export default async function RoutesPage() {
           </Link>
         </div>
 
-        <form className="form-panel" action="/rutas">
+        <form className="form-panel route-search-form" action="/rutas" method="get">
           <label>
             Origen
-            <select name="from" defaultValue={origins[0]}>
+            <select name="from" defaultValue={from}>
+              <option value="">Todos los orígenes</option>
               {origins.map((origin) => (
                 <option value={origin} key={origin}>
                   {origin}
@@ -68,13 +87,18 @@ export default async function RoutesPage() {
           </label>
           <label>
             Destino
-            <select name="to" defaultValue={destinations[0]}>
+            <select name="to" defaultValue={to}>
+              <option value="">Todos los destinos</option>
               {destinations.map((destination) => (
                 <option value={destination} key={destination}>
                   {destination}
                 </option>
               ))}
             </select>
+          </label>
+          <label>
+            Fecha de viaje
+            <input type="date" name="date" defaultValue={date} />
           </label>
           <button className="button" type="submit">
             Buscar salidas
@@ -83,7 +107,7 @@ export default async function RoutesPage() {
 
         <section className="section" id="salidas">
           <div className="route-grid">
-            {routes.map((route) => (
+            {routes.length ? routes.map((route) => (
               <Link className={`route-card ${route.featured ? "featured" : ""}`} href={`/rutas/${route.slug}`} key={route.id} prefetch={true}>
                 <div className="route-media" />
                 <div className="route-body">
@@ -99,7 +123,7 @@ export default async function RoutesPage() {
                   </div>
                 </div>
               </Link>
-            ))}
+            )) : <div className="empty-search-state"><strong>No encontramos rutas con esos datos.</strong><p>Probá con otro origen, destino o fecha.</p><Link className="button" href="/rutas">Limpiar búsqueda</Link></div>}
           </div>
         </section>
       </main>
