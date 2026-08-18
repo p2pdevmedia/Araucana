@@ -1319,6 +1319,23 @@ svg {
   font-weight: 500;
 }
 
+.route-schedule-hero { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(250px,.65fr); gap:24px; align-items:stretch; margin-bottom:20px; padding:28px; border-radius:22px; background:linear-gradient(135deg,var(--primary-deep),var(--primary)); color:#fff; box-shadow:0 18px 45px rgba(24,59,50,.16); }
+.route-schedule-hero h2 { max-width:590px; margin:8px 0 12px; font-family:var(--display); font-size:clamp(32px,4vw,52px); font-weight:500; line-height:.95; text-transform:uppercase; }
+.route-schedule-hero p:not(.eyebrow) { max-width:570px; margin:0; color:rgba(255,255,255,.72); line-height:1.55; }
+.route-schedule-hero .eyebrow { color:#b7d2c8; }
+.route-schedule-next { display:grid; align-content:center; gap:8px; min-height:150px; padding:22px; border:1px solid rgba(255,255,255,.2); border-radius:16px; background:rgba(255,255,255,.1); }
+.route-schedule-next span { color:#b7d2c8; font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+.route-schedule-next strong { font-size:22px; line-height:1.1; }
+.route-schedule-next small { color:rgba(255,255,255,.72); font-size:12px; }
+.route-schedule-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+.route-schedule-stats > div { display:grid; gap:6px; padding:18px; border:1px solid var(--line); border-radius:16px; background:var(--surface); }
+.route-schedule-stats span,.route-schedule-stats small { color:var(--ink-muted); font-size:11px; }
+.route-schedule-stats strong { color:var(--primary); font-size:28px; }
+.route-schedule-list { padding:22px; }
+.route-schedule-list .admin-edit-head { margin-bottom:18px; }
+.seat-availability b { color:var(--primary); }
+@media (max-width: 760px) { .route-schedule-hero { display:block; padding:22px; }.route-schedule-next { margin-top:20px; }.route-schedule-stats { grid-template-columns:repeat(2,1fr); }.route-schedule-list { padding:16px; } }
+
 .driver-schedule-detail {
   display: grid;
   gap: 18px;

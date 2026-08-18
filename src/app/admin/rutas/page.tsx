@@ -76,6 +76,7 @@ export default async function AdminRoutesPage({ searchParams }: AdminRoutesPageP
               <td>{route.scheduleCount}</td>
               <td>
                 <div className="table-actions">
+                  <Link className="button" href={`/admin/rutas/${route.id}/salidas`}>Ver salidas</Link>
                   <Link className="ghost-button" href={`/admin/rutas/${route.id}`}>Editar</Link>
                   <form action={setRouteActiveAction}>
                     <input type="hidden" name="id" value={route.id} />
