@@ -4,9 +4,11 @@ import { AdminShell } from "@/components/admin-shell";
 import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
 import { listAdminSchedules } from "@/lib/booking/repository";
 import { prisma } from "@/lib/db/prisma";
+import { deleteScheduleAction, setScheduleStatusAction } from "../../../salidas/actions";
 
 type RouteSchedulesPageProps = {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ month?: string }>;
 };
 
 const dateFormatter = new Intl.DateTimeFormat("es-AR", {
@@ -53,9 +55,42 @@ function statusLabel(status: string) {
   return { OPEN: "Abierta", DOCUMENTATION: "Documentación", CLOSED: "Cerrada" }[status] ?? status;
 }
 
-export default async function RouteSchedulesPage({ params }: RouteSchedulesPageProps) {
+function validMonth(value?: string) {
+  return value && /^\d{4}-\d{2}$/.test(value) ? value : todayKey().slice(0, 7);
+}
+
+function monthTitle(month: string) {
+  return new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric", timeZone: "America/Argentina/Salta" })
+    .format(new Date(`${month}-15T12:00:00-03:00`));
+}
+
+function calendarDays(month: string) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const firstDay = new Date(Date.UTC(year, monthNumber - 1, 1, 12));
+  const daysInMonth = new Date(Date.UTC(year, monthNumber, 0, 12)).getUTCDate();
+  const leadingDays = (firstDay.getUTCDay() + 6) % 7;
+  const totalCells = Math.ceil((leadingDays + daysInMonth) / 7) * 7;
+
+  return Array.from({ length: totalCells }, (_, index) => {
+    const dayNumber = index - leadingDays + 1;
+    if (dayNumber < 1 || dayNumber > daysInMonth) {
+      return null;
+    }
+
+    return `${month}-${String(dayNumber).padStart(2, "0")}`;
+  });
+}
+
+function monthOffset(month: string, offset: number) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const date = new Date(Date.UTC(year, monthNumber - 1 + offset, 1, 12));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+export default async function RouteSchedulesPage({ params, searchParams }: RouteSchedulesPageProps) {
   await getCurrentAdminOrRedirect();
   const { id } = await params;
+  const query = await searchParams;
   const [route, schedules] = await Promise.all([
     prisma.travelRoute.findUnique({ where: { id }, select: { id: true, from: true, to: true, via: true, category: true } }),
     listAdminSchedules()
@@ -72,6 +107,16 @@ export default async function RouteSchedulesPage({ params }: RouteSchedulesPageP
   const openSchedules = routeSchedules.filter((schedule) => schedule.status === "OPEN" || schedule.status === "DOCUMENTATION").length;
   const availableSeats = routeSchedules.reduce((total, schedule) => total + schedule.availableSeats, 0);
   const totalSeats = routeSchedules.reduce((total, schedule) => total + schedule.totalSeats, 0);
+  const month = validMonth(query?.month);
+  const days = calendarDays(month);
+  const schedulesByDay = new Map<string, typeof routeSchedules>();
+
+  for (const schedule of routeSchedules) {
+    const key = dateKey(schedule.departureAt);
+    const daySchedules = schedulesByDay.get(key) ?? [];
+    daySchedules.push(schedule);
+    schedulesByDay.set(key, daySchedules);
+  }
 
   return (
     <AdminShell
@@ -80,7 +125,7 @@ export default async function RouteSchedulesPage({ params }: RouteSchedulesPageP
       action={
         <div className="inline-actions">
           <Link className="ghost-button" href="/admin/rutas">Volver a rutas</Link>
-          <Link className="button" href={`/admin/salidas/nueva?routeId=${route.id}`}>Agregar salida</Link>
+          <Link className="button" href={`/admin/salidas/nueva?routeId=${route.id}&date=${today}`}>Agregar salida</Link>
         </div>
       }
     >
@@ -112,26 +157,55 @@ export default async function RouteSchedulesPage({ params }: RouteSchedulesPageP
         <div className="admin-edit-head">
           <div>
             <p className="eyebrow">Calendario operativo</p>
-            <h2>Listado de salidas</h2>
+            <h2>{monthTitle(month)}</h2>
           </div>
-          <span className="status-pill active">{routeSchedules.length} registros</span>
+          <div className="calendar-month-actions">
+            <Link className="ghost-button" href={`?month=${monthOffset(month, -1)}`} aria-label="Mes anterior">←</Link>
+            <Link className="ghost-button" href={`?month=${todayKey().slice(0, 7)}`}>Hoy</Link>
+            <Link className="ghost-button" href={`?month=${monthOffset(month, 1)}`} aria-label="Mes siguiente">→</Link>
+          </div>
         </div>
-        <div className="table-scroll">
-          <table className="data-table">
-            <thead><tr><th>Fecha</th><th>Salida</th><th>Llegada</th><th>Asientos</th><th>Estado</th><th>Acción</th></tr></thead>
-            <tbody>
-              {routeSchedules.map((schedule) => (
-                <tr key={schedule.id}>
-                  <td><strong>{dateFormatter.format(schedule.departureAt)}</strong></td>
-                  <td>{timeFormatter.format(schedule.departureAt)}</td>
-                  <td>{timeFormatter.format(schedule.arrivalAt)}</td>
-                  <td><span className="seat-availability"><b>{schedule.availableSeats}</b>/{schedule.totalSeats} libres</span></td>
-                  <td><span className={`status-pill ${schedule.status === "CLOSED" ? "inactive" : "active"}`}>{statusLabel(schedule.status)}</span></td>
-                  <td><Link className="ghost-button" href={`/admin/salidas/${schedule.id}`}>Editar salida</Link></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="calendar-weekdays" aria-hidden="true">
+          {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((day) => <span key={day}>{day}</span>)}
+        </div>
+        <div className="route-calendar">
+          {days.map((day, index) => {
+            const daySchedules = day ? schedulesByDay.get(day) ?? [] : [];
+            return (
+              <div className={`calendar-day ${day ? "" : "is-empty"}`} key={day ?? `empty-${index}`}>
+                {day ? <>
+                  <div className="calendar-day-head">
+                    <strong>{Number(day.slice(-2))}</strong>
+                    <Link href={`/admin/salidas/nueva?routeId=${route.id}&date=${day}`} aria-label={`Agregar salida el ${day}`}>+</Link>
+                  </div>
+                  <div className="calendar-day-schedules">
+                    {daySchedules.map((schedule) => (
+                      <article className={`calendar-schedule ${schedule.status === "CLOSED" ? "is-closed" : ""}`} key={schedule.id}>
+                        <div className="calendar-schedule-line">
+                          <strong>{timeFormatter.format(schedule.departureAt)}</strong>
+                          <span>{schedule.availableSeats}/{schedule.totalSeats}</span>
+                        </div>
+                        <small>{statusLabel(schedule.status)}</small>
+                        <div className="calendar-schedule-actions">
+                          <Link href={`/admin/salidas/${schedule.id}`}>Modificar</Link>
+                          <form action={setScheduleStatusAction}>
+                            <input type="hidden" name="id" value={schedule.id} />
+                            <input type="hidden" name="status" value={schedule.status === "CLOSED" ? "OPEN" : "CLOSED"} />
+                            <button type="submit">{schedule.status === "CLOSED" ? "Abrir" : "Cerrar"}</button>
+                          </form>
+                          <form action={deleteScheduleAction}>
+                            <input type="hidden" name="id" value={schedule.id} />
+                            <button type="submit" aria-label="Eliminar salida">×</button>
+                          </form>
+                        </div>
+                      </article>
+                    ))}
+                    {!daySchedules.length ? <Link className="calendar-add-empty" href={`/admin/salidas/nueva?routeId=${route.id}&date=${day}`}>Agregar salida</Link> : null}
+                  </div>
+                </> : null}
+              </div>
+            );
+          })}
         </div>
       </section>
     </AdminShell>
