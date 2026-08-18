@@ -52,6 +52,15 @@ function todayInputValue() {
   }).format(new Date());
 }
 
+function scheduleDateKey(date: Date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Argentina/Salta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(date);
+}
+
 function initialChapelcoServiceDate(route: { serviceStartDate?: string | null }) {
   const today = todayInputValue();
 
@@ -116,7 +125,8 @@ export default async function ReservationPage({ params, searchParams }: Reservat
   }
 
   const schedules = await listSchedulesForRoute(route.id);
-  const bookableSchedules = schedules.filter((schedule) => isBookableSchedule(schedule.status));
+  const today = todayInputValue();
+  const bookableSchedules = schedules.filter((schedule) => isBookableSchedule(schedule.status) && scheduleDateKey(schedule.departureAt) >= today);
   const seatMaps = await Promise.all(bookableSchedules.map((schedule) => getSeatMap(schedule.id)));
   const initialScheduleId = query?.scheduleId;
 

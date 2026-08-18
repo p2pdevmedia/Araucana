@@ -66,11 +66,12 @@ function formatScheduleTime(date: Date) {
 async function getRoutesWithScheduleCount(date?: string) {
   const routes = await listPublicRoutes();
   const schedules = await Promise.all(routes.map((route) => listSchedulesForRoute(route.id)));
+  const today = todayDateKey();
 
   return routes.map((route, index) => ({
     ...route,
-    schedules: (schedules[index] ?? []).filter((schedule) => !date || scheduleDateKey(schedule.departureAt) === date),
-    scheduleCount: (schedules[index] ?? []).filter((schedule) => !date || scheduleDateKey(schedule.departureAt) === date).length
+    schedules: (schedules[index] ?? []).filter((schedule) => scheduleDateKey(schedule.departureAt) >= today && (!date || scheduleDateKey(schedule.departureAt) === date)),
+    scheduleCount: (schedules[index] ?? []).filter((schedule) => scheduleDateKey(schedule.departureAt) >= today && (!date || scheduleDateKey(schedule.departureAt) === date)).length
   }));
 }
 
