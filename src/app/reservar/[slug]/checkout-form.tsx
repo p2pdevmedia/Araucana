@@ -90,6 +90,24 @@ export function formatDateTime(value: Date | string) {
   }).format(new Date(value)).replace(/\u00a0/g, " ");
 }
 
+function formatScheduleDate(value: Date | string) {
+  return new Intl.DateTimeFormat("es-AR", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    timeZone: "America/Argentina/Salta"
+  }).format(new Date(value)).replace(/\.$/, "");
+}
+
+function formatScheduleTime(value: Date | string) {
+  return new Intl.DateTimeFormat("es-AR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "America/Argentina/Salta"
+  }).format(new Date(value));
+}
+
 function formatPrice(cents: number, currency: string) {
   if (cents <= 0) {
     return "Consultar";
@@ -307,28 +325,30 @@ export function CheckoutForm({ route, schedules, seatMaps, initialScheduleId }: 
             <p className="eyebrow">Salida</p>
             <h2 className="route-title">Elegir salida</h2>
           </div>
-          <label>
-            Salida
-            <select
-              name="scheduleId"
-              value={selectedSchedule?.id ?? ""}
-              onChange={(event) => {
-                setScheduleId(event.target.value);
-                setSeatNumber("");
-              }}
-              disabled={!hasBookableSchedules || isSubmitting}
-            >
-              {!hasBookableSchedules ? (
-                <option value="">Sin salidas disponibles</option>
-              ) : (
-                bookableOptions.schedules.map((schedule) => (
-                  <option value={schedule.id} key={schedule.id}>
-                    {formatDateTime(schedule.departureAt)} - {schedule.availableSeats} asientos
-                  </option>
-                ))
-              )}
-            </select>
-          </label>
+          {hasBookableSchedules ? <fieldset className="schedule-picker" disabled={isSubmitting}>
+            <legend>Salidas disponibles</legend>
+            <div className="schedule-rail" aria-label="Salidas disponibles">
+              {bookableOptions.schedules.map((schedule) => (
+                <label className="schedule-option" key={schedule.id}>
+                  <input
+                    type="radio"
+                    name="scheduleId"
+                    value={schedule.id}
+                    checked={selectedSchedule?.id === schedule.id}
+                    onChange={(event) => {
+                      setScheduleId(event.target.value);
+                      setSeatNumber("");
+                    }}
+                  />
+                  <span className="schedule-card">
+                    <span className="schedule-date">{formatScheduleDate(schedule.departureAt)}</span>
+                    <strong className="schedule-time">{formatScheduleTime(schedule.departureAt)}</strong>
+                    <span className="schedule-seats">{schedule.availableSeats} asientos</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset> : null}
           {!hasBookableSchedules ? (
             <p className="muted">No hay salidas disponibles para reservar en este momento.</p>
           ) : null}
