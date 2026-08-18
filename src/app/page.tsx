@@ -1,326 +1,36 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { HistoricalMap } from "@/components/historical-map";
+import { SiteFooter } from "@/components/site-footer";
+import { listPublicRoutes } from "@/lib/booking/repository";
 import laninWinter from "../../lanin-invierno.jpeg";
 import laninSummer from "../../lanin-verano.jpeg";
-import { SiteFooter } from "@/components/site-footer";
-import { listPublicRoutes, listSchedulesForRoute } from "@/lib/booking/repository";
-import type { PublicRouteDto, ScheduleOptionDto } from "@/lib/booking/types";
 
 export const revalidate = 300;
 
-type RouteStop = {
-  name: string;
-  km: number;
-  minutes: number;
-  note: string;
-};
-
-function formatDuration(minutes: number) {
-  const hours = Math.floor(minutes / 60);
-  const remainder = minutes % 60;
-
-  if (!hours) {
-    return `${remainder} min`;
-  }
-
-  return remainder ? `${hours} h ${remainder} min` : `${hours} h`;
-}
-
-function formatPrice(cents: number, currency: string) {
-  if (cents <= 0) {
-    return "Consultar";
-  }
-
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0
-  }).format(cents / 100);
-}
-
-function normalizeStops(stops: unknown): RouteStop[] {
-  if (!Array.isArray(stops)) {
-    return [];
-  }
-
-  return stops
-    .map((stop) => {
-      if (!stop || typeof stop !== "object") {
-        return null;
-      }
-
-      const item = stop as { name?: unknown; km?: unknown; minutes?: unknown; note?: unknown };
-      return {
-        name: String(item.name ?? ""),
-        km: Number(item.km ?? 0),
-        minutes: Number(item.minutes ?? 0),
-        note: String(item.note ?? "")
-      };
-    })
-    .filter((stop): stop is RouteStop => Boolean(stop?.name));
-}
-
-function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "2-digit",
-    month: "short",
-    timeZone: "America/Argentina/Salta"
-  }).format(date);
-}
-
-function formatTime(date: Date) {
-  return new Intl.DateTimeFormat("es-AR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "America/Argentina/Salta"
-  }).format(date);
-}
-
-function dateKey(date: Date) {
-  return new Intl.DateTimeFormat("en-CA", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    timeZone: "America/Argentina/Salta"
-  }).format(date);
-}
-
-function scheduleSummary(schedules: ScheduleOptionDto[]) {
-  if (!schedules.length) {
-    return {
-      dateRange: "Sin salidas",
-      dayCount: 0,
-      firstTime: "Sin horario"
-    };
-  }
-
-  const sorted = [...schedules].sort((left, right) => left.departureAt.getTime() - right.departureAt.getTime());
-  const first = sorted[0];
-  const last = sorted[sorted.length - 1];
-
-  return {
-    dateRange: `${formatDate(first.departureAt)} - ${formatDate(last.departureAt)}`,
-    dayCount: new Set(sorted.map((schedule) => dateKey(schedule.departureAt))).size,
-    firstTime: formatTime(first.departureAt)
-  };
-}
-
-function destinationEyebrow(routes: PublicRouteDto[]) {
-  const names = Array.from(new Set(routes.flatMap((route) => [route.from, route.to]))).slice(0, 3);
-  return names.length ? names.join(" · ") : "Rutas publicadas";
-}
-
 export default async function HomePage() {
   const routes = await listPublicRoutes();
-  const schedulePairs = await Promise.all(routes.map(async (route) => [route.id, await listSchedulesForRoute(route.id)] as const));
-  const schedulesByRoute = new Map(schedulePairs);
-  const allSchedules = schedulePairs.flatMap(([, schedules]) => schedules);
-  const featured = routes.find((route) => route.featured) ?? routes[0];
-  const secondaryRoutes = featured ? routes.filter((route) => route.id !== featured.id).slice(0, 4) : [];
-  const featuredSchedules = featured ? (schedulesByRoute.get(featured.id) ?? []) : [];
-  const featuredSummary = scheduleSummary(featuredSchedules);
-  const globalSummary = scheduleSummary(allSchedules);
-  const featuredStops = featured ? normalizeStops(featured.stops) : [];
-  const secondaryCtaRoute = secondaryRoutes[0];
-  const heroStyle = {
-    "--hero-image": `url(${laninWinter.src})`
-  } as CSSProperties;
-  const crossingStyle = {
-    "--crossing-image": `url(${laninSummer.src})`
-  } as CSSProperties;
-
-  return (
-    <>
-      <section className="hero" style={heroStyle}>
-        <div className="hero-inner">
-          <div className="hero-copy">
-            <p className="eyebrow">{destinationEyebrow(routes)}</p>
-            <h1 className="display-title">
-              El placer de viajar por <em>la cordillera.</em>
-            </h1>
-            <p className="lead">
-              Transporte turistico regular por la Patagonia andina, con salidas,
-              paradas y disponibilidad publicadas desde la base de datos.
-            </p>
-            <div className="hero-actions">
-              <Link className="cream-button" href="/rutas" prefetch={true}>
-                Ver rutas y horarios
-              </Link>
-              <Link className="ghost-button" href="/rutas" prefetch={true}>
-                Reservar online
-              </Link>
-            </div>
-          </div>
-
-          <form className="booking-dock" action="/rutas">
-            <label className="dock-field">
-              <span>Desde</span>
-              <strong>{featured?.from ?? "Origen"}</strong>
-            </label>
-            <label className="dock-field">
-              <span>Hacia</span>
-              <strong>{featured?.to ?? "Destino"}</strong>
-            </label>
-            <label className="dock-field">
-              <span>Temporada</span>
-              <strong>{featuredSummary.dateRange}</strong>
-            </label>
-            <label className="dock-field">
-              <span>Primera salida</span>
-              <strong>{featuredSummary.firstTime}</strong>
-            </label>
-            <button className="button" type="submit">
-              Buscar
-            </button>
-          </form>
-        </div>
-      </section>
-
-      <main>
-        <section className="page-shell section">
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">Nuestra historia</p>
-              <h2 className="section-title">Somos de San Martin.</h2>
-            </div>
-            <p className="lead">
-              Conectamos la region con viajeros que vienen a
-              descubrir lagos, bosques, frontera y montana.
-            </p>
-          </div>
-          <div className="stats-grid home-stats-grid">
-            <div className="stat-card">
-              <strong>16</strong>
-              <span>anos de operacion</span>
-            </div>
-            <div className="stat-card">
-              <strong>{routes.length}</strong>
-              <span>rutas activas</span>
-            </div>
-            <div className="stat-card">
-              <strong>{globalSummary.dayCount}</strong>
-              <span>dias con salidas</span>
-            </div>
-          </div>
-        </section>
-
-        <section className="page-shell section" id="rutas">
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">Rutas regulares</p>
-              <h2 className="section-title">Una cordillera de posibilidades.</h2>
-            </div>
-            <Link className="button" href="/rutas" prefetch={true}>
-              Ver todas
-            </Link>
-          </div>
-
-          {featured ? (
-            <div className="route-grid">
-              <Link className="route-card featured" href={`/rutas/${featured.slug}`} prefetch={true}>
-                <div className="route-media" />
-                <div className="route-body">
-                  <span className="route-kicker">Ruta destacada</span>
-                  <h3 className="route-title">
-                    {featured.from} → {featured.to}
-                  </h3>
-                  <p className="muted">{featured.via}</p>
-                  <div className="route-meta">
-                    <span>{formatDuration(featured.durationMin)} · {featuredSchedules.length} salidas</span>
-                    <span className="price">{formatPrice(featured.priceCents, featured.currency)}</span>
-                  </div>
-                </div>
-              </Link>
-
-              {secondaryRoutes.map((route) => {
-                const routeSchedules = schedulesByRoute.get(route.id) ?? [];
-
-                return (
-                  <Link className="route-card" href={`/rutas/${route.slug}`} key={route.id} prefetch={true}>
-                    <div className="route-media" />
-                    <div className="route-body">
-                      <span className="route-kicker">{route.category}</span>
-                      <h3 className="route-title">
-                        {route.from} → {route.to}
-                      </h3>
-                      <p className="muted">{route.via}</p>
-                      <div className="route-meta">
-                        <span>{formatDuration(route.durationMin)} · {routeSchedules.length} salidas</span>
-                        <span className="price">{formatPrice(route.priceCents, route.currency)}</span>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="lead">No hay rutas activas publicadas por ahora.</p>
-          )}
-        </section>
-
-        {featured ? (
-          <section className="page-shell section">
-            <div className="feature-grid">
-              <div>
-                <p className="eyebrow">El itinerario</p>
-                <h2 className="section-title">
-                  {featured.from} a {featured.to}.
-                </h2>
-                <p className="lead">{featured.description}</p>
-                <div className="inline-actions">
-                  <Link className="button" href={`/rutas/${featured.slug}`} prefetch={true}>
-                    Ver detalle
-                  </Link>
-                  {secondaryCtaRoute ? (
-                    <Link className="ghost-button" href={`/rutas/${secondaryCtaRoute.slug}`} prefetch={true}>
-                      Otra ruta
-                    </Link>
-                  ) : null}
-                </div>
-              </div>
-              <div className="lake-grid">
-                {featuredStops.map((stop, index) => (
-                  <div className="lake-card" key={`${stop.name}-${index}`}>
-                    <small>0{index + 1} · +{stop.minutes}m</small>
-                    <strong>{stop.name}</strong>
-                    <p className="muted">{stop.note}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        ) : null}
-
-        <section className="dark-band crossing-band section" style={crossingStyle}>
-          <div className="page-shell split">
-            <div>
-              <p className="eyebrow">Salidas publicadas</p>
-              <h2 className="section-title">{globalSummary.dateRange}</h2>
-              <p className="lead">
-                La grilla de rutas, horarios, disponibilidad y paradas se lee
-                desde la base de datos para mantener la demo alineada con el
-                panel de administracion.
-              </p>
-              <Link className="cream-button" href="/rutas" prefetch={true}>
-                Ver salidas
-              </Link>
-            </div>
-            <div className="plain-card">
-              <p className="eyebrow">Reserva web</p>
-              <h3 className="route-title">Reserva y confirma tu asiento online.</h3>
-              <p className="muted">
-                Elegi ruta, salida y asiento desde la web para completar tu
-                reserva en pocos pasos, con ticket y QR listos para embarcar.
-              </p>
-              <Link className="button" href="/rutas" prefetch={true}>
-                Reservar online
-              </Link>
-            </div>
-          </div>
-        </section>
-      </main>
-      <SiteFooter />
-    </>
-  );
+  const firstRoute = routes[0];
+  const heroStyle = { "--hero-image": `url(${laninWinter.src})` } as CSSProperties;
+  const finalStyle = { "--final-image": `url(${laninSummer.src})` } as CSSProperties;
+  const services = [
+    { number: "01", title: "Servicio público", text: "Traful · Hua Hum · Yuco", href: "/rutas", tone: "service-green" },
+    { number: "02", title: "Traslados de invierno", text: "Lago Hermoso Ski · Cerro Chapelco", href: "/rutas", tone: "service-snow" },
+    { number: "03", title: "Traslados aeropuerto", text: "Desde y hacia el aeropuerto, puerta a puerta.", href: "#contacto", tone: "service-sky" },
+    { number: "04", title: "Excursiones", text: "Experiencias para descubrir la región.", href: "#contacto", tone: "service-red" },
+    { number: "05", title: "Creá tu viaje", text: "Grupales, privados y por todo el país.", href: "#contacto", tone: "service-dark" }
+  ];
+  return <>
+    <section className="hero" style={heroStyle}><div className="hero-inner"><div className="hero-copy"><p className="eyebrow hero-eyebrow">San Martín de los Andes <span>•</span> Patagonia Argentina</p><h1 className="display-title">El placer<br />de <em>viajar.</em></h1><p className="hero-tagline">El destino lo elegís vos</p><div className="hero-actions"><Link className="cream-button" href="/rutas">Ver rutas y horarios <span>↗</span></Link><Link className="accent-button" href="/rutas">Reservar online <span>↗</span></Link></div></div><div className="hero-note"><span className="hero-note-dot" /> Agencia de viajes <strong>desde 2009</strong></div></div></section>
+    <main>
+      <section className="page-shell section services-section" id="servicios"><div className="section-head"><div><p className="eyebrow">Nuestros servicios</p><h2 className="section-title">Elegí tu próximo<br /><span>destino.</span></h2></div><p className="lead section-intro">Una forma más simple de descubrir la Patagonia. Elegí cómo querés viajar y nosotros nos ocupamos del resto.</p></div><div className="services-grid">{services.map((service) => <Link className={`service-card ${service.tone}`} href={service.href} key={service.number}><span className="service-number">{service.number}</span><span className="service-arrow">↗</span><div className="service-icon">{service.number === "01" ? "⌁" : service.number === "02" ? "✦" : service.number === "03" ? "⌁" : service.number === "04" ? "◌" : "＋"}</div><h3>{service.title}</h3><p>{service.text}</p></Link>)}</div></section>
+      <section className="door-section page-shell"><div className="door-copy"><p className="eyebrow eyebrow-light">La experiencia Araucana</p><h2>Servicio<br /><em>puerta a puerta.</em></h2><p>Nosotros nos ocupamos del traslado.<br /><strong>Vos disfrutás el viaje.</strong></p><Link className="light-link" href="#contacto">Conocé más <span>↗</span></Link></div><div className="door-stamp"><span>Desde tu origen</span><b>→</b><span>Hasta tu destino</span></div></section>
+      <section className="booking-section page-shell" id="reservas"><div><p className="eyebrow">Tu próximo viaje empieza acá</p><h2 className="section-title">Reservá de forma<br /><span>simple y clara.</span></h2><p className="lead">Elegí tu ruta, fecha y horario. Si reservás fuera del horario de atención, recibimos tu solicitud y la confirmamos a partir de las 08:00 hs.</p></div><div className="booking-card"><div className="booking-card-top"><span>Reserva online</span><span className="status-dot">● Disponible</span></div><div className="booking-row"><div><small>Origen</small><strong>San Martín de los Andes</strong></div><span>→</span><div><small>Destino</small><strong>Elegí tu destino</strong></div></div><div className="booking-row booking-date"><div><small>Fecha de viaje</small><strong>Seleccioná una fecha</strong></div><Link className="accent-button" href={firstRoute ? `/rutas/${firstRoute.slug}` : "/rutas"}>Buscar horarios ↗</Link></div><p className="booking-help">Atención para confirmaciones: <strong>08:00 a 19:30 hs</strong></p></div></section>
+      <section className="story-section page-shell" id="historia"><div className="story-mark"><img src="/logo.png" alt="La Araucana" /></div><div><p className="eyebrow">Nuestra historia</p><h2 className="section-title">Viajar nos<br /><span>conecta.</span></h2><p className="lead">Conectamos con viajeros que quieren descubrir la región.</p><p className="story-copy">Desde 2009, hacemos de cada traslado una parte importante del viaje: con experiencia local, atención humana y el compromiso de acompañarte en cada destino.</p><Link className="text-link" href="#contacto">Conocé La Araucana <span>↗</span></Link></div></section>
+      <section className="map-section page-shell" id="mapa"><div className="section-head"><div><p className="eyebrow">Una historia que sigue viajando</p><h2 className="section-title">Destinos que<br /><span>nos inspiran.</span></h2></div><p className="lead section-intro">Explorá algunos de los lugares donde llegamos. Acercá el mapa para descubrirlos.</p></div><HistoricalMap /></section>
+      <section className="trust-section page-shell"><div className="trust-badge">✓</div><div><p className="eyebrow">Respaldo institucional</p><h2>Empresa habilitada como<br /><span>Agencia de Turismo Estudiantil.</span></h2></div><p>Trayectoria, confianza y experiencia para que viajes con tranquilidad.</p></section>
+      <section className="final-image" style={finalStyle}><div><p className="eyebrow eyebrow-light">Patagonia te espera</p><h2>El viaje<br />es <em>ahora.</em></h2><Link className="cream-button" href="/rutas">Empezá a viajar <span>↗</span></Link></div></section>
+      <section className="contact-section page-shell" id="contacto"><div className="contact-copy"><p className="eyebrow">Ubicación y contacto</p><h2 className="section-title">Estamos para<br /><span>ayudarte.</span></h2><p className="lead">Nuestra oficina se encuentra en:</p><p className="address">Mariano Moreno 829<br />San Martín de los Andes<br />C.P. 8370 · Neuquén<br />Patagonia Argentina</p><a className="text-link" href="https://www.google.com/maps/search/?api=1&query=Mariano+Moreno+829+San+Martin+de+los+Andes" target="_blank" rel="noreferrer">Ver ubicación en Google Maps ↗</a></div><div className="contact-card"><div><small>Hablemos</small><a href="tel:+542972420285">02972 420285</a><a href="mailto:info@araucana.com.ar">info@araucana.com.ar</a><a href="https://araucana.tur.ar" target="_blank" rel="noreferrer">www.araucana.tur.ar</a></div><div className="socials"><a className="whatsapp" href="https://wa.me/5492944649049" target="_blank" rel="noreferrer">WhatsApp ↗</a><a href="https://www.instagram.com/" target="_blank" rel="noreferrer">Instagram ↗</a><a href="https://www.tiktok.com/" target="_blank" rel="noreferrer">TikTok ↗</a></div></div></section>
+    </main><SiteFooter />
+  </>;
 }

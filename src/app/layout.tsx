@@ -4,8 +4,8 @@ import { BrandMark } from "@/components/brand-mark";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Araucana Viajes",
-  description: "Turismo y transporte en la Patagonia andina"
+  title: "La Araucana | Agencia de viajes desde 2009",
+  description: "Viajes, traslados y experiencias en la Patagonia Argentina."
 };
 
 export default function RootLayout({
@@ -19,21 +19,17 @@ export default function RootLayout({
         <header className="site-header">
           <nav className="site-nav">
             <Link className="brand-link" href="/">
-              <BrandMark color="#FBF6EB" size={38} />
-              <span>
-                <span className="brand-name">Araucana</span>
-                <span className="brand-kicker">Viajes · desde 2009</span>
-              </span>
+              <img className="brand-logo" src="/logo.png" alt="La Araucana Viajes" />
+              <span className="brand-kicker">Agencia de viajes desde 2009</span>
             </Link>
             <div className="nav-links">
-              <Link href="/rutas" prefetch={true}>Rutas</Link>
-              <Link href="/rutas" prefetch={true}>Reservas</Link>
+              <Link href="/rutas" prefetch={true}>Opciones de rutas</Link>
+              <Link href="#reservas">Reservá tu traslado</Link>
               <Link href="/soporte">Soporte</Link>
             </div>
             <div className="nav-actions">
-              <Link className="ghost-button" href="/login">
-                Admin
-              </Link>
+              <span className="languages">ES <span>EN</span> <span>PT</span></span>
+              <Link className="admin-link" href="/login">Admin</Link>
               <Link className="cream-button" href="/rutas" prefetch={true}>
                 Reservar
               </Link>
