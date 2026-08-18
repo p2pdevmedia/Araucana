@@ -10,6 +10,7 @@ type CheckoutFormProps = {
   route: PublicRouteDto;
   schedules: ScheduleOptionDto[];
   seatMaps: SeatMapDto[];
+  initialScheduleId?: string;
 };
 
 type PassengerForm = {
@@ -184,11 +185,12 @@ export function buildPassengerPayload(passenger: PassengerForm): CreateReservati
   };
 }
 
-export function CheckoutForm({ route, schedules, seatMaps }: CheckoutFormProps) {
+export function CheckoutForm({ route, schedules, seatMaps, initialScheduleId }: CheckoutFormProps) {
   const router = useRouter();
   const bookableOptions = useMemo(() => filterBookableSchedules(schedules, seatMaps), [schedules, seatMaps]);
   const firstScheduleId = bookableOptions.schedules[0]?.id ?? "";
-  const [scheduleId, setScheduleId] = useState(firstScheduleId);
+  const preferredScheduleId = initialScheduleId && bookableOptions.schedules.some((schedule) => schedule.id === initialScheduleId) ? initialScheduleId : firstScheduleId;
+  const [scheduleId, setScheduleId] = useState(preferredScheduleId);
   const [seatNumber, setSeatNumber] = useState("");
   const [passenger, setPassenger] = useState<PassengerForm>(initialPassenger);
   const [isSubmitting, setIsSubmitting] = useState(false);

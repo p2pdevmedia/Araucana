@@ -51,6 +51,7 @@ async function getRoutesWithScheduleCount(date?: string) {
 
   return routes.map((route, index) => ({
     ...route,
+    schedules: (schedules[index] ?? []).filter((schedule) => !date || scheduleDateKey(schedule.departureAt) === date),
     scheduleCount: (schedules[index] ?? []).filter((schedule) => !date || scheduleDateKey(schedule.departureAt) === date).length
   }));
 }
@@ -117,7 +118,7 @@ export default async function RoutesPage({ searchParams }: RoutesPageProps) {
         <section className="section" id="salidas">
           <div className="route-grid">
             {routes.length ? routes.map((route) => (
-              <Link className={`route-card ${route.featured ? "featured" : ""}`} href={`/rutas/${route.slug}`} key={route.id} prefetch={true}>
+              <article className={`route-card ${route.featured ? "featured" : ""}`} key={route.id}>
                 <div className="route-media" />
                 <div className="route-body">
                   <span className="route-kicker">{route.category}</span>
@@ -130,8 +131,12 @@ export default async function RoutesPage({ searchParams }: RoutesPageProps) {
                     <span>{formatDuration(route.durationMin)} · {route.scheduleCount} salidas disponibles</span>
                     <span className="price">{formatPrice(route.priceCents, route.currency)}</span>
                   </div>
+                  <form className="route-quick-book" action={`/reservar/${route.slug}`}>
+                    {route.schedules.length ? <label>Elegí tu salida<select name="scheduleId" defaultValue={route.schedules[0].id}>{route.schedules.map((schedule) => <option value={schedule.id} key={schedule.id}>{new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "America/Argentina/Salta" }).format(schedule.departureAt)} · {schedule.availableSeats} asientos</option>)}</select></label> : null}
+                    <button className="button" type="submit">Consultar y elegir asiento ↗</button>
+                  </form>
                 </div>
-              </Link>
+              </article>
             )) : <div className="empty-search-state"><strong>No encontramos rutas con esos datos.</strong><p>Probá con otro origen, destino o fecha.</p><Link className="button" href="/rutas">Limpiar búsqueda</Link></div>}
           </div>
         </section>

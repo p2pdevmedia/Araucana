@@ -11,6 +11,9 @@ type ReservationPageProps = {
   params: Promise<{
     slug: string;
   }>;
+  searchParams?: Promise<{
+    scheduleId?: string;
+  }>;
 };
 
 function formatDuration(minutes: number) {
@@ -59,8 +62,9 @@ function initialChapelcoServiceDate(route: { serviceStartDate?: string | null })
   return today;
 }
 
-export default async function ReservationPage({ params }: ReservationPageProps) {
+export default async function ReservationPage({ params, searchParams }: ReservationPageProps) {
   const { slug } = await params;
+  const query = await searchParams;
   const route = await getPublicRouteBySlug(slug);
 
   if (!route) {
@@ -114,6 +118,7 @@ export default async function ReservationPage({ params }: ReservationPageProps) 
   const schedules = await listSchedulesForRoute(route.id);
   const bookableSchedules = schedules.filter((schedule) => isBookableSchedule(schedule.status));
   const seatMaps = await Promise.all(bookableSchedules.map((schedule) => getSeatMap(schedule.id)));
+  const initialScheduleId = query?.scheduleId;
 
   return (
     <>
@@ -149,7 +154,7 @@ export default async function ReservationPage({ params }: ReservationPageProps) 
           </div>
         </section>
 
-        <CheckoutForm route={route} schedules={bookableSchedules} seatMaps={seatMaps} />
+        <CheckoutForm route={route} schedules={bookableSchedules} seatMaps={seatMaps} initialScheduleId={initialScheduleId} />
       </main>
       <SiteFooter />
     </>
