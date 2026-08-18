@@ -4,6 +4,15 @@ import { listPublicRoutes, listSchedulesForRoute } from "@/lib/booking/repositor
 
 export const revalidate = 300;
 
+function todayDateKey() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Argentina/Salta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date());
+}
+
 function formatDuration(minutes: number) {
   const hours = Math.floor(minutes / 60);
   const remainder = minutes % 60;
@@ -98,7 +107,7 @@ export default async function RoutesPage({ searchParams }: RoutesPageProps) {
           </label>
           <label>
             Fecha de viaje
-            <input type="date" name="date" defaultValue={date} />
+            <input type="date" name="date" defaultValue={date || todayDateKey()} />
           </label>
           <button className="button" type="submit">
             Buscar salidas
