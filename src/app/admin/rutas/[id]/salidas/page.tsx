@@ -8,7 +8,7 @@ import { deleteScheduleAction, setScheduleStatusAction } from "../../../salidas/
 
 type RouteSchedulesPageProps = {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ month?: string }>;
+  searchParams?: Promise<{ month?: string; notice?: string }>;
 };
 
 const dateFormatter = new Intl.DateTimeFormat("es-AR", {
@@ -122,10 +122,11 @@ export default async function RouteSchedulesPage({ params, searchParams }: Route
     <AdminShell
       title={`${route.from} → ${route.to}`}
       eyebrow="Salidas de la ruta"
+      notice={query?.notice}
       action={
         <div className="inline-actions">
           <Link className="ghost-button" href="/admin/rutas">Volver a rutas</Link>
-          <Link className="button" href={`/admin/salidas/nueva?routeId=${route.id}&date=${today}`}>Agregar salida</Link>
+          <Link className="button" href={`/admin/rutas/${route.id}/salidas/nueva?date=${today}`}>Agregar salida</Link>
         </div>
       }
     >
@@ -176,7 +177,7 @@ export default async function RouteSchedulesPage({ params, searchParams }: Route
                 {day ? <>
                   <div className="calendar-day-head">
                     <strong>{Number(day.slice(-2))}</strong>
-                    <Link href={`/admin/salidas/nueva?routeId=${route.id}&date=${day}`} aria-label={`Agregar salida el ${day}`}>+</Link>
+                    <Link href={`/admin/rutas/${route.id}/salidas/nueva?date=${day}`} aria-label={`Agregar salida el ${day}`}>+</Link>
                   </div>
                   <div className="calendar-day-schedules">
                     {daySchedules.map((schedule) => (
@@ -187,7 +188,7 @@ export default async function RouteSchedulesPage({ params, searchParams }: Route
                         </div>
                         <small>{statusLabel(schedule.status)}</small>
                         <div className="calendar-schedule-actions">
-                          <Link href={`/admin/salidas/${schedule.id}`}>Modificar</Link>
+                          <Link href={`/admin/rutas/${route.id}/salidas/${schedule.id}`}>Modificar</Link>
                           <form action={setScheduleStatusAction}>
                             <input type="hidden" name="id" value={schedule.id} />
                             <input type="hidden" name="status" value={schedule.status === "CLOSED" ? "OPEN" : "CLOSED"} />
@@ -200,7 +201,7 @@ export default async function RouteSchedulesPage({ params, searchParams }: Route
                         </div>
                       </article>
                     ))}
-                    {!daySchedules.length ? <Link className="calendar-add-empty" href={`/admin/salidas/nueva?routeId=${route.id}&date=${day}`}>Agregar salida</Link> : null}
+                    {!daySchedules.length ? <Link className="calendar-add-empty" href={`/admin/rutas/${route.id}/salidas/nueva?date=${day}`}>Agregar salida</Link> : null}
                   </div>
                 </> : null}
               </div>

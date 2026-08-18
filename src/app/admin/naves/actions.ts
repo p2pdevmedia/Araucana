@@ -93,7 +93,6 @@ function vehicleErrorState(error: unknown) {
 function revalidateVehiclePaths() {
   revalidatePath("/admin");
   revalidatePath("/admin/naves");
-  revalidatePath("/admin/salidas");
 }
 
 export async function createVehicleAction(_state: AdminFormState, formData: FormData): Promise<AdminFormState> {

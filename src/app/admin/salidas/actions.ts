@@ -102,11 +102,14 @@ function scheduleErrorState(error: unknown) {
   return errorState("No pudimos guardar la salida. Intentalo nuevamente.");
 }
 
-function revalidateSchedulePaths(routeSlug?: string) {
+function revalidateSchedulePaths(routeSlug?: string, routeId?: string) {
   revalidatePath("/admin");
-  revalidatePath("/admin/salidas");
   revalidatePath("/admin/rutas");
   revalidatePath("/rutas");
+
+  if (routeId) {
+    revalidatePath(`/admin/rutas/${routeId}/salidas`);
+  }
 
   if (routeSlug) {
     revalidatePath(`/rutas/${routeSlug}`);
@@ -117,17 +120,16 @@ function revalidateSchedulePaths(routeSlug?: string) {
 export async function createScheduleAction(_state: AdminFormState, formData: FormData): Promise<AdminFormState> {
   await getCurrentAdminOrRedirect();
 
-  let routeSlug: string;
+  let schedule: Awaited<ReturnType<typeof scheduleData>>;
   try {
-    const schedule = await scheduleData(formData);
-    routeSlug = schedule.routeSlug;
+    schedule = await scheduleData(formData);
     await prisma.schedule.create({ data: schedule.data });
   } catch (error) {
     return scheduleErrorState(error);
   }
 
-  revalidateSchedulePaths(routeSlug);
-  redirect(`/admin/salidas?notice=${encodeURIComponent("Salida guardada con exito.")}`);
+  revalidateSchedulePaths(schedule.routeSlug, schedule.data.routeId);
+  redirect(`/admin/rutas/${schedule.data.routeId}/salidas?notice=${encodeURIComponent("Salida guardada con exito.")}`);
 }
 
 export async function updateScheduleAction(_state: AdminFormState, formData: FormData): Promise<AdminFormState> {
@@ -143,23 +145,23 @@ export async function updateScheduleAction(_state: AdminFormState, formData: For
     select: {
       route: {
         select: {
+          id: true,
           slug: true
         }
       }
     }
   });
-  let routeSlug: string;
+  let schedule: Awaited<ReturnType<typeof scheduleData>>;
   try {
-    const schedule = await scheduleData(formData);
-    routeSlug = schedule.routeSlug;
+    schedule = await scheduleData(formData);
     await prisma.schedule.update({ where: { id }, data: schedule.data });
   } catch (error) {
     return scheduleErrorState(error);
   }
 
-  revalidateSchedulePaths(current?.route.slug);
-  revalidateSchedulePaths(routeSlug);
-  redirect(`/admin/salidas?notice=${encodeURIComponent("Salida guardada con exito.")}`);
+  revalidateSchedulePaths(schedule.routeSlug, schedule.data.routeId);
+  revalidateSchedulePaths(current?.route.slug, current?.route.id);
+  redirect(`/admin/rutas/${schedule.data.routeId}/salidas?notice=${encodeURIComponent("Salida guardada con exito.")}`);
 }
 
 export async function setScheduleStatusAction(formData: FormData) {
@@ -178,13 +180,14 @@ export async function setScheduleStatusAction(formData: FormData) {
     select: {
       route: {
         select: {
+          id: true,
           slug: true
         }
       }
     }
   });
-  revalidateSchedulePaths(schedule.route.slug);
-  redirect(`/admin/salidas?notice=${encodeURIComponent("Salida actualizada con exito.")}`);
+  revalidateSchedulePaths(schedule.route.slug, schedule.route.id);
+  redirect(`/admin/rutas/${schedule.route.id}/salidas?notice=${encodeURIComponent("Salida actualizada con exito.")}`);
 }
 
 export async function deleteScheduleAction(formData: FormData) {
@@ -196,6 +199,7 @@ export async function deleteScheduleAction(formData: FormData) {
     select: {
       route: {
         select: {
+          id: true,
           slug: true
         }
       }
@@ -216,6 +220,6 @@ export async function deleteScheduleAction(formData: FormData) {
     await prisma.schedule.delete({ where: { id } });
   }
 
-  revalidateSchedulePaths(schedule.route.slug);
-  redirect(`/admin/salidas?notice=${encodeURIComponent(notice)}`);
+  revalidateSchedulePaths(schedule.route.slug, schedule.route.id);
+  redirect(`/admin/rutas/${schedule.route.id}/salidas?notice=${encodeURIComponent(notice)}`);
 }

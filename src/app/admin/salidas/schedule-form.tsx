@@ -132,7 +132,7 @@ export function ScheduleForm({ action, routes, vehicles, schedule, submitLabel }
       </label>
       <div className="form-actions span-2">
         <AdminSubmitButton>{submitLabel}</AdminSubmitButton>
-        <Link className="ghost-button" href="/admin/salidas">Cancelar</Link>
+        <Link className="ghost-button" href={schedule?.routeId ? `/admin/rutas/${schedule.routeId}/salidas` : "/admin/rutas"}>Cancelar</Link>
       </div>
     </form>
   );

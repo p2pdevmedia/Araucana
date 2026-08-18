@@ -15,7 +15,6 @@ type AdminShellProps = {
 const links: Array<{ href: string; label: string; roles: AppRole[] }> = [
   { href: "/admin", label: "Panel", roles: ["ADMIN"] },
   { href: "/admin/rutas", label: "Rutas", roles: ["ADMIN"] },
-  { href: "/admin/salidas", label: "Salidas", roles: ["ADMIN"] },
   { href: "/admin/naves", label: "Naves", roles: ["ADMIN"] },
   { href: "/admin/chapelco", label: "Chapelco", roles: ["ADMIN", "SECRETARY"] },
   { href: "/admin/secretarias", label: "Secretarias", roles: ["ADMIN"] },

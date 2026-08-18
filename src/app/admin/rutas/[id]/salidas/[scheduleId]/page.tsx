@@ -2,26 +2,19 @@ import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
 import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
 import { prisma } from "@/lib/db/prisma";
-import { updateScheduleAction } from "../actions";
-import { getScheduleFormData } from "../form-data";
-import { ScheduleForm } from "../schedule-form";
+import { updateScheduleAction } from "../../../../salidas/actions";
+import { getScheduleFormData } from "../../../../salidas/form-data";
+import { ScheduleForm } from "../../../../salidas/schedule-form";
 
-type EditSchedulePageProps = {
-  params: Promise<{
-    id: string;
-  }>;
+type EditRouteSchedulePageProps = {
+  params: Promise<{ id: string; scheduleId: string }>;
 };
 
-export default async function EditSchedulePage({ params }: EditSchedulePageProps) {
+export default async function EditRouteSchedulePage({ params }: EditRouteSchedulePageProps) {
   await getCurrentAdminOrRedirect();
-  const { id } = await params;
+  const { scheduleId } = await params;
   const [schedule, formData] = await Promise.all([
-    prisma.schedule.findUnique({
-      where: { id },
-      include: {
-        route: true
-      }
-    }),
+    prisma.schedule.findUnique({ where: { id: scheduleId }, include: { route: true } }),
     getScheduleFormData()
   ]);
 
@@ -30,11 +23,9 @@ export default async function EditSchedulePage({ params }: EditSchedulePageProps
   }
 
   return (
-    <AdminShell title="Editar salida">
+    <AdminShell title="Modificar salida" eyebrow="Salidas de la ruta">
       <section className="plain-card admin-section">
-        <h2>
-          {schedule.route.from} → {schedule.route.to}
-        </h2>
+        <h2>{schedule.route.from} → {schedule.route.to}</h2>
         <ScheduleForm
           action={updateScheduleAction}
           routes={formData.routes}
