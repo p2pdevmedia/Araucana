@@ -45,6 +45,24 @@ function scheduleDateKey(date: Date) {
   }).format(date);
 }
 
+function formatScheduleDate(date: Date) {
+  return new Intl.DateTimeFormat("es-AR", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    timeZone: "America/Argentina/Salta"
+  }).format(date).replace(/\.$/, "");
+}
+
+function formatScheduleTime(date: Date) {
+  return new Intl.DateTimeFormat("es-AR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "America/Argentina/Salta"
+  }).format(date);
+}
+
 async function getRoutesWithScheduleCount(date?: string) {
   const routes = await listPublicRoutes();
   const schedules = await Promise.all(routes.map((route) => listSchedulesForRoute(route.id)));
@@ -132,7 +150,21 @@ export default async function RoutesPage({ searchParams }: RoutesPageProps) {
                     <span className="price">{formatPrice(route.priceCents, route.currency)}</span>
                   </div>
                   <form className="route-quick-book" action={`/reservar/${route.slug}`}>
-                    {route.schedules.length ? <label>Elegí tu salida<select name="scheduleId" defaultValue={route.schedules[0].id}>{route.schedules.map((schedule) => <option value={schedule.id} key={schedule.id}>{new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "America/Argentina/Salta" }).format(schedule.departureAt)} · {schedule.availableSeats} asientos</option>)}</select></label> : null}
+                    {route.schedules.length ? <fieldset className="schedule-picker">
+                      <legend>Elegí tu salida</legend>
+                      <div className="schedule-rail" aria-label="Salidas disponibles">
+                        {route.schedules.map((schedule, index) => (
+                          <label className="schedule-option" key={schedule.id}>
+                            <input type="radio" name="scheduleId" value={schedule.id} defaultChecked={index === 0} />
+                            <span className="schedule-card">
+                              <span className="schedule-date">{formatScheduleDate(schedule.departureAt)}</span>
+                              <strong className="schedule-time">{formatScheduleTime(schedule.departureAt)}</strong>
+                              <span className="schedule-seats">{schedule.availableSeats} asientos</span>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset> : null}
                     <button className="button" type="submit">Consultar y elegir asiento ↗</button>
                   </form>
                 </div>
