@@ -1358,6 +1358,12 @@ svg {
 .calendar-schedule-actions button:last-child { margin-left:auto; color:#b24b3c; font-size:16px; line-height:1; }
 .calendar-add-empty { color:var(--ink-muted); font-size:10px; text-decoration:none; }
 .calendar-add-empty:hover { color:var(--accent); }
+.schedule-reservations-panel { padding:22px; }
+.schedule-reservations-panel .admin-edit-head { margin-bottom:18px; }
+.reservation-contact { display:grid; gap:4px; }
+.reservation-contact a { color:var(--accent); font-size:11px; font-weight:800; }
+.empty-admin-state { display:grid; gap:6px; padding:30px 18px; border:1px dashed var(--line); border-radius:12px; color:var(--ink-muted); text-align:center; }
+.empty-admin-state strong { color:var(--primary); }
 @media (max-width: 760px) { .route-schedule-hero { display:block; padding:22px; }.route-schedule-next { margin-top:20px; }.route-schedule-stats { grid-template-columns:repeat(2,1fr); }.route-schedule-list { padding:16px; } }
 @media (max-width: 760px) { .route-schedule-list { overflow-x:auto; }.calendar-weekdays,.route-calendar { min-width:760px; }.calendar-day { min-height:145px; } }
 
