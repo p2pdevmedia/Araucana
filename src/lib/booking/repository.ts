@@ -414,7 +414,7 @@ export function createBookingRepository(client: BookingClient, deps: BookingRepo
   return {
     async listPublicRoutes() {
       const routes = await client.travelRoute.findMany({
-        where: { isActive: true },
+        where: { isActive: true, bookingMode: { not: "CHAPELCO" } },
         orderBy: [{ featured: "desc" }, { from: "asc" }, { to: "asc" }, { slug: "asc" }]
       });
 
@@ -739,6 +739,7 @@ export function createBookingRepository(client: BookingClient, deps: BookingRepo
 
     async listAdminRoutes(): Promise<AdminRouteRowDto[]> {
       const routes = await client.travelRoute.findMany({
+        where: { bookingMode: { not: "CHAPELCO" } },
         include: {
           _count: {
             select: {
