@@ -333,6 +333,7 @@ export function CheckoutForm({ route, schedules, initialScheduleId }: CheckoutFo
                     checked={selectedSchedule?.id === schedule.id}
                     onChange={(event) => {
                       setScheduleId(event.target.value);
+                      setPassengerCount(1);
                     }}
                   />
                   <span className="schedule-card">
@@ -356,16 +357,24 @@ export function CheckoutForm({ route, schedules, initialScheduleId }: CheckoutFo
           </div>
           <label className="quantity-field">
             Cantidad de asientos
-            <select
-              value={passengerCount}
-              onChange={(event) => setPassengerCount(Number(event.target.value))}
-              disabled={isSubmitting || !selectedSchedule}
-              aria-label="Cantidad de asientos"
-            >
-              {Array.from({ length: selectedSchedule?.availableSeats ?? 0 }, (_, index) => index + 1).map((count) => (
-                <option value={count} key={count}>{count} {count === 1 ? "asiento" : "asientos"}</option>
-              ))}
-            </select>
+            <span className="quantity-picker" role="group" aria-label="Cantidad de asientos">
+              <button
+                className="quantity-button"
+                type="button"
+                onClick={() => setPassengerCount((count) => Math.max(1, count - 1))}
+                disabled={isSubmitting || !selectedSchedule || passengerCount <= 1}
+                aria-label="Restar un asiento"
+              >−</button>
+              <strong aria-live="polite">{passengerCount}</strong>
+              <button
+                className="quantity-button"
+                type="button"
+                onClick={() => setPassengerCount((count) => Math.min(selectedSchedule?.availableSeats ?? count, count + 1))}
+                disabled={isSubmitting || !selectedSchedule || passengerCount >= (selectedSchedule?.availableSeats ?? 0)}
+                aria-label="Sumar un asiento"
+              >+</button>
+            </span>
+            <small className="quantity-help">{selectedSchedule ? `${selectedSchedule.availableSeats} lugares disponibles` : "Elegí una salida primero"}</small>
           </label>
           <p className="muted">No se asignan asientos numerados. El equipo confirma los lugares disponibles.</p>
         </section>
