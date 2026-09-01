@@ -166,7 +166,7 @@ export default async function RoutesPage({ searchParams }: RoutesPageProps) {
                         ))}
                       </div>
                     </fieldset> : null}
-                    <button className="button" type="submit">Consultar y elegir asiento ↗</button>
+                     <button className="button" type="submit">Consultar disponibilidad ↗</button>
                   </form>
                 </div>
               </article>

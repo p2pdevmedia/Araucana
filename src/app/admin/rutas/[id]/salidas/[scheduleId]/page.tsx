@@ -95,7 +95,7 @@ export default async function EditRouteSchedulePage({ params }: EditRouteSchedul
                       <td>
                         <div className="reservation-contact"><span>{reservation.passenger.email}</span>{whatsappUrl ? <a href={whatsappUrl} target="_blank" rel="noreferrer">WhatsApp</a> : null}</div>
                       </td>
-                      <td><strong>{reservation.seatNumber ?? "Sin asignar"}</strong></td>
+                      <td><strong>{reservation.passengerCount} {reservation.passengerCount === 1 ? "lugar" : "lugares"}</strong></td>
                       <td><span className={`status-pill ${reservation.status === "CANCELLED" ? "inactive" : "active"}`}>{reservationStatus(reservation.status)}</span></td>
                       <td>{reservation.payment?.status ?? "Pendiente"}</td>
                     </tr>

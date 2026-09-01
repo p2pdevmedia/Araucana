@@ -60,6 +60,7 @@ type ScheduleRecord = {
     id: string;
     seatId: string;
     seatNumber: string;
+    passengerCount: number;
     status: string;
   }>;
 };
@@ -257,7 +258,9 @@ function mapRoute(route: RouteRecord): PublicRouteDto {
 
 function mapSchedule(schedule: ScheduleRecord): ScheduleOptionDto {
   const totalSeats = schedule.vehicle.seats.length;
-  const occupiedSeats = (schedule.reservations ?? []).length;
+  const occupiedSeats = (schedule.reservations ?? [])
+    .filter((reservation) => reservation.status !== "CANCELLED")
+    .reduce((total, reservation) => total + reservation.passengerCount, 0);
 
   return {
     id: schedule.id,
@@ -486,28 +489,35 @@ export function createBookingRepository(client: BookingClient, deps: BookingRepo
               throw new BookingError("SCHEDULE_CLOSED", "Schedule is not available for reservations");
             }
 
-            const seat =
-              schedule.vehicle.seats.find((item) => item.number === parsed.seatNumber) ??
-              (await tx.seat.findFirst({
-                where: {
-                  vehicleId: schedule.vehicleId,
-                  number: parsed.seatNumber
-                }
-              }));
+            const occupiedSeats = (schedule.reservations ?? [])
+              .filter((reservation) => reservation.status !== "CANCELLED")
+              .reduce((total, reservation) => total + reservation.passengerCount, 0);
+            const requestedSeats = parsed.passengerCount;
+            const availableSeats = Math.max(schedule.vehicle.seats.length - occupiedSeats, 0);
 
-            if (!seat) {
-              throw new BookingError("SEAT_NOT_FOUND", `Seat ${parsed.seatNumber} does not exist for this schedule`);
+            if (requestedSeats > availableSeats) {
+              throw new BookingError("CAPACITY_FULL", `Only ${availableSeats} seats are available for this schedule`);
             }
 
-            const existingReservation = await tx.reservation.findFirst({
-              where: {
-                scheduleId: schedule.id,
-                OR: [{ seatNumber: seat.number }, { seatId: seat.id }]
-              }
-            });
+            let seat: (typeof schedule.vehicle.seats)[number] | null = null;
+            if (parsed.seatNumber) {
+              seat = schedule.vehicle.seats.find((item) => item.number === parsed.seatNumber) ?? null;
 
-            if (existingReservation) {
-              throw new BookingError("SEAT_OCCUPIED", `Seat ${seat.number} is already occupied`);
+              if (!seat) {
+                throw new BookingError("SEAT_NOT_FOUND", `Seat ${parsed.seatNumber} does not exist for this schedule`);
+              }
+
+              const existingReservation = await tx.reservation.findFirst({
+                where: {
+                  scheduleId: schedule.id,
+                  OR: [{ seatNumber: seat.number }, { seatId: seat.id }],
+                  status: { not: "CANCELLED" }
+                }
+              });
+
+              if (existingReservation) {
+                throw new BookingError("SEAT_OCCUPIED", `Seat ${seat.number} is already occupied`);
+              }
             }
 
             const passenger = await tx.passenger.create({
@@ -520,19 +530,19 @@ export function createBookingRepository(client: BookingClient, deps: BookingRepo
                 scheduleId: schedule.id,
                 routeId: schedule.routeId,
                 passengerId: passenger.id,
-                seatId: seat.id,
-                seatNumber: seat.number,
-                passengerCount: 1,
+                seatId: seat?.id ?? null,
+                seatNumber: seat?.number ?? null,
+                passengerCount: requestedSeats,
                 bookingMode: "SEATED",
                 status: "PENDING_PAYMENT",
-                totalCents: schedule.route.priceCents,
+                totalCents: schedule.route.priceCents * requestedSeats,
                 currency: schedule.route.currency
               }
             });
 
             const payment = await paymentProvider.createPendingPayment({
               reservationCode: code,
-              amountCents: schedule.route.priceCents,
+              amountCents: schedule.route.priceCents * requestedSeats,
               currency: schedule.route.currency
             });
             await tx.payment.create({
@@ -555,7 +565,8 @@ export function createBookingRepository(client: BookingClient, deps: BookingRepo
                   reservationCode: code,
                   ticketCode,
                   scheduleId: schedule.id,
-                  seatNumber: seat.number
+                  seatNumber: seat?.number ?? null,
+                  passengerCount: requestedSeats
                 })
               }
             });
@@ -571,6 +582,10 @@ export function createBookingRepository(client: BookingClient, deps: BookingRepo
         } catch (error) {
           if (isSeatUniqueConstraintError(error)) {
             throw new BookingError("SEAT_OCCUPIED", `Seat ${parsed.seatNumber} is already occupied`);
+          }
+
+          if (error instanceof BookingError && error.code === "CAPACITY_FULL") {
+            throw error;
           }
 
           if (isReservationCodeUniqueConstraintError(error)) {

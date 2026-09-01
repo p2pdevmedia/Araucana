@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentReservationsUserOrRedirect } from "@/lib/auth/admin";
-import { approveManualPayment, BookingError, updatePassengerForReservation } from "@/lib/booking/repository";
-import { passengerSchema } from "@/lib/booking/validation";
+import { approveManualPayment, BookingError, createWebReservation, updatePassengerForReservation } from "@/lib/booking/repository";
+import { createReservationSchema, passengerSchema } from "@/lib/booking/validation";
 import {
   errorState,
   fieldErrorsFromZodError,
@@ -15,6 +15,43 @@ import {
 function value(formData: FormData, key: string) {
   const entry = formData.get(key);
   return typeof entry === "string" ? entry.trim() : "";
+}
+
+export async function createAdminReservationAction(formData: FormData) {
+  await getCurrentReservationsUserOrRedirect();
+
+  const parsed = createReservationSchema.safeParse({
+    scheduleId: value(formData, "scheduleId"),
+    passengerCount: value(formData, "passengerCount"),
+    passenger: {
+      firstName: value(formData, "firstName"),
+      lastName: value(formData, "lastName"),
+      email: value(formData, "email"),
+      phone: value(formData, "phone"),
+      documentType: value(formData, "documentType"),
+      documentId: value(formData, "documentId"),
+      nationality: value(formData, "nationality") || null
+    }
+  });
+
+  if (!parsed.success) {
+    redirect(`/admin/reservas/nueva?notice=${encodeURIComponent("Revisa los datos de la reserva.")}`);
+  }
+
+  let reservation: Awaited<ReturnType<typeof createWebReservation>>;
+  try {
+    reservation = await createWebReservation(parsed.data);
+  } catch (error) {
+    const message = error instanceof BookingError && error.code === "CAPACITY_FULL"
+      ? "No hay suficientes asientos disponibles para esa salida."
+      : "No pudimos crear la reserva. Intentalo nuevamente.";
+    redirect(`/admin/reservas/nueva?notice=${encodeURIComponent(message)}`);
+  }
+
+  revalidatePath("/admin/reservas");
+  revalidatePath(`/admin/reservas/${reservation.code}`);
+  revalidatePath(`/reservar/${reservation.route.slug}`);
+  redirect(`/admin/reservas/${reservation.code}`);
 }
 
 export async function approveManualPaymentAction(formData: FormData) {

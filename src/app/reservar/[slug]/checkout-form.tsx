@@ -9,7 +9,6 @@ import { createReservationAction } from "./actions";
 type CheckoutFormProps = {
   route: PublicRouteDto;
   schedules: ScheduleOptionDto[];
-  seatMaps: SeatMapDto[];
   initialScheduleId?: string;
 };
 
@@ -203,13 +202,16 @@ export function buildPassengerPayload(passenger: PassengerForm): CreateReservati
   };
 }
 
-export function CheckoutForm({ route, schedules, seatMaps, initialScheduleId }: CheckoutFormProps) {
+export function CheckoutForm({ route, schedules, initialScheduleId }: CheckoutFormProps) {
   const router = useRouter();
-  const bookableOptions = useMemo(() => filterBookableSchedules(schedules, seatMaps), [schedules, seatMaps]);
+  const bookableOptions = useMemo(() => ({
+    schedules: schedules.filter((schedule) => bookableScheduleStatuses.has(schedule.status)),
+    seatMaps: [] as SeatMapDto[]
+  }), [schedules]);
   const firstScheduleId = bookableOptions.schedules[0]?.id ?? "";
   const preferredScheduleId = initialScheduleId && bookableOptions.schedules.some((schedule) => schedule.id === initialScheduleId) ? initialScheduleId : firstScheduleId;
   const [scheduleId, setScheduleId] = useState(preferredScheduleId);
-  const [seatNumber, setSeatNumber] = useState("");
+  const [passengerCount, setPassengerCount] = useState(1);
   const [passenger, setPassenger] = useState<PassengerForm>(initialPassenger);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -227,12 +229,6 @@ export function CheckoutForm({ route, schedules, seatMaps, initialScheduleId }: 
     () => bookableOptions.schedules.find((schedule) => schedule.id === scheduleId) ?? bookableOptions.schedules[0] ?? null,
     [scheduleId, bookableOptions.schedules]
   );
-  const selectedSeatMap = useMemo(
-    () => bookableOptions.seatMaps.find((seatMap) => seatMap.scheduleId === selectedSchedule?.id) ?? null,
-    [bookableOptions.seatMaps, selectedSchedule?.id]
-  );
-  const selectedSeat = selectedSeatMap?.seats.find((seat) => seat.number === seatNumber) ?? null;
-
   function updatePassenger(field: keyof PassengerForm, value: string) {
     setPassenger((current) => ({
       ...current,
@@ -291,8 +287,8 @@ export function CheckoutForm({ route, schedules, seatMaps, initialScheduleId }: 
       return;
     }
 
-    if (!hasBookableSchedules || !selectedSchedule || !selectedSeat) {
-      setError("Selecciona una salida y un asiento disponible.");
+    if (!hasBookableSchedules || !selectedSchedule) {
+      setError("Selecciona una salida disponible.");
       return;
     }
 
@@ -300,7 +296,7 @@ export function CheckoutForm({ route, schedules, seatMaps, initialScheduleId }: 
 
     const result = await createReservationAction({
       scheduleId: selectedSchedule.id,
-      seatNumber: selectedSeat.number,
+      passengerCount,
       passenger: buildPassengerPayload(passenger)
     });
 
@@ -337,7 +333,6 @@ export function CheckoutForm({ route, schedules, seatMaps, initialScheduleId }: 
                     checked={selectedSchedule?.id === schedule.id}
                     onChange={(event) => {
                       setScheduleId(event.target.value);
-                      setSeatNumber("");
                     }}
                   />
                   <span className="schedule-card">
@@ -356,36 +351,23 @@ export function CheckoutForm({ route, schedules, seatMaps, initialScheduleId }: 
 
         <section className="form-panel checkout-panel">
           <div>
-            <p className="eyebrow">Asiento</p>
-            <h2 className="route-title">Seleccionar asiento</h2>
+            <p className="eyebrow">Cupos</p>
+            <h2 className="route-title">¿Cuántos asientos comprás?</h2>
           </div>
-          {selectedSeatMap ? (
-            <div className="seat-grid" aria-label="Asientos disponibles">
-              {selectedSeatMap.seats.map((seat) => {
-                const isSelected = seat.number === seatNumber;
-
-                return (
-                  <button
-                    className={`seat-button ${isSelected ? "selected" : ""} ${seat.occupied ? "occupied" : ""}`}
-                    type="button"
-                    aria-pressed={isSelected}
-                    disabled={seat.occupied || isSubmitting}
-                    onClick={() => setSeatNumber(seat.number)}
-                    key={seat.id}
-                  >
-                    {seat.number}
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="muted">Selecciona una salida para ver los asientos.</p>
-          )}
-          <div className="seat-legend">
-            <span><i className="legend-box" /> Libre</span>
-            <span><i className="legend-box selected" /> Seleccionado</span>
-            <span><i className="legend-box occupied" /> Ocupado</span>
-          </div>
+          <label className="quantity-field">
+            Cantidad de asientos
+            <select
+              value={passengerCount}
+              onChange={(event) => setPassengerCount(Number(event.target.value))}
+              disabled={isSubmitting || !selectedSchedule}
+              aria-label="Cantidad de asientos"
+            >
+              {Array.from({ length: selectedSchedule?.availableSeats ?? 0 }, (_, index) => index + 1).map((count) => (
+                <option value={count} key={count}>{count} {count === 1 ? "asiento" : "asientos"}</option>
+              ))}
+            </select>
+          </label>
+          <p className="muted">No se asignan asientos numerados. El equipo confirma los lugares disponibles.</p>
         </section>
 
         <section className="form-panel checkout-panel">
@@ -601,13 +583,13 @@ export function CheckoutForm({ route, schedules, seatMaps, initialScheduleId }: 
             <strong>{selectedSchedule ? formatDateTime(selectedSchedule.departureAt) : "Sin salida"}</strong>
           </div>
           <div>
-            <span>Asiento</span>
-            <strong>{selectedSeat ? `Asiento ${selectedSeat.number}` : "Pendiente"}</strong>
+            <span>Asientos</span>
+            <strong>{passengerCount} {passengerCount === 1 ? "lugar" : "lugares"}</strong>
           </div>
           <div>
             <span>Precio</span>
             <strong className="price">
-              {selectedSchedule ? formatPrice(selectedSchedule.priceCents, selectedSchedule.currency) : formatPrice(route.priceCents, route.currency)}
+              {formatPrice((selectedSchedule?.priceCents ?? route.priceCents) * passengerCount, selectedSchedule?.currency ?? route.currency)}
             </strong>
           </div>
         </div>
@@ -619,7 +601,7 @@ export function CheckoutForm({ route, schedules, seatMaps, initialScheduleId }: 
         <button
           className="button checkout-submit"
           type="submit"
-          disabled={isSubmitting || !hasBookableSchedules || !selectedSchedule || !selectedSeat}
+          disabled={isSubmitting || !hasBookableSchedules || !selectedSchedule}
         >
           {isSubmitting ? "Confirmando..." : "Confirmar reserva"}
         </button>

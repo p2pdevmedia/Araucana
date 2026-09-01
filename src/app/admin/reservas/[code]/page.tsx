@@ -76,7 +76,7 @@ export default async function AdminPassengerPage({ params }: AdminPassengerPageP
             </div>
             <div>
               <span>{isChapelco ? "Cupo" : "Asiento"}</span>
-              <strong>{isChapelco ? `${reservation.passengerCount} personas` : reservation.seatNumber}</strong>
+              <strong>{`${reservation.passengerCount} ${reservation.passengerCount === 1 ? "lugar" : "lugares"}`}</strong>
             </div>
             {isChapelco && reservation.chapelcoDetails ? (
               <div>

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
-import { getPublicRouteBySlug, getSeatMap, listSchedulesForRoute } from "@/lib/booking/repository";
+import { getPublicRouteBySlug, listSchedulesForRoute } from "@/lib/booking/repository";
 import { getChapelcoAvailability } from "@/lib/chapelco/repository";
 import { CheckoutForm } from "./checkout-form";
 import { ChapelcoCheckoutForm } from "./chapelco-checkout-form";
@@ -127,7 +127,6 @@ export default async function ReservationPage({ params, searchParams }: Reservat
   const schedules = await listSchedulesForRoute(route.id);
   const today = todayInputValue();
   const bookableSchedules = schedules.filter((schedule) => isBookableSchedule(schedule.status) && scheduleDateKey(schedule.departureAt) >= today);
-  const seatMaps = await Promise.all(bookableSchedules.map((schedule) => getSeatMap(schedule.id)));
   const initialScheduleId = query?.scheduleId;
 
   return (
@@ -164,7 +163,7 @@ export default async function ReservationPage({ params, searchParams }: Reservat
           </div>
         </section>
 
-        <CheckoutForm route={route} schedules={bookableSchedules} seatMaps={seatMaps} initialScheduleId={initialScheduleId} />
+        <CheckoutForm route={route} schedules={bookableSchedules} initialScheduleId={initialScheduleId} />
       </main>
       <SiteFooter />
     </>

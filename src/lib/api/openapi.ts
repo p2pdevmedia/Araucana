@@ -367,10 +367,10 @@ export function getOpenApiSpec(baseUrl = "https://araucana.app"): OpenApiSpec {
         },
         CreateReservationInput: {
           type: "object",
-          required: ["scheduleId", "seatNumber", "passenger"],
+          required: ["scheduleId", "passengerCount", "passenger"],
           properties: {
             scheduleId: { type: "string" },
-            seatNumber: { type: "string" },
+            passengerCount: { type: "integer", minimum: 1 },
             passenger: { type: "object" }
           }
         },

@@ -9,6 +9,7 @@ const bookingErrorResponses: Record<string, { message: string; status: number }>
   SCHEDULE_NOT_FOUND: { message: "Horario no encontrado", status: 404 },
   SEAT_NOT_FOUND: { message: "Asiento no encontrado", status: 404 },
   SCHEDULE_CLOSED: { message: "El horario no esta disponible para reservas", status: 409 },
+  CAPACITY_FULL: { message: "No hay suficientes asientos disponibles", status: 409 },
   CODE_COLLISION: { message: "No pudimos generar la reserva. Intenta nuevamente", status: 503 }
 };
 

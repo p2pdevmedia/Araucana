@@ -111,7 +111,7 @@ export default async function ReservationConfirmationPage({ params }: Reservatio
               </div>
               <div>
                 <span>{isChapelco ? "Cupo" : "Asiento"}</span>
-                <strong>{isChapelco ? `${reservation.passengerCount} personas` : `Asiento ${reservation.seatNumber}`}</strong>
+                <strong>{`${reservation.passengerCount} ${reservation.passengerCount === 1 ? "lugar" : "lugares"}`}</strong>
               </div>
               {isChapelco && reservation.chapelcoDetails ? (
                 <div>

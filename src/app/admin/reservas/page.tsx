@@ -47,6 +47,9 @@ export default async function AdminReservationsPage({ searchParams }: AdminReser
 
   return (
     <AdminShell title="Reservas" notice={params?.notice} role={user.role}>
+      <div className="admin-page-actions">
+        <Link className="button" href="/admin/reservas/nueva">Crear reserva</Link>
+      </div>
       <table className="data-table">
         <thead>
           <tr>
@@ -93,7 +96,7 @@ export default async function AdminReservationsPage({ searchParams }: AdminReser
                 <td>
                   {reservation.bookingMode === "CHAPELCO"
                     ? `${reservation.passengerCount} personas${reservation.chapelcoAscentSlot ? ` · ${reservation.chapelcoAscentSlot}` : ""}`
-                    : reservation.seatNumber}
+                    : `${reservation.passengerCount} ${reservation.passengerCount === 1 ? "lugar" : "lugares"}`}
                 </td>
                 <td>{formatReservationStatus(reservation.status)}</td>
                 <td>{formatPaymentStatus(reservation.paymentStatus)}</td>
