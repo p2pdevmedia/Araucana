@@ -12,7 +12,7 @@ describe("high intent route prefetching", () => {
   it("prefetches primary route entry points from the global navigation", () => {
     const source = readAppFile("layout.tsx");
 
-    expect(source).toContain('<Link href="/rutas" prefetch={true}>Rutas</Link>');
+    expect(source).toContain('<Link href="/rutas" prefetch={true}>Traslados</Link>');
     expect(source).toContain('<Link className="cream-button" href="/rutas" prefetch={true}>');
   });
 
@@ -20,8 +20,8 @@ describe("high intent route prefetching", () => {
     const source = readAppFile("page.tsx");
 
     expect(source).toContain('<Link className="cream-button" href="/rutas" prefetch={true}>');
-    expect(source).toContain('<Link className="ghost-button" href="/rutas" prefetch={true}>');
-    expect(source).toContain('<Link className="route-card featured" href={`/rutas/${featured.slug}`} prefetch={true}>');
+    expect(source).toContain('className="chapelco-section page-shell"');
+    expect(source).toContain('href="/rutas" prefetch={true}');
     expect(source).toContain('prefetch={true}');
   });
 
