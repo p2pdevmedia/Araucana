@@ -15,7 +15,7 @@ function todayDateKey() {
 
 export default async function HomePage() {
   const routes = await listPublicRoutes();
-  const heroStyle = { "--hero-image": "url('/fleet-araucana.webp')" } as CSSProperties;
+  const heroStyle = { "--hero-image": "url('/hero-araucana.webp')" } as CSSProperties;
   const finalStyle = { "--final-image": `url(${laninSummer.src})` } as CSSProperties;
   const destinations = [["San Martín de los Andes", "Lagos, bosque y montaña"], ["Chapelco", "Nieve y experiencias de altura"], ["Lago Hermoso", "Un refugio en la cordillera"], ["Villa La Angostura", "Ruta, lago y bosque"]];
   return <>
