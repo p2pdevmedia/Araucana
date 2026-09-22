@@ -4,7 +4,6 @@ import { HistoricalMap } from "@/components/historical-map";
 import { ServicesGrid } from "@/components/services-grid";
 import { SiteFooter } from "@/components/site-footer";
 import { listPublicRoutes } from "@/lib/booking/repository";
-import laninWinter from "../../lanin-invierno.jpeg";
 import laninSummer from "../../lanin-verano.jpeg";
 
 export const revalidate = 300;
@@ -16,7 +15,7 @@ function todayDateKey() {
 
 export default async function HomePage() {
   const routes = await listPublicRoutes();
-  const heroStyle = { "--hero-image": `url(${laninWinter.src})` } as CSSProperties;
+  const heroStyle = { "--hero-image": "url('/fleet-araucana.webp')" } as CSSProperties;
   const finalStyle = { "--final-image": `url(${laninSummer.src})` } as CSSProperties;
   const destinations = [["San Martín de los Andes", "Lagos, bosque y montaña"], ["Chapelco", "Nieve y experiencias de altura"], ["Lago Hermoso", "Un refugio en la cordillera"], ["Villa La Angostura", "Ruta, lago y bosque"]];
   return <>
