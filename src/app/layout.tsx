@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Poppins } from "next/font/google";
 import { BrandMark } from "@/components/brand-mark";
 import { MobileNav } from "@/components/mobile-nav";
 import "./globals.css";
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-poppins"
+});
 
 export const metadata: Metadata = {
   title: "La Araucana | Agencia de viajes desde 2009",
@@ -16,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body>
+      <body className={poppins.variable}>
         <header className="site-header">
           <nav className="site-nav">
             <Link className="brand-link" href="/" id="inicio">

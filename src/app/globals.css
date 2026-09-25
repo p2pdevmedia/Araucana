@@ -1936,6 +1936,7 @@ body { background: var(--bg); }
 .hero-eyebrow span { color: #e2b79d; padding: 0 6px; }
 .display-title { font-family: var(--display); font-size: clamp(70px, 10vw, 150px); font-weight: 900; letter-spacing: -.05em; text-transform: uppercase; }
 .display-title em, .section-title span, .door-copy em, .final-image em { color: #d77b63; font-style: normal; }
+.section-title .brand-green-text { color: var(--primary); }
 .hero-tagline { margin: 22px 0 28px; font-size: 22px; color: #fff; }
 .hero-actions { gap: 10px; }
 .accent-button { background: var(--accent); color: #fff; border: 0; border-radius: 7px; min-height: 46px; padding: 0 18px; display: inline-flex; align-items: center; gap: 12px; font-weight: 800; }
@@ -1986,7 +1987,7 @@ body { background: var(--bg); }
 .brand-logo,.footer-logo { filter:none; }.story-mark { width:fit-content; padding:18px; border-radius:18px; background:var(--primary); }.story-mark img { display:block; mix-blend-mode:normal; }
 
 /* Home redesign */
-.site-header { background:rgba(14,61,52,.92); border-bottom-color:rgba(251,246,235,.12); }
+.site-header { background:transparent; border-bottom-color:rgba(251,246,235,.12); }
 .site-nav { min-height:78px; }
 .nav-links { gap:16px; font-size:12px; letter-spacing:.02em; }
 .new-hero { min-height:calc(100vh - 78px); display:grid; align-items:end; position:relative; overflow:hidden; color:var(--surface); background:linear-gradient(90deg,rgba(8,19,17,.82),rgba(8,19,17,.32) 62%,rgba(8,19,17,.12)),linear-gradient(180deg,rgba(11,23,21,.05),rgba(11,23,21,.78)),var(--hero-image) center/cover; }
@@ -1995,7 +1996,8 @@ body { background: var(--bg); }
 .new-hero::after { content:""; position:absolute; inset:auto 0 0; height:32%; background:linear-gradient(180deg,transparent,rgba(11,23,21,.75)); }
 .new-hero-inner { position:relative; z-index:1; width:min(1180px,calc(100% - 32px)); margin:0 auto; padding:100px 0 54px; }
 .new-hero-copy { max-width:700px; }
-.new-hero h1 { margin:0; font-family:var(--display); font-size:clamp(52px,7vw,104px); font-weight:500; line-height:.92; letter-spacing:-.04em; }
+.new-hero h1 { margin:0; font-family:var(--font-poppins), sans-serif; font-size:clamp(52px,7vw,104px); font-weight:400; line-height:.92; letter-spacing:-.04em; }
+.new-hero h1 em { font-weight:700; }
 .new-hero h1 em,.chapelco-copy h2 em,.final-image h2 em { color:#f2c896; font-style:italic; }
 .new-hero-lead { margin:28px 0 8px; max-width:520px; font-size:23px; line-height:1.2; }
 .new-hero-detail { max-width:520px; color:rgba(251,246,235,.75); font-size:15px; line-height:1.55; }
