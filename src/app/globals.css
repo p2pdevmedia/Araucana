@@ -1987,7 +1987,7 @@ body { background: var(--bg); }
 .brand-logo,.footer-logo { filter:none; }.story-mark { width:fit-content; padding:18px; border-radius:18px; background:var(--primary); }.story-mark img { display:block; mix-blend-mode:normal; }
 
 /* Home redesign */
-.site-header { position:absolute; top:0; right:0; left:0; background:transparent; border-bottom-color:rgba(251,246,235,.12); backdrop-filter:none; }
+.site-header { position:absolute; top:0; right:0; left:0; background:transparent; border-bottom-color:rgba(251,246,235,.12); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
 .site-nav { min-height:78px; }
 .nav-links { gap:16px; font-size:12px; letter-spacing:.02em; }
 .new-hero { min-height:100vh; display:grid; align-items:end; position:relative; overflow:hidden; color:var(--surface); background:linear-gradient(90deg,rgba(8,19,17,.82),rgba(8,19,17,.32) 62%,rgba(8,19,17,.12)),linear-gradient(180deg,rgba(11,23,21,.05),rgba(11,23,21,.78)),var(--hero-image) center/cover; }
