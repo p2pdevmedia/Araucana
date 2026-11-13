@@ -207,6 +207,13 @@ svg {
   color: inherit;
 }
 
+/* Atajo elegido (ej. «Sucursal» en el checkout): el botón tiene que verse activo, no igual que apagado. */
+.ghost-button[aria-pressed="true"] {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--surface);
+}
+
 .danger-button {
   background: rgba(160, 84, 56, 0.12);
   color: var(--accent-deep);

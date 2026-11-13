@@ -17,6 +17,7 @@ import type { PickupPrecision } from "@/lib/airport/place-suggestions";
 import { AirportPlaceSearch, type AirportSelectedPlace } from "@/components/airport-place-search";
 import { AirportGooglePickup } from "@/components/airport-google-pickup";
 import { googlePickupConfigured } from "@/lib/airport/google-maps";
+import type { AirportBranch } from "@/lib/airport/branch-settings";
 import { chargesZoneExtra, isInsideAirportPickupZone, OUTSIDE_PICKUP_ZONE, type AirportCoverage, type PickupPoint } from "@/lib/airport/pickup-zone";
 import { airportExtrasBreakdown, MAX_SPORTS_LUGGAGE, type AirportExtras } from "@/lib/airport/extras";
 import {
@@ -79,6 +80,8 @@ type AirportCheckoutFormProps = {
   initialDate: string;
   initialFlights: FlightOption[];
   coverage: AirportCoverage;
+  /** Oficina de la agencia, para el atajo «Usar la sucursal» (issue #34). */
+  branch?: AirportBranch | null;
   /** Recargo de zona y equipaje deportivo vigentes (el servidor recalcula al reservar). */
   extras: Pick<AirportExtras, "zoneExtraCents" | "sportsLuggageCents">;
   fromAdmin?: boolean;
@@ -141,7 +144,7 @@ function formatPrice(cents: number, currency: string) {
   return new Intl.NumberFormat("es-AR", { style: "currency", currency, maximumFractionDigits: 0 }).format(cents / 100);
 }
 
-export function AirportCheckoutForm({ route, fares, initialDirection, initialDate, initialFlights, coverage, extras, fromAdmin = false }: AirportCheckoutFormProps) {
+export function AirportCheckoutForm({ route, fares, initialDirection, initialDate, initialFlights, coverage, branch = null, extras, fromAdmin = false }: AirportCheckoutFormProps) {
   const router = useRouter();
   const [paso, setPaso] = useState<1 | 2 | 3>(1);
   const [date, setDate] = useState(initialDate);
@@ -163,6 +166,8 @@ export function AirportCheckoutForm({ route, fares, initialDirection, initialDat
   const [originalPoint, setOriginalPoint] = useState<PickupPoint | null>(null);
   const [pickupMode, setPickupMode] = useState<"address" | "location">("address");
   const [pickupConfirmed, setPickupConfirmed] = useState(false);
+  /** El punto salió del atajo «Usar la sucursal»: se guarda con el nombre de la oficina. */
+  const [usandoSucursal, setUsandoSucursal] = useState(false);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState("");
   const [approximateAddress, setApproximateAddress] = useState(false);
@@ -217,6 +222,7 @@ export function AirportCheckoutForm({ route, fares, initialDirection, initialDat
   const outsideCoverage = Boolean(coverage.enabled && pickupPoint && !isInsideAirportPickupZone(pickupPoint, coverage));
 
   function selectPickupPoint(point: PickupPoint | null) {
+    setUsandoSucursal(false);
     setApproximateAddress(false);
     setPickupPrecision(point ? "exact" : null);
     setPickupPoint(point);
@@ -248,6 +254,24 @@ export function AirportCheckoutForm({ route, fares, initialDirection, initialDat
     }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
   }
 
+  /**
+   * Atajo «Usar la sucursal» (issue #34): precarga la oficina de la agencia y deja el punto
+   * confirmado, porque la dirección la fijó la propia agencia. Un toque, sin mapa.
+   */
+  function usarSucursal() {
+    if (!branch) return;
+    locationRequest.current++;
+    setLocating(false);
+    setLocationError("");
+    selectPickupPoint(branch.point);
+    setPickupMode("address");
+    setPickupAddress(branch.address);
+    setPickupPrecision("exact");
+    setPickupConfirmed(true);
+    setUsandoSucursal(true);
+    setFieldErrors((current) => ({ ...current, pickupAddress: undefined }));
+  }
+
   function useAddress() {
     locationRequest.current++;
     setPickupMode("address");
@@ -261,6 +285,7 @@ export function AirportCheckoutForm({ route, fares, initialDirection, initialDat
     setLocating(false);
     setLocationError("");
     setGoogleReference(null);
+    setUsandoSucursal(false);
     if (!adjustPickupPoint(point)) selectPickupPoint(point);
   }
 
@@ -278,6 +303,7 @@ export function AirportCheckoutForm({ route, fares, initialDirection, initialDat
 
   function adjustPickupPoint(point: PickupPoint) {
     if (!originalPoint) return false;
+    setUsandoSucursal(false);
     setPickupPoint(point);
     setPickupConfirmed(false);
     setError((current) => current === OUTSIDE_PICKUP_ZONE ? "" : current);
@@ -423,6 +449,7 @@ export function AirportCheckoutForm({ route, fares, initialDirection, initialDat
           overrideTotalCents,
           passenger: buildPassengerPayload(passenger),
           pickupAddress: pickupMode === "location" ? undefined : pickupAddress.trim() || undefined,
+          pickupName: usandoSucursal && branch ? branch.label : undefined,
           pickupPoint: pickupPoint ?? undefined,
           pickupNotes: pickupNotes.trim() || undefined,
           ...(esPrivado
@@ -716,6 +743,12 @@ export function AirportCheckoutForm({ route, fares, initialDirection, initialDat
                     <button className="ghost-button" type="button" disabled={locating || isSubmitting} onClick={useCurrentLocation}>
                       {locating ? "Buscando ubicación…" : "Usar mi ubicación actual"}
                     </button>
+                    {branch ? (
+                      <button className="ghost-button" type="button" disabled={isSubmitting} onClick={usarSucursal}
+                        aria-pressed={usandoSucursal}>
+                        {usandoSucursal ? `✓ ${branch.label}` : `Usar la sucursal · ${branch.address.split(",")[0]}`}
+                      </button>
+                    ) : null}
                     {pickupMode === "location" ? <button className="ghost-button" type="button" onClick={useAddress}>Buscar por dirección</button> : null}
                   </div>
                   {locationError ? <p role="alert" className="field-error">{locationError}</p> : null}

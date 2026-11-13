@@ -3,6 +3,7 @@ import { AirportCheckoutForm } from "@/app/reservar/[slug]/airport-checkout-form
 import { AdminShell } from "@/components/admin-shell";
 import { loadAirportCheckoutFlights } from "@/lib/airport/checkout-flights";
 import { getAirportFares } from "@/lib/airport/fares";
+import { getAirportBranch } from "@/lib/airport/branch-settings";
 import { getAirportExtras } from "@/lib/airport/extras-settings";
 import { getAirportCoverage } from "@/lib/airport/pickup-zone-settings";
 import { getCurrentReservationsUserOrRedirect } from "@/lib/auth/admin";
@@ -16,8 +17,8 @@ export default async function NewAirportReservationPage({ searchParams }: { sear
   const fares = await getAirportFares();
   const route = fares.ARRIVAL ?? fares.DEPARTURE;
   const checkout = route ? await Promise.all([
-    loadAirportCheckoutFlights(initialDate), getAirportCoverage(), getAirportExtras()
-  ]).then(([flights, coverage, extras]) => ({ flights, coverage, extras })) : null;
+    loadAirportCheckoutFlights(initialDate), getAirportCoverage(), getAirportExtras(), getAirportBranch()
+  ]).then(([flights, coverage, extras, branch]) => ({ flights, coverage, extras, branch })) : null;
 
   return (
     <AdminShell
@@ -35,6 +36,7 @@ export default async function NewAirportReservationPage({ searchParams }: { sear
           initialDate={initialDate}
           initialFlights={checkout.flights}
           coverage={checkout.coverage}
+          branch={checkout.branch}
           extras={checkout.extras}
         />
       ) : <p className="muted">No hay rutas de aeropuerto activas para reservar.</p>}

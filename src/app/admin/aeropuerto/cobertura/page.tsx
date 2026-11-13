@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/admin-shell";
+import { getAirportBranch } from "@/lib/airport/branch-settings";
 import { getAirportExtras } from "@/lib/airport/extras-settings";
 import { getAirportCoverage } from "@/lib/airport/pickup-zone-settings";
 import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
+import { BranchEditor } from "./branch-editor";
 import { CoverageEditor } from "./coverage-editor";
 import { ExtrasEditor } from "./extras-editor";
 
 export default async function AirportCoveragePage() {
   const user = await getCurrentAdminOrRedirect();
-  const [coverage, extras] = await Promise.all([getAirportCoverage(), getAirportExtras()]);
+  const [coverage, extras, branch] = await Promise.all([getAirportCoverage(), getAirportExtras(), getAirportBranch()]);
 
   return (
     <AdminShell title="Cobertura de aeropuerto" role={user.role}
@@ -18,6 +20,9 @@ export default async function AirportCoveragePage() {
       </section>
       <section className="plain-card admin-section">
         <ExtrasEditor initialExtras={extras} />
+      </section>
+      <section className="plain-card admin-section">
+        <BranchEditor initialBranch={branch} />
       </section>
     </AdminShell>
   );
