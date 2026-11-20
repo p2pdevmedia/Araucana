@@ -91,3 +91,23 @@ it("reconoce el nombre comercial Turismo Patagonia sin confundirlo con Patagonia
   expect(suggestMunicipalLodgings("Hotel Turismo Patagonia, Junín de los Andes")).toEqual([]);
   expect(findMunicipalLodgings("Patagonia Plaza")[0].id).toBe("1");
 });
+/**
+ * Buscar por tipo. El cliente lo pidió así: «no me trae casi ningún alojamiento» y «hoteles en
+ * general tiene que estar más fino». Antes `cabanas`, `apart`, `hosterias` estaban en `ignoredWords`,
+ * la consulta quedaba sin palabras de nombre y devolvía 0 fichas del directorio. Ahora un tipo sólo
+ * devuelve la categoría completa, y un tipo con nombre («cabañas ñire») exige las dos cosas.
+ */
+it.each([
+  ["cabañas", "Cabañas", 44],
+  ["apart", "Apart Hoteles", 49],
+  ["hosterías", "Hosterias", 23]
+])("buscar «%s» devuelve la categoría completa del directorio", (query, type, total) => {
+  const found = findMunicipalLodgings(query, 8);
+  expect(found).toHaveLength(total);
+  expect(found.every((place) => place.type === type)).toBe(true);
+});
+it("buscar por tipo con nombre exige el nombre y no filtra por la categoría equivocada", () => {
+  expect(findMunicipalLodgings("hotel del esquiador").map((place) => place.id)).toContain("165");
+  expect(findMunicipalLodgings("cabañas elvira").map((place) => place.id)).toEqual(["374"]);
+  expect(findMunicipalLodgings("cabañas ñire")).toEqual([]);
+});
