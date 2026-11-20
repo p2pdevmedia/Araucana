@@ -1,32 +1,22 @@
 import { prisma } from "@/lib/db/prisma";
 
-/**
- * Recorrido dibujado y seguimiento por chofer (issue #321): el historial de posiciones ya se escribe
- * (`DriverLocationSample`, una fila por reporte del panel del chofer cada 3 s) y hasta ahora no lo leía
- * nadie. Esta capa arma la línea que se dibuja en el mapa y la ficha por chofer.
- *
- * Igual que `en-vivo.ts`: una mitad pura (testeable sin base) y una mitad de consulta.
- *
- * Dos cuidados que no son de estética:
- *  - la lectura va **acotada a una ventana** (`VENTANA_RECORRIDO_HORAS`): sin eso, a 3 s por reporte la
- *    consulta crece sin techo (≈1.200 filas por hora por chofer);
- *  - los puntos a menos de `DISTANCIA_MINIMA_METROS` se descartan: un GPS quieto tirita y dibujaría
- *    una maraña de 2 m en la puerta de la terminal.
- */
-
-/** Hasta cuántas horas atrás se dibuja el recorrido. Coincide con la jornada larga de un chofer. */
+/** Ventana por defecto y máximo permitido tanto en la página como en la API. */
 export const VENTANA_RECORRIDO_HORAS = 8;
-
-/** Tope de puntos por recorrido: por encima de esto la línea no se lee mejor, sólo pesa más. */
+export const MAX_HORAS_RECORRIDO = 24;
+/** Límite global, no por chofer. Se prioriza lo reciente; la API avisa si falta historial. */
+export const MAX_MUESTRAS_RECORRIDO = 50_000;
 export const MAX_PUNTOS_RECORRIDO = 400;
-
-/** Debajo de esta distancia el punto es ruido del GPS y no un movimiento real. */
 export const DISTANCIA_MINIMA_METROS = 25;
-
-/** Cuántos días se guarda el historial de posiciones antes de poder borrarlo. */
-export const RETENCION_DIAS = 30;
+export const MAX_PAUSA_RECORRIDO_MS = 10 * 60 * 1000;
+/**
+ * Umbral conservador para transporte terrestre: >180 km/h inferidos entre reportes es un salto
+ * de GPS, no una distancia recorrida. También se corta ante movimiento con tiempo transcurrido 0.
+ * Es una heurística de visualización, no un odómetro ni evidencia de velocidad del chofer.
+ */
+export const MAX_VELOCIDAD_RECORRIDO_KMH = 180;
 
 export type MuestraCruda = {
+  id?: string;
   driverId: string;
   vehicleId: string;
   latitude: number;
@@ -39,28 +29,36 @@ export type MuestraCruda = {
 export type PuntoRecorrido = {
   /** [lat, lng], como los quiere Leaflet. */
   punto: [number, number];
-  /** ISO del reporte que originó el punto. */
   at: string;
 };
 
 export type Recorrido = {
+  /** Identifica el inicio del segmento; independiente del orden de entrada y del recorte visual. */
+  id: string;
   driverId: string;
   driverName: string | null;
   vehicleId: string;
   internalNumber: string | null;
   vehicleName: string;
   puntos: PuntoRecorrido[];
-  /** Metros acumulados sobre los puntos dibujados (no sobre todas las muestras). */
+  /** Aproximación tras filtrar ruido, ANTES de reducir puntos para dibujar. Nunca incluye cortes. */
   metros: number;
   ultimaSenal: string;
-  /** Cuántas muestras crudas había antes de descartar ruido y recortar. */
+  /** Muestras válidas del segmento, antes del filtrado de ruido y recorte visual. */
   muestras: number;
 };
 
-export type OpcionesRecorrido = {
-  maxPuntos?: number;
-  distanciaMinimaMetros?: number;
-};
+export type OpcionesRecorrido = { maxPuntos?: number; distanciaMinimaMetros?: number };
+export type ResultadoRecorridos = { recorridos: Recorrido[]; horas: number; truncado: boolean };
+
+/** Inválidos/ausentes usan 8 h; valores finitos se redondean y acotan a 1..24 h. */
+export function acotarHoras(horas: unknown = VENTANA_RECORRIDO_HORAS): number {
+  const numero = typeof horas === "number" ? horas
+    : typeof horas === "string" && horas.trim() !== "" ? Number(horas) : NaN;
+  return Number.isFinite(numero)
+    ? Math.min(MAX_HORAS_RECORRIDO, Math.max(1, Math.round(numero)))
+    : VENTANA_RECORRIDO_HORAS;
+}
 
 const RADIO_TIERRA_M = 6_371_000;
 
@@ -70,135 +68,170 @@ export function distanciaMetros(a: [number, number], b: [number, number]): numbe
   const [lat2, lng2] = b;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const h =
-    Math.sin(dLat / 2) ** 2 +
+  const h = Math.sin(dLat / 2) ** 2 +
     Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-  return 2 * RADIO_TIERRA_M * Math.asin(Math.min(1, Math.sqrt(h)));
+  return 2 * RADIO_TIERRA_M * Math.asin(Math.min(1, Math.sqrt(Math.max(0, h))));
 }
 
-/**
- * Deja los puntos que valen la pena dibujar: ordena por hora, descarta lo que está a menos de
- * `distanciaMinimaMetros` del punto anterior y, si todavía son muchos, los reparte parejo hasta
- * `maxPuntos` **conservando el primero y el último** (la salida y la llegada son lo que se mira).
- */
-export function depurarPuntos(
-  muestras: MuestraCruda[],
-  { maxPuntos = MAX_PUNTOS_RECORRIDO, distanciaMinimaMetros = DISTANCIA_MINIMA_METROS }: OpcionesRecorrido = {}
-): PuntoRecorrido[] {
-  const ordenadas = [...muestras].sort((a, b) => a.recordedAt.getTime() - b.recordedAt.getTime());
+function fechaValida(muestra: MuestraCruda): boolean {
+  return muestra.recordedAt instanceof Date && Number.isFinite(muestra.recordedAt.getTime());
+}
+
+function muestraValida(muestra: MuestraCruda): boolean {
+  return fechaValida(muestra) && typeof muestra.driverId === "string" && muestra.driverId.trim() !== "" &&
+    typeof muestra.vehicleId === "string" && muestra.vehicleId.trim() !== "" &&
+    Number.isFinite(muestra.latitude) && Math.abs(muestra.latitude) <= 90 &&
+    Number.isFinite(muestra.longitude) && Math.abs(muestra.longitude) <= 180;
+}
+
+/** Desempate determinista incluso en fixtures/importaciones sin id persistido. */
+function claveMuestra(muestra: MuestraCruda): string {
+  return JSON.stringify([muestra.driverId, muestra.vehicleId, muestra.recordedAt.toISOString(),
+    muestra.id ?? null, muestra.latitude, muestra.longitude]);
+}
+
+function compararMuestras(a: MuestraCruda, b: MuestraCruda): number {
+  return a.recordedAt.getTime() - b.recordedAt.getTime() || claveMuestra(a).localeCompare(claveMuestra(b));
+}
+
+function puntoDe(muestra: MuestraCruda): PuntoRecorrido {
+  return { punto: [muestra.latitude, muestra.longitude], at: muestra.recordedAt.toISOString() };
+}
+
+/** Lista ya ordenada y válida. El endpoint se preserva incluso si cae dentro del umbral de ruido. */
+function filtrarRuido(muestras: MuestraCruda[], distanciaMinima: number): PuntoRecorrido[] {
   const filtrados: PuntoRecorrido[] = [];
-
-  for (const muestra of ordenadas) {
-    const punto: [number, number] = [muestra.latitude, muestra.longitude];
+  for (let i = 0; i < muestras.length; i += 1) {
+    const punto = puntoDe(muestras[i]);
     const anterior = filtrados.at(-1);
-    if (anterior && distanciaMetros(anterior.punto, punto) < distanciaMinimaMetros) continue;
-    filtrados.push({ punto, at: muestra.recordedAt.toISOString() });
+    if (!anterior || distanciaMetros(anterior.punto, punto.punto) >= distanciaMinima ||
+      (i === muestras.length - 1 && (anterior.at !== punto.at ||
+        anterior.punto[0] !== punto.punto[0] || anterior.punto[1] !== punto.punto[1]))) {
+      filtrados.push(punto);
+    }
   }
-
-  if (filtrados.length <= maxPuntos) return filtrados;
-
-  const paso = (filtrados.length - 1) / (maxPuntos - 1);
-  const recortados: PuntoRecorrido[] = [];
-  for (let i = 0; i < maxPuntos; i += 1) {
-    recortados.push(filtrados[Math.round(i * paso)]);
-  }
-  return recortados;
+  return filtrados;
 }
 
-/** Metros recorridos sumando los puntos ya depurados. */
+function opcionesValidas(opciones: OpcionesRecorrido) {
+  const { maxPuntos = MAX_PUNTOS_RECORRIDO, distanciaMinimaMetros = DISTANCIA_MINIMA_METROS } = opciones;
+  return {
+    maxPuntos: Number.isFinite(maxPuntos) ? Math.max(2, Math.min(MAX_PUNTOS_RECORRIDO, Math.floor(maxPuntos))) : MAX_PUNTOS_RECORRIDO,
+    distanciaMinimaMetros: Number.isFinite(distanciaMinimaMetros) ? Math.max(0, distanciaMinimaMetros) : DISTANCIA_MINIMA_METROS
+  };
+}
+
+function recortarPuntos(puntos: PuntoRecorrido[], maxPuntos: number): PuntoRecorrido[] {
+  if (puntos.length <= maxPuntos) return puntos;
+  const paso = (puntos.length - 1) / (maxPuntos - 1);
+  return Array.from({ length: maxPuntos }, (_, i) => puntos[Math.round(i * paso)]);
+}
+
+/** Para un segmento: sanea, ordena, filtra ruido y recorta conservando salida y última señal. */
+export function depurarPuntos(muestras: MuestraCruda[], opciones: OpcionesRecorrido = {}): PuntoRecorrido[] {
+  const { maxPuntos, distanciaMinimaMetros } = opcionesValidas(opciones);
+  const ordenadas = muestras.filter(muestraValida).sort(compararMuestras);
+  return recortarPuntos(filtrarRuido(ordenadas, distanciaMinimaMetros), maxPuntos);
+}
+
 export function metrosDeRecorrido(puntos: PuntoRecorrido[]): number {
   let total = 0;
-  for (let i = 1; i < puntos.length; i += 1) {
-    total += distanciaMetros(puntos[i - 1].punto, puntos[i].punto);
-  }
+  for (let i = 1; i < puntos.length; i += 1) total += distanciaMetros(puntos[i - 1].punto, puntos[i].punto);
   return Math.round(total);
 }
 
+function hayCorte(anterior: MuestraCruda, actual: MuestraCruda): boolean {
+  if (anterior.vehicleId !== actual.vehicleId) return true;
+  const ms = actual.recordedAt.getTime() - anterior.recordedAt.getTime();
+  if (ms > MAX_PAUSA_RECORRIDO_MS) return true;
+  const metros = distanciaMetros([anterior.latitude, anterior.longitude], [actual.latitude, actual.longitude]);
+  return ms <= 0 ? metros > 0 : metros * 3600 / ms > MAX_VELOCIDAD_RECORRIDO_KMH;
+}
+
 /**
- * Un recorrido por chofer. Se agrupa por `driverId` (no por unidad): el mismo chofer puede cambiar de
- * nave en el día y lo que se sigue es la persona; la unidad queda como dato de la ficha.
+ * Un elemento por tramo continuo de chofer+vehículo; un cambio de vehículo, hueco, salto o coordenada
+ * inválida corta la línea. No se unen visitas posteriores a la misma unidad. Los puntos solitarios
+ * se conservan con 0 metros para no perder la última señal; no constituyen una línea por sí solos.
  */
-export function construirRecorridos(
-  muestras: MuestraCruda[],
-  opciones: OpcionesRecorrido = {}
-): Recorrido[] {
+export function construirRecorridos(muestras: MuestraCruda[], opciones: OpcionesRecorrido = {}): Recorrido[] {
+  const { maxPuntos, distanciaMinimaMetros } = opcionesValidas(opciones);
   const porChofer = new Map<string, MuestraCruda[]>();
   for (const muestra of muestras) {
+    // Una fecha ilegible no tiene posición temporal fiable; no puede ordenarse ni serializarse.
+    if (!fechaValida(muestra) || typeof muestra.driverId !== "string" || !muestra.driverId.trim()) continue;
     const lista = porChofer.get(muestra.driverId);
     if (lista) lista.push(muestra);
     else porChofer.set(muestra.driverId, [muestra]);
   }
 
   const recorridos: Recorrido[] = [];
-  for (const [driverId, lista] of porChofer) {
-    const puntos = depurarPuntos(lista, opciones);
-    if (puntos.length < 2) continue;
-    // La unidad de la ficha es la del último reporte: si cambió de nave, la que importa es la actual.
-    const ultima = [...lista].sort((a, b) => b.recordedAt.getTime() - a.recordedAt.getTime())[0];
+  function agregar(segmento: MuestraCruda[]) {
+    if (!segmento.length) return;
+    const ultima = segmento[segmento.length - 1];
+    const depurados = filtrarRuido(segmento, distanciaMinimaMetros);
     recorridos.push({
-      driverId,
-      driverName: ultima.driver.name?.trim() || null,
+      id: claveMuestra(segmento[0]),
+      driverId: ultima.driverId,
+      driverName: ultima.driver?.name?.trim() || null,
       vehicleId: ultima.vehicleId,
-      internalNumber: ultima.vehicle.internalNumber,
-      vehicleName: ultima.vehicle.name,
-      puntos,
-      metros: metrosDeRecorrido(puntos),
+      internalNumber: ultima.vehicle?.internalNumber?.trim() || null,
+      vehicleName: ultima.vehicle?.name?.trim() || "",
+      puntos: recortarPuntos(depurados, maxPuntos),
+      metros: metrosDeRecorrido(depurados),
       ultimaSenal: ultima.recordedAt.toISOString(),
-      muestras: lista.length
+      muestras: segmento.length
     });
   }
-
-  return recorridos.sort((a, b) => b.metros - a.metros);
-}
-
-/** Corte de retención: la muestra ya se puede borrar. Puro, para poder testearlo. */
-export function muestraVencida(
-  recordedAt: Date,
-  ahora: Date = new Date(),
-  dias: number = RETENCION_DIAS
-): boolean {
-  return ahora.getTime() - recordedAt.getTime() > dias * 24 * 60 * 60 * 1000;
+  for (const lista of porChofer.values()) {
+    let segmento: MuestraCruda[] = [];
+    for (const muestra of lista.sort(compararMuestras)) {
+      if (!muestraValida(muestra)) {
+        agregar(segmento);
+        segmento = [];
+        continue;
+      }
+      const anterior = segmento.at(-1);
+      if (anterior && hayCorte(anterior, muestra)) {
+        agregar(segmento);
+        segmento = [];
+      }
+      segmento.push(muestra);
+    }
+    agregar(segmento);
+  }
+  return recorridos.sort((a, b) => b.metros - a.metros || a.id.localeCompare(b.id));
 }
 
 const SELECT_MUESTRA = {
-  driverId: true,
-  vehicleId: true,
-  latitude: true,
-  longitude: true,
-  recordedAt: true,
+  id: true, driverId: true, vehicleId: true, latitude: true, longitude: true, recordedAt: true,
   driver: { select: { name: true } },
   vehicle: { select: { name: true, internalNumber: true } }
 } as const;
 
-/**
- * Recorridos de la ventana pedida. `horas` se acota entre 1 y la ventana larga: la pantalla nunca debe
- * poder pedir «todo el historial» por querystring.
- */
+/** Una fila extra detecta truncamiento sin un COUNT ni una lectura ilimitada. */
+export async function cargarRecorridosResultado(
+  horas: number = VENTANA_RECORRIDO_HORAS,
+  ahora: Date = new Date()
+): Promise<ResultadoRecorridos> {
+  const acotadas = acotarHoras(horas);
+  const desde = new Date(ahora.getTime() - acotadas * 60 * 60 * 1000);
+  const muestras = await prisma.driverLocationSample.findMany({
+    where: { recordedAt: { gte: desde, lte: ahora } },
+    select: SELECT_MUESTRA,
+    orderBy: [{ recordedAt: "desc" }, { id: "desc" }],
+    take: MAX_MUESTRAS_RECORRIDO + 1
+  });
+  return {
+    recorridos: construirRecorridos(muestras.slice(0, MAX_MUESTRAS_RECORRIDO)),
+    horas: acotadas,
+    truncado: muestras.length > MAX_MUESTRAS_RECORRIDO
+  };
+}
+
+/** Compatibilidad con la página server: la API usa el resultado completo para avisar truncamiento. */
 export async function cargarRecorridos(
   horas: number = VENTANA_RECORRIDO_HORAS,
   ahora: Date = new Date()
 ): Promise<Recorrido[]> {
-  const acotadas = Math.min(Math.max(Math.round(horas), 1), VENTANA_RECORRIDO_HORAS);
-  const desde = new Date(ahora.getTime() - acotadas * 60 * 60 * 1000);
-  const muestras = await prisma.driverLocationSample.findMany({
-    where: { recordedAt: { gte: desde } },
-    select: SELECT_MUESTRA,
-    orderBy: { recordedAt: "asc" }
-  });
-  return construirRecorridos(muestras);
-}
-
-/**
- * Borra las muestras más viejas que la retención. Devuelve cuántas se borraron.
- * Lo llama `scripts/limpiar-posiciones.mjs`; no corre solo porque el proyecto no tiene scheduler.
- */
-export async function limpiarMuestrasVencidas(
-  ahora: Date = new Date(),
-  dias: number = RETENCION_DIAS
-): Promise<number> {
-  const corte = new Date(ahora.getTime() - dias * 24 * 60 * 60 * 1000);
-  const { count } = await prisma.driverLocationSample.deleteMany({
-    where: { recordedAt: { lt: corte } }
-  });
-  return count;
+  return (await cargarRecorridosResultado(horas, ahora)).recorridos;
 }

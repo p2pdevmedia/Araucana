@@ -145,3 +145,44 @@ button.flota-fila:hover, button.flota-fila:focus-visible { background: #f1efe7; 
 .flota-toggle[aria-pressed="true"] { color: #1f7a5e; border-color: #1f7a5e; }
 .flota-fila-recorrido { font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .flota-fila:disabled { cursor: default; }
+
+/* --- Revisión UX de #322: controles, selección y estados --- */
+.flota-leyenda { display: inline-flex; align-items: center; gap: 6px; }
+.flota-controles { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.flota-toggle:disabled { opacity: 0.45; cursor: not-allowed; }
+.flota-toggle:focus-visible, .flota-fila:focus-visible, .flota-enlace:focus-visible {
+  outline: 2px solid #2868a2; outline-offset: 2px;
+}
+.flota-enlace {
+  padding: 0; border: 0; background: none; color: #1d5c8a;
+  font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer;
+}
+.flota-aviso {
+  margin: 0 0 12px; padding: 10px 14px; border: 1px solid #d9cfa9; border-radius: 10px;
+  background: #fdf9ec; color: #6b5212; font-size: 13px;
+}
+.flota-mapa-wrap { display: grid; gap: 8px; align-content: start; }
+.flota-mapa { width: 100%; }
+
+.flota-fila-color { flex: 0 0 auto; width: 4px; align-self: stretch; border-radius: 2px; background: #c9c4ba; }
+.flota-fila[aria-pressed="true"] { background: #eef4f0; box-shadow: inset 0 0 0 1px #1f7a5e33; }
+.flota-fila[data-estado="sin-dato"] { opacity: 0.85; }
+.flota-detalle {
+  margin-top: 10px; padding: 10px 12px; border: 1px dashed var(--line);
+  border-radius: 10px; background: #fbfaf6;
+}
+.flota-detalle p { margin: 4px 0 0; font-size: 13px; }
+.flota-detalle-dato { color: var(--ink-soft); }
+
+/* Etiqueta permanente con el interno: no hay que abrir el globo para saber qué unidad es. */
+.flota-pin-etiqueta {
+  padding: 1px 6px; border: 0; border-radius: 999px; background: #ffffffd9;
+  box-shadow: 0 1px 4px rgba(24, 59, 50, 0.25); color: #1e2b26;
+  font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+.flota-pin-etiqueta::before { display: none; }
+
+@media (max-width: 900px) {
+  .flota-controles .flota-toggle { flex: 1 1 auto; }
+  .flota-fila-hora { font-size: 11px; }
+}

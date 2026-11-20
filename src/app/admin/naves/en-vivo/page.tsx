@@ -30,10 +30,12 @@ export default async function NavesEnVivoPage() {
       }
     >
       <p className="lead flota-en-vivo-intro">
-        Dónde está cada nave que tiene el panel del chofer abierto y por dónde pasó en las últimas{" "}
-        {VENTANA_RECORRIDO_HORAS} horas. Las posiciones se actualizan cada 30 segundos y la unidad avanza
-        de forma continua; una nave que deja de reportar sigue en su última posición, marcada como{" "}
-        <strong>sin señal</strong> después de {VENTANA_SENAL_MINUTOS} minutos.
+        Dónde está cada unidad que tiene el panel del chofer abierto y por dónde pasó en las últimas{" "}
+        {VENTANA_RECORRIDO_HORAS} horas. Las posiciones se actualizan cada 30 segundos y el punto se mueve
+        al llegar cada reporte nuevo, sin inventar el tramo intermedio. Una nave que deja de reportar sigue
+        en su última posición, marcada como <strong>sin señal</strong> después de {VENTANA_SENAL_MINUTOS}{" "}
+        minutos. La línea se corta cuando cambia la unidad o hay un hueco de más de 10 minutos: no se une
+        lo que no fue un viaje continuo.
       </p>
 
       <FlotaEnVivoMapa inicial={flota} recorridosIniciales={recorridos} />

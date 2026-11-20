@@ -21,6 +21,13 @@ const RETENCION_DIAS = Number(process.env.RETENCION_DIAS ?? 30);
 const dryRun = process.argv.includes("--dry-run") || process.env.DRY_RUN === "1";
 const confirmado = process.env.CONFIRMAR === "si";
 
+// Un valor inválido (vacío, "abc") o negativo no puede llegar al DELETE: `Date.now() - (-5 * día)` cae
+// en el futuro y borraría TODO el historial, incluido el de hoy. Se valida antes de abrir la conexión.
+if (!Number.isInteger(RETENCION_DIAS) || RETENCION_DIAS < 1) {
+  console.error(`[limpieza] RETENCION_DIAS inválido: ${JSON.stringify(process.env.RETENCION_DIAS ?? 30)}. Tiene que ser un entero >= 1. No se toca nada.`);
+  process.exit(1);
+}
+
 function describir(url) {
   try {
     const parsed = new URL(url);
