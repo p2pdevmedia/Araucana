@@ -250,6 +250,14 @@ type GrupoDeVuelo = Omit<ServiceOrderBlock, "key" | "vehicle" | "manualOrder"> &
   pickupGroupId: string | null;
 };
 
+/** Criterio compartido por la hoja del chofer y su agenda en el panel. */
+export function esUnaRecorrida(miembros: { direction: string | null }[]) {
+  // Mismo sentido y al menos dos vuelos. No se exige una sola nave: desde #271/#272 una vuelta puede
+  // salir con dos combis y los pasajeros se reparten por zona entre ellas (`repartirEnNaves`).
+  if (miembros.length < 2) return false;
+  return miembros.every((miembro) => miembro.direction === miembros[0].direction);
+}
+
 /**
  * Une en una sola orden los vuelos que se hacen en la misma vuelta (`pickupGroupId`), del mismo sentido.
  * Si la vuelta sale con más de una nave (dos vuelos llenos, dos trafics) los pasajeros de todos los vuelos
@@ -269,8 +277,7 @@ function unirVuelosCoordinados(grupos: Map<string, GrupoDeVuelo>) {
   }
 
   for (const [pickupGroupId, miembros] of porGrupo) {
-    if (miembros.length < 2) continue;
-    if (new Set(miembros.map((miembro) => miembro.direction)).size > 1) continue;
+    if (!esUnaRecorrida(miembros)) continue;
 
     const ordenados = [...miembros].sort((a, b) => a.flightAt.getTime() - b.flightAt.getTime());
     const primero = ordenados[0];

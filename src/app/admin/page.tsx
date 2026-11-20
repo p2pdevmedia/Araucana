@@ -1,3 +1,4 @@
+import { DayWorkspace, type DayParams } from "./salidas-del-dia/day-workspace";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin-shell";
 import { getCurrentAdminOrRedirect } from "@/lib/auth/admin";
@@ -8,9 +9,7 @@ import { LogoutButton } from "./logout-button";
 import "./panel.css";
 
 type AdminPageProps = {
-  searchParams?: Promise<{
-    notice?: string;
-  }>;
+  searchParams?: Promise<DayParams>;
 };
 
 const cuando = new Intl.DateTimeFormat("es-AR", {
@@ -42,6 +41,7 @@ function FilaComprobante({ item }: { item: AdminReceiptRow }) {
 export default async function AdminPage({ searchParams }: AdminPageProps) {
   const user = await getCurrentAdminOrRedirect();
   const params = await searchParams;
+  if (params?.vista !== "comercial") return <DayWorkspace panel user={user} params={params} />;
   const [routes, reservationCount, operaciones] = await Promise.all([
     listPublicRoutes(),
     countAdminReservations(),
@@ -53,6 +53,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
   return (
     <AdminShell role={user.role} title="Panel" eyebrow="Gestión comercial y operativa" action={<LogoutButton />} notice={params?.notice}>
+      <Link className="ghost-button" href="/admin">Volver a la jornada</Link>
       <p className="panel-session muted">Sesión de {user.email}</p>
 
       {/* Lo que se abre todos los días, a un toque. Son enlaces a pantallas que ya existen. */}

@@ -82,7 +82,7 @@ export async function fleetConflicts(
   ];
 }
 
-type DriverInterval = { driverId: string; startsAt: Date; endsAt: Date };
+type DriverInterval = { driverId: string; startsAt: Date; endsAt: Date; excludeScheduleId?: string };
 
 /**
  * Dónde más maneja el chofer en ese tramo: salidas de ruta (como nave principal o sumada), viajes
@@ -100,7 +100,10 @@ export async function driverConflicts(
   // Los vuelos se traen con un día de margen para cada lado (un arribo de la noche anterior reparte
   // pasada la medianoche) y se filtran por su propia ventana de servicio.
   const flightRange = { gte: new Date(+dayInterval(first).startsAt - 86_400_000), lt: new Date(+dayInterval(last).endsAt + 86_400_000) };
-  const activeSchedule = { departureAt: { lt: endsAt }, arrivalAt: { gt: startsAt }, status: { notIn: ["CANCELLED", "CANCELED", "CLOSED"] } };
+  const activeSchedule = {
+    ...(interval.excludeScheduleId ? { id: { not: interval.excludeScheduleId } } : {}),
+    departureAt: { lt: endsAt }, arrivalAt: { gt: startsAt }, status: { notIn: ["CANCELLED", "CANCELED", "CLOSED"] }
+  };
   const [schedules, units, special, chapelco, airport] = await Promise.all([
     tx.schedule.findMany({ where: { driverId, ...activeSchedule }, include: { route: { select: { from: true, to: true } } } }),
     tx.scheduleUnit.findMany({ where: { driverId, schedule: activeSchedule }, include: { schedule: { include: { route: { select: { from: true, to: true } } } } } }),

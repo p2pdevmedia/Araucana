@@ -18,6 +18,11 @@ export function boardHref(dateKey: string, notice?: string) {
   return `/admin/salidas-del-dia?${query.toString()}`;
 }
 
-export function redirectToBoard(dateKey: string, notice: string): never {
-  redirect(boardHref(dateKey, notice));
+export function redirectToBoard(dateKey: string, notice: string, form?: FormData): never {
+  const href = boardHref(dateKey, notice);
+  if (form?.get("panelOrigin") !== "panel") redirect(href);
+  const query = new URLSearchParams({ date: dateKey, notice });
+  const service = form.get("panelService");
+  if (typeof service === "string" && service.length <= 200 && service) query.set("servicio", service);
+  redirect("/admin?" + query.toString() + (query.has("servicio") ? "#servicio-" + encodeURIComponent(String(service)) : ""));
 }

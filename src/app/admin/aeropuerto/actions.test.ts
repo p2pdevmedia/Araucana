@@ -153,6 +153,24 @@ describe("aeropuerto: combi y chofer desde el modal «Asignar combi»", () => {
     expect(mocks.acceptance).toHaveBeenCalledWith(expect.anything(), "AIRPORT", "asig1", "secre", [cruce]);
   });
 
+  it("al editar el chofer desde el panel conserva el origen y actualiza la orden", async () => {
+    mocks.findAssignment.mockResolvedValue({ id: "a1", driverId: null });
+    const url = await redirectTo(assignVehicleAction(undefined, form({
+      flightId: "f1", vehicleId: "v1", assignmentId: "a1", driverId: "d1", volver: "tablero", panelOrigin: "panel"
+    })));
+    const destination = new URL(url.replace("redirect:", ""), "http://localhost");
+    expect(destination.pathname).toBe("/admin");
+    expect(destination.searchParams.get("date")).toBe("2026-11-20");
+    expect(destination.searchParams.get("notice")).toBe("Chofer asignado a la combi.");
+    expect(mocks.refresh).toHaveBeenCalledWith("/admin/aeropuerto/orden-de-servicio/ver");
+  });
+
+  it("un selector abierto antes de quitar la combi no vuelve a crear la asignación", async () => {
+    const result = await assignVehicleAction(undefined, form({ flightId: "f1", vehicleId: "v1", assignmentId: "anterior", driverId: "d1" }));
+    expect(result).toHaveProperty("error");
+    expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
   it("desde el tablero (sin campo de chofer) suma la combi sin chofer", async () => {
     await redirectTo(assignVehicleAction(undefined, form({ flightId: "f1", vehicleId: "v1" })));
     expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: { flightId: "f1", vehicleId: "v1", driverId: null } }));
