@@ -128,3 +128,20 @@ button.flota-fila:hover, button.flota-fila:focus-visible { background: #f1efe7; 
   .flota-panel { max-height: none; }
   .flota-en-vivo-refresco { margin-left: 0; }
 }
+
+/* --- Recorridos dibujados y seguimiento por chofer (issue #321) --- */
+.flota-punto.is-recorrido { background: #2f6fb0; }
+.flota-toggle {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.flota-toggle:hover { color: var(--ink); border-color: var(--ink-muted); }
+.flota-toggle[aria-pressed="true"] { color: #1f7a5e; border-color: #1f7a5e; }
+.flota-fila-recorrido { font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.flota-fila:disabled { cursor: default; }
