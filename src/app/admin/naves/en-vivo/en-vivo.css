@@ -36,9 +36,11 @@
 }
 
 .flota-mapa {
-  /* Entra en pantalla sin scrollear: el alto sigue a la ventana y no a un número fijo. */
-  height: calc(100vh - 430px);
-  min-height: 380px;
+  /* Entra en pantalla sin scrollear: el alto sigue a la ventana y no a un número fijo. Los 460 px
+     descuentan encabezado, pestañas, intro y leyenda; con 430 el mapa quedaba 14 px abajo al agregar
+     las pestañas. */
+  height: calc(100vh - 460px);
+  min-height: 280px;
   max-height: 760px;
   border: 1px solid var(--line);
   border-radius: 14px;
