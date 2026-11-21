@@ -8,6 +8,7 @@ import { fechaLocal, rangoDelDia } from "@/lib/driver/jornada";
 import { cargarServiciosDelDia } from "@/lib/driver/servicios-consulta";
 import { evaluarServiciosDelDia } from "@/lib/driver/servicios";
 import { ServiciosDelDia } from "./servicios-del-dia";
+import { AvisoDeServicios } from "./aviso-servicios";
 import { AutoRefresco } from "./auto-refresco";
 import { FlotaEnVivoMapa } from "./flota-en-vivo-mapa";
 import { ResumenDelDia } from "./resumen-del-dia";
@@ -36,7 +37,7 @@ export default async function NavesEnVivoPage({ searchParams }: Props) {
 
   const [flota, recorridos, dia, dias, servicios] =
     vista === "en-vivo"
-      ? [await cargarFlotaEnVivo(), await cargarRecorridos(), null, [] as string[], null]
+      ? [await cargarFlotaEnVivo(), await cargarRecorridos(), null, [] as string[], await cargarServiciosDelDia(fecha)]
       : vista === "dia"
         ? [null, [], await cargarDiaDeFlota(fecha), await diasConActividad(), null]
         : [await cargarFlotaEnVivo(), [], null, [] as string[], await cargarServiciosDelDia(fecha)];
@@ -76,6 +77,7 @@ export default async function NavesEnVivoPage({ searchParams }: Props) {
             30 segundos; después de {VENTANA_SENAL_MINUTOS} minutos sin reportar queda <strong>sin señal</strong>{" "}
             en su última posición. La línea se corta si cambia la unidad o hay un hueco de más de 10 minutos.
           </p>
+          <AvisoDeServicios resumen={evaluarServiciosDelDia(servicios ?? [], flota)} fecha={fecha} />
           <FlotaEnVivoMapa inicial={flota} recorridosIniciales={recorridos ?? []} />
         </>
       ) : vista === "servicios" && servicios ? (

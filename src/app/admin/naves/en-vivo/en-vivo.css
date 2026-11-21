@@ -36,11 +36,11 @@
 }
 
 .flota-mapa {
-  /* Entra en pantalla sin scrollear: el alto sigue a la ventana y no a un número fijo. Los 460 px
-     descuentan encabezado, pestañas, intro y leyenda; con 430 el mapa quedaba 14 px abajo al agregar
-     las pestañas. */
-  height: calc(100vh - 460px);
-  min-height: 280px;
+  /* Entra en pantalla sin scrollear: el alto sigue a la ventana y no a un número fijo. Los 520 px
+     descuentan encabezado, pestañas, intro, el aviso de servicios y la leyenda. Cada banda nueva arriba
+     del mapa obliga a ajustar este número: se mide `top + height` contra `innerHeight`, no se estima. */
+  height: calc(100vh - 520px);
+  min-height: 240px;
   max-height: 760px;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -409,3 +409,16 @@ button.flota-fila:hover, button.flota-fila:focus-visible { background: #f1efe7; 
 
 .dia-acciones { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
 .dia-descargar { white-space: nowrap; }
+
+/* Aviso de servicios arriba del mapa: el operador que mira las unidades se entera igual. */
+.aviso-servicios {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+  margin: 0 0 12px; padding: 10px 14px;
+  border: 1px solid #d9b3a9; border-left: 4px solid #b03a24; border-radius: 10px;
+  background: #fdf1ee; color: #7a2f1d; font-size: 12.5px;
+}
+.aviso-servicios-titulo { font-size: 12.5px; font-weight: 900; }
+.aviso-servicios ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+.aviso-servicios li { font-weight: 600; }
+.aviso-servicios-resto { color: #8a2f1d; font-weight: 700; }
+.aviso-servicios-link { margin-left: auto; color: #7a2f1d; font-weight: 900; text-decoration: underline; white-space: nowrap; }
