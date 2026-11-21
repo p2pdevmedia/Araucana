@@ -20,24 +20,39 @@ export type SugerenciaConNombre = {
 const MAX_NOMBRE = 120;
 
 /**
- * Nombre del lugar propuesto a partir del label del geocoder, o `""` si la sugerencia **no** es un
- * lugar con nombre.
+ * Nombre del lugar propuesto a partir del label de la sugerencia elegida, o `""` si la sugerencia
+ * **no** es un lugar con nombre.
  *
- * Los labels que devuelve el buscador tienen formas muy distintas y sólo una es un nombre propio:
+ * Hay dos familias de labels y no se leen igual:
+ *
+ * **Ficha del catálogo de alojamientos** (`source: "municipal"`, label
+ * `Hostal del Esquiador, Cnel. Rohde 975 · Centro · Hosterias`): el primer segmento es **siempre** el
+ * nombre del establecimiento tal como lo registra el padrón municipal o provincial, nunca una calle.
+ * Ahí no se aplican las heurísticas de dirección: 77 de las 294 fichas del catálogo tienen **una sola
+ * palabra** (Turismo, Tunqueley, Paihuen, Alhué…) y otras no tienen punto verificado
+ * (`precision: "none"`, el pasajero marca el pin). Descartarlas por esas dos razones dejaba sin nombre
+ * justo a los alojamientos que el cliente nombra.
+ *
+ * **Geocoder** (`locationiq`, `photon`, `georef`, `google`): el label es una dirección o un lugar y hay
+ * que distinguirlos:
  *
  * - `Hotel el Viejo Esquiador, 1242, Avenida San Martín, …` → **lugar** (el nombre va primero).
  * - `750, Juez del Valle, Tiro Federal, …` → dirección: arranca con la altura.
  * - `Coronel Rohde 975, San Martín de los Andes` → dirección: termina con la altura.
+ * - `Belgrano, San Martín de los Andes` → una sola palabra es el nombre de una calle, no de un lugar.
  *
- * Sólo se propone cuando la fuente ubicó el punto con precisión exacta: un resultado de calle o
+ * Y sólo se propone cuando la fuente ubicó el punto con precisión exacta: un resultado de calle o
  * interpolado es una dirección, y ponerla como «alojamiento» en la hoja del chofer es peor que
  * dejarlo vacío (ahí la hoja usa la dirección, que es el dato correcto).
  */
 export function nombreDelLugarSugerido(place: SugerenciaConNombre): string {
-  if (place.precision !== "exact") return "";
-
   const primero = place.label.split(",")[0]?.trim() ?? "";
   if (!primero || primero.length > MAX_NOMBRE) return "";
+
+  // Catálogo de alojamientos: el primer segmento ya es el nombre del establecimiento.
+  if (place.source === "municipal") return primero;
+
+  if (place.precision !== "exact") return "";
   // Arranca con la altura: «750, Juez del Valle».
   if (/^\d/.test(primero)) return "";
   // Calle y altura: «Coronel Rohde 975».

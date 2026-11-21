@@ -64,6 +64,39 @@ describe("nombreDelLugarSugerido", () => {
   });
 });
 
+/**
+ * Los labels del catálogo son los que devolvió producción el 20-nov-2026 para fichas del padrón
+ * municipal (`POST /api/v1/airport/address`, `kind: "suggestions"`).
+ */
+describe("nombreDelLugarSugerido — fichas del catálogo de alojamientos", () => {
+  it("acepta un nombre de una sola palabra: en el padrón no puede ser una calle", () => {
+    expect(
+      nombreDelLugarSugerido({ label: "Turismo, Misionero Mascardi 517 · Centro · Hotel", source: "municipal", precision: "exact" })
+    ).toBe("Turismo");
+    expect(
+      nombreDelLugarSugerido({ label: "Tunqueley, Perito Moreno 1120 · Centro · Hotel", source: "municipal", precision: "exact" })
+    ).toBe("Tunqueley");
+  });
+
+  it("acepta el nombre aunque la ficha no tenga punto verificado (el pasajero marca el pin)", () => {
+    expect(
+      nombreDelLugarSugerido({ label: "Alhué, Los Andes 455 · Centro · Albergues - Hostel", source: "municipal", precision: "none" })
+    ).toBe("Alhué");
+  });
+
+  it("acepta la ficha complementaria del registro provincial", () => {
+    expect(
+      nombreDelLugarSugerido({ label: "Hostal del Lago, Costanera 1234 · Centro · Hosterias", source: "municipal", precision: "exact" })
+    ).toBe("Hostal del Lago");
+  });
+
+  it("sigue descartando el label que no entra en el campo del servidor", () => {
+    expect(
+      nombreDelLugarSugerido({ label: `${"a".repeat(121)}, Calle 1 · Centro · Hotel`, source: "municipal", precision: "exact" })
+    ).toBe("");
+  });
+});
+
 describe("pickupNameParaElChofer", () => {
   it("con el atajo de la sucursal manda el nombre de la oficina, no lo que quedó escrito", () => {
     expect(
