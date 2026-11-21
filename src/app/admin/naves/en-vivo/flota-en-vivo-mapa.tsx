@@ -252,15 +252,25 @@ export function FlotaEnVivoMapa({
       ) : null}
 
       <div className="flota-en-vivo-grid">
-        <MapaUnidades
-          naves={naves}
-          recorridos={recorridos}
-          mostrar={mostrar}
-          seleccion={seleccion}
-          onSeleccion={seleccionar}
-          encuadre={encuadre}
-          colores={colores}
-        />
+        {/* La leyenda va dentro de la columna del mapa: como hija directa del grid ocupaba el lugar
+            del panel y lo empujaba a una segunda fila. */}
+        <div className="flota-mapa-col">
+          <MapaUnidades
+            naves={naves}
+            recorridos={recorridos}
+            mostrar={mostrar}
+            seleccion={seleccion}
+            onSeleccion={seleccionar}
+            encuadre={encuadre}
+            colores={colores}
+          />
+          <p className="flota-mapa-leyenda">
+            <span><i className="inicio" aria-hidden="true" /> círculo hueco: dónde arrancó el tramo</span>
+            <span><i className="sentido" aria-hidden="true" /> flecha: para dónde fue</span>
+            <span><i className="fin" aria-hidden="true" /> punto lleno: última posición del tramo</span>
+            <span>cada unidad tiene su color, igual que en la lista</span>
+          </p>
+        </div>
 
         <aside className="flota-panel" aria-label="Unidades y choferes">
           <h2>

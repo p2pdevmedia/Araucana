@@ -190,3 +190,33 @@ button.flota-fila:hover, button.flota-fila:focus-visible { background: #f1efe7; 
   .flota-controles .flota-toggle { flex: 1 1 auto; }
   .flota-fila-hora { font-size: 11px; }
 }
+
+/* Punta de flecha al final de cada tramo: indica el sentido del recorrido. */
+.flota-flecha span {
+  display: block;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 9px solid #17664f;
+  filter: drop-shadow(0 0 1px #fff);
+}
+/* El pin mantiene el color del estado en el relleno y el de la unidad en el borde. */
+.flota-pin span { border-width: 3px; }
+
+/* El mapa base se atenúa un poco: deja las calles de referencia y no compite con los recorridos. */
+.flota-mapa .leaflet-tile-pane { filter: grayscale(0.5) brightness(1.04) contrast(0.95); }
+.flota-mapa-leyenda {
+  display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+  margin: 8px 2px 0; color: var(--ink-muted); font-size: 11.5px;
+}
+.flota-mapa-leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+.flota-mapa-leyenda i {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+}
+.flota-mapa-leyenda i.inicio { background: #fff; border: 2px solid #4f6a62; }
+.flota-mapa-leyenda i.fin { background: #4f6a62; }
+.flota-mapa-leyenda i.sentido {
+  width: 0; height: 0; border-radius: 0; border-left: 4px solid transparent;
+  border-right: 4px solid transparent; border-bottom: 7px solid #4f6a62;
+}

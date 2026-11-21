@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Map as LeafletMap, Marker, Polyline } from "leaflet";
+import type { CircleMarker, CircleMarkerOptions, Layer, Map as LeafletMap, Marker, Polyline } from "leaflet";
 import type { NaveEnVivo } from "@/lib/driver/en-vivo";
 import type { Recorrido } from "@/lib/driver/recorrido";
 import { distanciaVisible, horaSenal, nombreUnidad, puedeAnimar } from "@/lib/driver/mapa-vivo";
@@ -20,7 +20,7 @@ export function MapaUnidades({ naves, recorridos, mostrar, seleccion, onSeleccio
   const mapa = useRef<LeafletMap | null>(null);
   const leaflet = useRef<typeof import("leaflet") | null>(null);
   const pins = useRef(new Map<string, { marker: Marker; dato: NaveEnVivo }>());
-  const lineas = useRef<Polyline[]>([]);
+  const lineas = useRef<Layer[]>([]);
   const animaciones = useRef(new Map<string, number>());
   const seleccionRef = useRef(onSeleccion);
   seleccionRef.current = onSeleccion;
@@ -35,6 +35,8 @@ export function MapaUnidades({ naves, recorridos, mostrar, seleccion, onSeleccio
     void import("leaflet").then((L) => {
       if (cancelado || !contenedor.current) return;
       const map = L.map(contenedor.current, { scrollWheelZoom: false }).setView([-40.1579, -71.3534], 12);
+      // OSM estándar (sin API key) y el fondo se atenúa por CSS: así quedan las calles como referencia
+      // pero el color de los recorridos gana. Los mapas claros de CARTO ahora exigen clave y meten marca.
       const tiles = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "&copy; OpenStreetMap contributors", maxZoom: 19
       }).addTo(map);
@@ -72,8 +74,11 @@ export function MapaUnidades({ naves, recorridos, mostrar, seleccion, onSeleccio
       globo.className = "flota-globo";
       for (const texto of [nombreUnidad(nave), nave.driverName ?? "Chofer sin nombre", ESTADO[nave.estado],
         `Última señal: ${horaSenal(nave.recordedAt)} · hace ${nave.minutosDesdeLaSenal} min`]) globo.append(textoSeguro(texto));
-      const icon = L.divIcon({ className: `flota-pin is-${nave.estado}`, html: "<span></span>",
-        iconSize: [22, 22], iconAnchor: [11, 11] });
+      const colorUnidad = colores.get(nave.driverId) ?? "#4f6a62";
+      const icon = L.divIcon({
+        className: `flota-pin is-${nave.estado}`, html: `<span style="border-color:${colorUnidad}"></span>`,
+        iconSize: [22, 22], iconAnchor: [11, 11]
+      });
       let entrada = pins.current.get(key);
       if (!entrada) {
         const marker = L.marker(posicion, { icon, title: nombreUnidad(nave) }).addTo(map).bindPopup(globo);
@@ -142,12 +147,33 @@ export function MapaUnidades({ naves, recorridos, mostrar, seleccion, onSeleccio
     if (!mostrar) return;
     for (const recorrido of recorridos) {
       if (recorrido.puntos.length < 2 || (seleccion && claveUnidad(recorrido) !== seleccion)) continue;
-      const linea = L.polyline(recorrido.puntos.map(p => p.punto), {
-        color: colores.get(recorrido.driverId) ?? "#4f6a62", weight: seleccion ? 5 : 3, opacity: 0.85
+      const puntos = recorrido.puntos.map(p => p.punto);
+      const color = colores.get(recorrido.driverId) ?? "#4f6a62";
+      // Un halo blanco debajo: sobre el mapa de calles el trazo solo se perdía entre rutas y etiquetas.
+      const halo = L.polyline(puntos, {
+        color: "#ffffff", weight: seleccion ? 8 : 6, opacity: 0.85, lineCap: "round", lineJoin: "round"
       }).addTo(map);
+      const linea = L.polyline(puntos, {
+        color, weight: seleccion ? 4.5 : 3.5, opacity: 0.95, lineCap: "round", lineJoin: "round"
+      }).addTo(map);
+      // Inicio (hueco) y última posición del tramo: sin esto el trazo no dice para dónde fue.
+      const salida = L.circleMarker(puntos[0], {
+        radius: 4, color, weight: 2, fillColor: "#ffffff", fillOpacity: 1
+      }).addTo(map);
+      const ultimo = puntos[puntos.length - 1];
+      const anterior = puntos[puntos.length - 2] ?? ultimo;
+      const rumbo = (Math.atan2(ultimo[1] - anterior[1], ultimo[0] - anterior[0]) * 180) / Math.PI;
+      const llegada = L.marker(ultimo, {
+        interactive: false,
+        icon: L.divIcon({
+          className: "flota-flecha", iconSize: [18, 18], iconAnchor: [9, 9],
+          html: `<span style="transform:rotate(${90 - rumbo}deg);border-bottom-color:${color}"></span>`
+        })
+      }).addTo(map);
+      lineas.current.push(salida, llegada);
       linea.bindTooltip(textoSeguro(`${recorrido.driverName ?? "Chofer"} · ${recorrido.internalNumber ?? recorrido.vehicleName} · ≈ ${distanciaVisible(recorrido.metros)}`), { sticky: true });
       linea.on("click", () => seleccionRef.current(claveUnidad(recorrido)));
-      lineas.current.push(linea);
+      lineas.current.push(halo, linea);
     }
   }, [listo, recorridos, seleccion, mostrar, colores]);
 
