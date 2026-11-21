@@ -51,12 +51,17 @@ export function ResumenDelDia({
           <h2 id="dia-titulo">Resumen del día</h2>
           <p className="dia-fecha">{diaLindo(dia.fecha)}</p>
         </div>
-        <form className="dia-buscar" method="get" action="/admin/naves/en-vivo">
-          <input type="hidden" name="vista" value="dia" />
-          <label htmlFor="dia-fecha">Ver otro día</label>
-          <input id="dia-fecha" type="date" name="fecha" defaultValue={dia.fecha} max={hoy} />
-          <button type="submit" className="ghost-button">Ver</button>
-        </form>
+        <div className="dia-acciones">
+          <a className="ghost-button dia-descargar" href={`/admin/naves/en-vivo/planilla?fecha=${dia.fecha}`}>
+            Descargar planilla
+          </a>
+          <form className="dia-buscar" method="get" action="/admin/naves/en-vivo">
+            <input type="hidden" name="vista" value="dia" />
+            <label htmlFor="dia-fecha">Ver otro día</label>
+            <input id="dia-fecha" type="date" name="fecha" defaultValue={dia.fecha} max={hoy} />
+            <button type="submit" className="ghost-button">Ver</button>
+          </form>
+        </div>
       </div>
 
       <div className="dia-chips" role="group" aria-label="Días con actividad">

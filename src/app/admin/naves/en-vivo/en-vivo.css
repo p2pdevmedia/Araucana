@@ -406,3 +406,6 @@ button.flota-fila:hover, button.flota-fila:focus-visible { background: #f1efe7; 
   color: #8a2f1d; font-size: 12px; font-weight: 800; text-decoration: none;
 }
 .srv-asignar:hover { background: #fdf1ee; }
+
+.dia-acciones { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.dia-descargar { white-space: nowrap; }
