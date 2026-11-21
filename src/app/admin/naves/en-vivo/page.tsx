@@ -5,6 +5,9 @@ import { cargarFlotaEnVivo, VENTANA_SENAL_MINUTOS } from "@/lib/driver/en-vivo";
 import { cargarRecorridos, VENTANA_RECORRIDO_HORAS } from "@/lib/driver/recorrido";
 import { cargarDiaDeFlota, diasConActividad } from "@/lib/driver/dia";
 import { fechaLocal, rangoDelDia } from "@/lib/driver/jornada";
+import { cargarServiciosDelDia } from "@/lib/driver/servicios-consulta";
+import { evaluarServiciosDelDia } from "@/lib/driver/servicios";
+import { ServiciosDelDia } from "./servicios-del-dia";
 import { FlotaEnVivoMapa } from "./flota-en-vivo-mapa";
 import { ResumenDelDia } from "./resumen-del-dia";
 import "./en-vivo.css";
@@ -25,15 +28,17 @@ type Props = { searchParams?: Promise<{ vista?: string; fecha?: string }> };
 export default async function NavesEnVivoPage({ searchParams }: Props) {
   const sessionUser = await getCurrentAdminOrRedirect();
   const query = (await searchParams) ?? {};
-  const vista = query.vista === "dia" ? "dia" : "en-vivo";
+  const vista = query.vista === "dia" ? "dia" : query.vista === "servicios" ? "servicios" : "en-vivo";
   const hoy = fechaLocal(new Date());
   const fechaPedida = typeof query.fecha === "string" ? query.fecha : "";
   const fecha = rangoDelDia(fechaPedida) ? fechaPedida : hoy;
 
-  const [flota, recorridos, dia, dias] =
+  const [flota, recorridos, dia, dias, servicios] =
     vista === "en-vivo"
-      ? [await cargarFlotaEnVivo(), await cargarRecorridos(), null, [] as string[]]
-      : [null, [], await cargarDiaDeFlota(fecha), await diasConActividad()];
+      ? [await cargarFlotaEnVivo(), await cargarRecorridos(), null, [] as string[], null]
+      : vista === "dia"
+        ? [null, [], await cargarDiaDeFlota(fecha), await diasConActividad(), null]
+        : [await cargarFlotaEnVivo(), [], null, [] as string[], await cargarServiciosDelDia(fecha)];
 
   return (
     <AdminShell
@@ -55,6 +60,12 @@ export default async function NavesEnVivoPage({ searchParams }: Props) {
         >
           Resumen del día
         </Link>
+        <Link
+          href={`/admin/naves/en-vivo?vista=servicios&fecha=${hoy}`}
+          aria-current={vista === "servicios" ? "page" : undefined}
+        >
+          Servicios de hoy
+        </Link>
       </nav>
 
       {vista === "en-vivo" && flota ? (
@@ -66,6 +77,8 @@ export default async function NavesEnVivoPage({ searchParams }: Props) {
           </p>
           <FlotaEnVivoMapa inicial={flota} recorridosIniciales={recorridos ?? []} />
         </>
+      ) : vista === "servicios" && servicios ? (
+        <ServiciosDelDia resumen={evaluarServiciosDelDia(servicios, flota)} fecha={fecha} />
       ) : dia ? (
         <ResumenDelDia dia={dia} dias={dias} hoy={hoy} />
       ) : (

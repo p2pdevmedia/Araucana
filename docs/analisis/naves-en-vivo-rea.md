@@ -83,9 +83,10 @@ Criterios que se respetaron, porque son los que hacen que un número se pueda de
 
 ## Lo que falta y conviene hacer después (en orden de valor para el cliente)
 
-1. **Ligar la unidad al servicio del día** (ETA y cumplimiento): es el patrón que todos los productos
-   de turismo venden y el que contesta «¿la unidad del aeropuerto de las 9 llegó a horario?». Requiere
-   cruzar `DriverVehicleLocation` con las salidas y vuelos que ya existen en el sistema. **P1.**
+1. ~~Ligar la unidad al servicio del día~~ **Hecho**: la pestaña «Servicios de hoy» cruza el tablero
+   (salidas, vuelos, Chapelco y viajes especiales) con la posición de la unidad asignada y marca
+   *sin nave*, *en riesgo*, *atención* o *listo*. Falta el paso siguiente: **ETA y hora de llegada
+   registrada** (entrar al radio del punto de recogida), que necesita geocercas por servicio. **P1.**
 2. **Persistir viajes y eventos** (`Trip`, `FleetEvent`) para que el resumen no se recalcule leyendo
    todo el día y para tener un lugar donde anotar «este corte fue por falta de datos del teléfono».
    **P2**, cuando haya volumen real.

@@ -328,3 +328,81 @@ button.flota-fila:hover, button.flota-fila:focus-visible { background: #f1efe7; 
   .dia-buscar { justify-content: space-between; }
   .dia-senal { white-space: normal; }
 }
+
+/* === Servicios del día ===
+   El cruce que faltaba: qué hay que cubrir hoy y si la unidad que lo cubre está viva. */
+
+.srv-barra { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; justify-content: space-between; margin-bottom: 6px; }
+.srv-barra h2 { margin: 0; font-size: 20px; }
+.srv-fecha { margin: 2px 0 0; color: var(--ink-muted); font-size: 13px; }
+.srv-resumen { margin: 0; color: var(--ink-soft); font-size: 13px; font-weight: 600; }
+.srv-num-alerta { color: #8a2f1d; font-weight: 800; }
+.srv-num-ok { color: #1f7a5e; font-weight: 800; }
+.srv-nota { margin: 4px 0 14px; color: var(--ink-muted); font-size: 11.5px; max-width: 92ch; }
+
+.srv-lista { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.srv-fila {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1.6fr) minmax(0, 1.2fr) minmax(120px, auto);
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: 10px;
+  background: #fff;
+}
+.srv-fila.es-riesgo { border-left-color: #b03a24; }
+.srv-fila.es-atencion { border-left-color: #b98a1d; }
+.srv-fila.es-listo { border-left-color: #1f7a5e; }
+.srv-fila.es-futuro { border-left-color: var(--line); }
+.srv-fila.es-pasado { border-left-color: #c9c4ba; opacity: 0.75; }
+
+.srv-hora { display: grid; gap: 1px; }
+.srv-hora strong { font-size: 17px; font-variant-numeric: tabular-nums; }
+.srv-hora span { color: var(--ink-muted); font-size: 11px; font-weight: 700; }
+
+.srv-servicio { min-width: 0; }
+.srv-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 2px; align-items: center; }
+.srv-area { font-size: 10px; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-muted); }
+.srv-nivel { padding: 1px 6px; border-radius: 5px; font-size: 10px; font-weight: 900; text-transform: uppercase; color: #fff; background: var(--ink-muted); }
+.es-riesgo .srv-nivel { background: #b03a24; }
+.es-atencion .srv-nivel { background: #b98a1d; }
+.es-listo .srv-nivel { background: #1f7a5e; }
+.es-futuro .srv-nivel { background: #8b8b8b; }
+.srv-pax { font-size: 11px; color: var(--ink-muted); font-weight: 700; }
+.srv-titulo { font-weight: 800; color: inherit; text-decoration: none; }
+.srv-titulo:hover { text-decoration: underline; }
+.srv-detalle { color: var(--ink-muted); font-size: 12px; }
+
+.srv-unidades { display: flex; flex-wrap: wrap; gap: 10px; min-width: 0; }
+.srv-unidad { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700; }
+.srv-unidad-nombre { white-space: nowrap; }
+.srv-chofer { color: var(--ink-muted); font-weight: 600; }
+.srv-sin-unidad { color: #8a2f1d; font-size: 12.5px; font-weight: 800; }
+.srv-punto { width: 8px; height: 8px; border-radius: 50%; background: #8b8b8b; flex: 0 0 auto; }
+.srv-punto.is-en-movimiento { background: #1f7a5e; box-shadow: 0 0 0 3px #1f7a5e22; }
+.srv-punto.is-detenida { background: #b98a1d; }
+.srv-punto.is-sin-senal { background: #b03a24; }
+.srv-punto.is-sin-posicion { background: #c9c4ba; }
+
+.srv-motivo { margin: 0; text-align: right; color: var(--ink-soft); font-size: 12px; font-weight: 700; }
+.es-riesgo .srv-motivo { color: #8a2f1d; }
+.es-atencion .srv-motivo { color: #7a5a1d; }
+.es-listo .srv-motivo { color: #1f7a5e; }
+
+.srv-vacio { margin: 0; padding: 18px; border: 1px dashed var(--line); border-radius: 12px; color: var(--ink-muted); font-size: 13px; }
+.srv-pasados { margin-top: 14px; }
+.srv-pasados > summary { cursor: pointer; color: var(--ink-muted); font-size: 12.5px; font-weight: 700; margin-bottom: 8px; }
+
+@media (max-width: 900px) {
+  .srv-fila { grid-template-columns: 70px minmax(0, 1fr); }
+  .srv-unidades, .srv-motivo { grid-column: 2; text-align: left; }
+}
+
+.srv-asignar {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border: 1px solid #b03a24; border-radius: 999px;
+  color: #8a2f1d; font-size: 12px; font-weight: 800; text-decoration: none;
+}
+.srv-asignar:hover { background: #fdf1ee; }
