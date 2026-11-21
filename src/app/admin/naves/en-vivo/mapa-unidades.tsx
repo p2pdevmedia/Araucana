@@ -65,7 +65,10 @@ export function MapaUnidades({ naves, recorridos, mostrar, seleccion, onSeleccio
     const L = leaflet.current;
     if (!listo || !map || !L) return;
     const vistos = new Set<string>();
-    const reducir = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Con la pestaña en segundo plano el navegador frena `requestAnimationFrame`: si se animara, el
+    // pin quedaría clavado en la posición vieja hasta que alguien mire. Ahí se salta directo.
+    const reducir =
+      matchMedia("(prefers-reduced-motion: reduce)").matches || document.visibilityState !== "visible";
     for (const nave of naves) {
       const key = nave.vehicleId;
       vistos.add(key);
