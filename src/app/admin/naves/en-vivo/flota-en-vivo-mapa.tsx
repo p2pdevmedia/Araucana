@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FlotaEnVivo } from "@/lib/driver/en-vivo";
 import type { Recorrido } from "@/lib/driver/recorrido";
 import {
-  colorRecorrido,
+  asignarColores,
   distanciaVisible,
   horaSenal,
   nombreUnidad,
@@ -96,6 +96,12 @@ export function FlotaEnVivoMapa({
       );
     return { vivas, sinDato: flota.sinUbicacion };
   }, [naves, metrosPorUnidad, flota.sinUbicacion]);
+
+  /** Un color por chofer, estable y sin repetir mientras alcance la paleta. */
+  const colores = useMemo(
+    () => asignarColores([...naves.map((nave) => nave.driverId), ...recorridos.map((tramo) => tramo.driverId)]),
+    [naves, recorridos]
+  );
 
   const seleccionada = seleccion ? naves.find((nave) => claveUnidad(nave) === seleccion) ?? null : null;
   const tramosSeleccionados = seleccion
@@ -253,6 +259,7 @@ export function FlotaEnVivoMapa({
           seleccion={seleccion}
           onSeleccion={seleccionar}
           encuadre={encuadre}
+          colores={colores}
         />
 
         <aside className="flota-panel" aria-label="Unidades y choferes">
@@ -280,7 +287,7 @@ export function FlotaEnVivoMapa({
                     >
                       <span
                         className="flota-fila-color"
-                        style={{ background: colorRecorrido(fila.nave.driverId) }}
+                        style={{ background: colores.get(fila.nave.driverId) ?? "#c9c4ba" }}
                         aria-hidden="true"
                       />
                       <span className="flota-fila-texto">

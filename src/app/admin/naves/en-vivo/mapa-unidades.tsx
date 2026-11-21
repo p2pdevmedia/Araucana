@@ -4,16 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as LeafletMap, Marker, Polyline } from "leaflet";
 import type { NaveEnVivo } from "@/lib/driver/en-vivo";
 import type { Recorrido } from "@/lib/driver/recorrido";
-import { colorRecorrido, distanciaVisible, horaSenal, nombreUnidad, puedeAnimar } from "@/lib/driver/mapa-vivo";
+import { distanciaVisible, horaSenal, nombreUnidad, puedeAnimar } from "@/lib/driver/mapa-vivo";
 import "leaflet/dist/leaflet.css";
 
 export const claveUnidad = (n: { driverId: string; vehicleId: string }) => `${n.driverId}/${n.vehicleId}`;
 const ESTADO = { "en-movimiento": "En movimiento", detenida: "Detenida", "sin-senal": "Sin señal" };
 const textoSeguro = (texto: string) => { const el = document.createElement("span"); el.textContent = texto; return el; };
 
-export function MapaUnidades({ naves, recorridos, mostrar, seleccion, onSeleccion, encuadre }: {
+export function MapaUnidades({ naves, recorridos, mostrar, seleccion, onSeleccion, encuadre, colores }: {
   naves: NaveEnVivo[]; recorridos: Recorrido[]; mostrar: boolean; seleccion: string | null;
   onSeleccion: (clave: string) => void; encuadre: { tipo: "todas" | "recorrido"; numero: number };
+  colores: Map<string, string>;
 }) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapa = useRef<LeafletMap | null>(null);
@@ -113,11 +114,24 @@ export function MapaUnidades({ naves, recorridos, mostrar, seleccion, onSeleccio
       animaciones.current.delete(key);
       entrada.marker.remove(); pins.current.delete(key);
     }
-    if (!inicial.current && naves.length) {
-      map.fitBounds(naves.map(n => [n.latitude, n.longitude] as [number, number]), { padding: [45, 45], maxZoom: 14 });
-      inicial.current = true;
-    }
   }, [listo, naves, seleccion]);
+
+  /**
+   * Encuadre inicial una sola vez, incluyendo los recorridos: si sólo entran los puntos actuales, la
+   * línea se sale del mapa y aparece cortada. Los refrescos siguientes no reencuadran, para no moverle
+   * el mapa al operador mientras lo está mirando.
+   */
+  useEffect(() => {
+    if (!listo || !mapa.current || inicial.current) return;
+    const puntos: [number, number][] = [
+      ...naves.map(n => [n.latitude, n.longitude] as [number, number]),
+      ...(mostrar ? recorridos.flatMap(r => r.puntos.map(p => p.punto)) : [])
+    ];
+    if (!puntos.length) return;
+    mapa.current.fitBounds(puntos, { padding: [45, 45], maxZoom: 14 });
+    inicial.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listo, naves, recorridos, mostrar]);
 
   useEffect(() => {
     const map = mapa.current;
@@ -129,13 +143,13 @@ export function MapaUnidades({ naves, recorridos, mostrar, seleccion, onSeleccio
     for (const recorrido of recorridos) {
       if (recorrido.puntos.length < 2 || (seleccion && claveUnidad(recorrido) !== seleccion)) continue;
       const linea = L.polyline(recorrido.puntos.map(p => p.punto), {
-        color: colorRecorrido(recorrido.driverId), weight: seleccion ? 5 : 3, opacity: 0.8
+        color: colores.get(recorrido.driverId) ?? "#4f6a62", weight: seleccion ? 5 : 3, opacity: 0.85
       }).addTo(map);
       linea.bindTooltip(textoSeguro(`${recorrido.driverName ?? "Chofer"} · ${recorrido.internalNumber ?? recorrido.vehicleName} · ≈ ${distanciaVisible(recorrido.metros)}`), { sticky: true });
       linea.on("click", () => seleccionRef.current(claveUnidad(recorrido)));
       lineas.current.push(linea);
     }
-  }, [listo, recorridos, seleccion, mostrar]);
+  }, [listo, recorridos, seleccion, mostrar, colores]);
 
   useEffect(() => {
     if (!listo || !mapa.current || encuadre.numero === 0) return;

@@ -1,11 +1,16 @@
 import type { NaveEnVivo } from "./en-vivo";
 
-const COLORES = ["#17664f", "#2868a2", "#a04d25", "#78429e", "#866700", "#226d75", "#96375d", "#506b26"];
-/** El color no cambia cuando se agrega/quita otro recorrido. */
-export function colorRecorrido(driverId: string) {
-  let hash = 0;
-  for (const letra of driverId) hash = (hash * 31 + letra.charCodeAt(0)) >>> 0;
-  return COLORES[hash % COLORES.length];
+export const PALETA_RECORRIDO = ["#17664f", "#2868a2", "#a04d25", "#78429e", "#866700", "#226d75", "#96375d", "#506b26"];
+
+/**
+ * Un color por chofer, asignado por orden alfabético del conjunto y sin repetir mientras alcance la
+ * paleta. Con hash, dos choferes caían en el mismo tono y sus líneas se confundían (pasó con dos
+ * unidades en la misma pantalla). Con orden estable, sumar o quitar un chofer no repinta a los demás
+ * salvo que cambie el orden.
+ */
+export function asignarColores(driverIds: string[]): Map<string, string> {
+  const unicos = [...new Set(driverIds)].sort((a, b) => a.localeCompare(b, "es"));
+  return new Map(unicos.map((id, i) => [id, PALETA_RECORRIDO[i % PALETA_RECORRIDO.length]]));
 }
 
 export function posicionValida(nave: NaveEnVivo) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { NaveEnVivo } from "./en-vivo";
-import { colorRecorrido, horaSenal, puedeAnimar, unidadesActuales } from "./mapa-vivo";
+import { asignarColores, horaSenal, puedeAnimar, unidadesActuales } from "./mapa-vivo";
 const ahora = Date.parse("2026-11-20T20:00:00Z");
 const nave: NaveEnVivo = { vehicleId: "v1", driverId: "d1", driverName: "Juan", vehicleName: "Unidad",
   internalNumber: "08", licensePlate: null, latitude: -40.15, longitude: -71.35,
@@ -36,5 +36,17 @@ describe("mapa vivo", () => {
     expect(puedeAnimar(nave, { ...nueva, recordedAt: new Date(ahora + 180_000).toISOString() }, false)).toBe(false);
   });
   it("hora de señal real no depende del reloj de render", () => expect(horaSenal(nave.recordedAt)).toContain("17:00"));
-  it("color estable por chofer", () => expect(colorRecorrido("d1")).toBe(colorRecorrido("d1")));
+  it("dos choferes nunca comparten color, aunque el hash los juntara", () => {
+    const colores = asignarColores(["cmwlhziiz0000jgos0zv8ltwg", "cmwlhzije0001jgos4rcdz3lu"]);
+    expect(new Set(colores.values()).size).toBe(2);
+  });
+  it("para el mismo conjunto de choferes el reparto es el mismo", () => {
+    const a = asignarColores(["x", "y", "z"]);
+    const b = asignarColores(["z", "x", "y"]);
+    expect([...a.entries()].sort()).toEqual([...b.entries()].sort());
+  });
+  it("con más choferes que colores, reparte toda la paleta antes de repetir", () => {
+    const colores = asignarColores(Array.from({ length: 8 }, (_, i) => `chofer-${i}`));
+    expect(new Set(colores.values()).size).toBe(8);
+  });
 });

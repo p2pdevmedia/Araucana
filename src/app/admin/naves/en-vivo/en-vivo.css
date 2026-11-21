@@ -36,12 +36,16 @@
 }
 
 .flota-mapa {
-  min-height: 520px;
+  /* Entra en pantalla sin scrollear: el alto sigue a la ventana y no a un número fijo. */
+  height: calc(100vh - 430px);
+  min-height: 380px;
+  max-height: 760px;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: #e7eee9;
   overflow: hidden;
 }
+.flota-panel { max-height: none; }
 
 /* --- Punto de estado (lista y leyenda) --- */
 .flota-punto {
@@ -130,7 +134,7 @@ button.flota-fila:hover, button.flota-fila:focus-visible { background: #f1efe7; 
 }
 
 /* --- Recorridos dibujados y seguimiento por chofer (issue #321) --- */
-.flota-punto.is-recorrido { background: #2f6fb0; }
+.flota-punto.is-recorrido { background: #4f6a62; } /* tono neutro: las líneas usan un color por chofer */
 .flota-toggle {
   padding: 4px 10px;
   border: 1px solid var(--line);
