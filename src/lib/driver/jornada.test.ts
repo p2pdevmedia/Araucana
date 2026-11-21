@@ -93,14 +93,16 @@ describe("armarJornadas", () => {
     expect(jornadas.map((j) => j.driverName)).toEqual(["Juan Muñoz", "María Quiroga"]);
   });
 
-  it("ignora velocidades imposibles al buscar la máxima", () => {
+  it("ignora velocidades imposibles al buscar la máxima y guarda cuándo y dónde ocurrió", () => {
     const jornada = armarJornadas([
       muestra({ minutos: 0, reportedSpeedKmh: 55 }),
       muestra({ minutos: 1, reportedSpeedKmh: 999 }),
-      muestra({ minutos: 2, reportedSpeedKmh: 70 })
+      muestra({ minutos: 2, latitude: -40.162, longitude: -71.318, reportedSpeedKmh: 70 })
     ]);
 
     expect(jornada[0].velocidadMaximaKmh).toBe(70);
+    expect(jornada[0].velocidadMaximaPunto).toEqual([-40.162, -71.318]);
+    expect(jornada[0].velocidadMaximaEn).toBe(new Date(BASE + 2 * 60_000).toISOString());
   });
 
   it("cuenta los cortes de señal del día sin sumarlos como movimiento", () => {
@@ -118,23 +120,37 @@ describe("armarJornadas", () => {
 describe("alertasDeJornadas", () => {
   const ahora = new Date(BASE + 120 * 60_000);
 
-  it("avisa cuando la unidad dejó de reportar y dice cuántos minutos hace", () => {
-    const jornadas = armarJornadas([muestra({ minutos: 0 }), muestra({ minutos: 10, latitude: -40.16 })]);
+  it("avisa cuando la unidad dejó de reportar hoy y formatea en horas y minutos con coordenadas", () => {
+    const jornadas = armarJornadas([muestra({ minutos: 0 }), muestra({ minutos: 10, latitude: -40.16, longitude: -71.32 })]);
     const alertas = alertasDeJornadas(jornadas, { ahora });
 
     expect(alertas[0].tipo).toBe("sin-senal");
-    expect(alertas[0].texto).toContain("110 min");
+    expect(alertas[0].texto).toContain("09:10");
+    expect(alertas[0].texto).toContain("1 h 50 min");
+    expect(alertas[0].latitude).toBe(-40.16);
+    expect(alertas[0].longitude).toBe(-71.32);
   });
 
-  it("marca exceso con el límite aplicado a la vista", () => {
+  it("no emite alerta de sin-señal relativa a ahora cuando se consulta un día pasado (esHoy=false)", () => {
+    const jornadas = armarJornadas([muestra({ minutos: 0 }), muestra({ minutos: 10, latitude: -40.16 })]);
+    const alertas = alertasDeJornadas(jornadas, { ahora, esHoy: false });
+
+    expect(alertas.filter((a) => a.tipo === "sin-senal")).toHaveLength(0);
+  });
+
+  it("marca exceso con la hora exacta, coordenadas y el límite aplicado a la vista", () => {
     const jornadas = armarJornadas([
-      muestra({ minutos: 100, reportedSpeedKmh: 95 }),
-      muestra({ minutos: 110, latitude: -40.16, reportedSpeedKmh: 95 })
+      muestra({ minutos: 100, latitude: -40.165, longitude: -71.325, reportedSpeedKmh: 95 }),
+      muestra({ minutos: 110, latitude: -40.16, reportedSpeedKmh: 65 })
     ]);
     const alertas = alertasDeJornadas(jornadas, { ahora, limiteVelocidadKmh: 80 });
 
-    expect(alertas.map((a) => a.tipo)).toContain("exceso-de-velocidad");
-    expect(alertas.find((a) => a.tipo === "exceso-de-velocidad")?.texto).toContain("límite 80");
+    const exceso = alertas.find((a) => a.tipo === "exceso-de-velocidad");
+    expect(exceso?.texto).toContain("95 km/h");
+    expect(exceso?.texto).toContain("10:40");
+    expect(exceso?.texto).toContain("límite 80");
+    expect(exceso?.latitude).toBe(-40.165);
+    expect(exceso?.longitude).toBe(-71.325);
   });
 
   it("no alerta una unidad que viene reportando bien y dentro del límite", () => {

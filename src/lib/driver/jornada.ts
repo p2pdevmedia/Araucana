@@ -70,8 +70,11 @@ export type JornadaDeUnidad = {
   minutosEnMovimiento: number;
   minutosDetenido: number;
   velocidadMaximaKmh: number | null;
+  velocidadMaximaEn: string | null;
+  velocidadMaximaPunto: [number, number] | null;
   primeraSenal: string;
   ultimaSenal: string;
+  ultimaPosicion: [number, number];
   muestras: number;
   paradas: Parada[];
   /** Huecos de más de 10 minutos entre dos reportes: la unidad estuvo fuera del mapa un rato. */
@@ -87,6 +90,11 @@ export type AlertaDeJornada = {
   vehicleId: string;
   /** Texto listo para pantalla, con el número que la dispara. */
   texto: string;
+  /** Hora (ISO) del evento que disparó la alerta, cuando aplica. */
+  ocurrioEn?: string | null;
+  /** Coordenadas del evento (exceso de velocidad o última posición con señal). */
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 export type ResumenDelDia = {
@@ -104,6 +112,15 @@ function redondear(valor: number, decimales = 0) {
 
 function claveDe(muestra: MuestraDeJornada) {
   return `${muestra.driverId}::${muestra.vehicleId}`;
+}
+
+function horaArgentina(iso: string) {
+  return new Date(iso).toLocaleTimeString("es-AR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "America/Argentina/Buenos_Aires"
+  });
 }
 
 /** Un reporte vale si tiene coordenadas usables y una fecha real: sin eso no hay jornada que contar. */
@@ -206,15 +223,25 @@ function tiempos(ordenadas: MuestraDeJornada[]) {
   return { enMovimiento: redondear(enMovimiento), detenido: redondear(detenido), huecos };
 }
 
-function velocidadMaxima(ordenadas: MuestraDeJornada[]) {
+function picoDeVelocidad(ordenadas: MuestraDeJornada[]): {
+  kmh: number | null;
+  en: string | null;
+  punto: [number, number] | null;
+} {
   let maxima: number | null = null;
+  let en: string | null = null;
+  let punto: [number, number] | null = null;
   for (const muestra of ordenadas) {
     const velocidad = muestra.reportedSpeedKmh ?? muestra.inferredSpeedKmh;
     if (velocidad == null || !Number.isFinite(velocidad)) continue;
     if (velocidad > MAX_VELOCIDAD_RECORRIDO_KMH) continue;
-    if (maxima == null || velocidad > maxima) maxima = velocidad;
+    if (maxima == null || velocidad > maxima) {
+      maxima = velocidad;
+      en = muestra.recordedAt.toISOString();
+      punto = [muestra.latitude, muestra.longitude];
+    }
   }
-  return maxima == null ? null : redondear(maxima);
+  return { kmh: maxima == null ? null : redondear(maxima), en, punto };
 }
 
 /**
@@ -238,6 +265,7 @@ export function armarJornadas(muestras: MuestraDeJornada[]): JornadaDeUnidad[] {
     const primera = ordenadas[0];
     const ultima = ordenadas.at(-1)!;
     const { enMovimiento, detenido, huecos } = tiempos(ordenadas);
+    const pico = picoDeVelocidad(ordenadas);
     jornadas.push({
       clave,
       driverId: primera.driverId,
@@ -248,9 +276,12 @@ export function armarJornadas(muestras: MuestraDeJornada[]): JornadaDeUnidad[] {
       km: kilometros(ordenadas),
       minutosEnMovimiento: enMovimiento,
       minutosDetenido: detenido,
-      velocidadMaximaKmh: velocidadMaxima(ordenadas),
+      velocidadMaximaKmh: pico.kmh,
+      velocidadMaximaEn: pico.en,
+      velocidadMaximaPunto: pico.punto,
       primeraSenal: primera.recordedAt.toISOString(),
       ultimaSenal: ultima.recordedAt.toISOString(),
+      ultimaPosicion: [ultima.latitude, ultima.longitude],
       muestras: ordenadas.length,
       paradas: paradas(ordenadas),
       huecos
@@ -269,45 +300,64 @@ function nombreDe(jornada: JornadaDeUnidad) {
  * Alertas que piden una decisión del operador. Se generan sólo con lo que el sistema sabe: no se
  * inventan infracciones ni se comparan contra un límite que el cliente no confirmó — el texto dice
  * el número aplicado para que se pueda discutir.
+ *
+ * `esHoy`: cuando se consulta un día pasado, no tiene sentido decir «dejó de reportar hace 1400 min»;
+ * ese día ya cerró. Para días cerrados sólo quedan excesos, cortes en medio de la jornada y unidades
+ * que reportaron sin moverse.
  */
 export function alertasDeJornadas(
   jornadas: JornadaDeUnidad[],
-  opciones: { ahora?: Date; limiteVelocidadKmh?: number; minutosSinSenal?: number } = {}
+  opciones: { ahora?: Date; limiteVelocidadKmh?: number; minutosSinSenal?: number; esHoy?: boolean } = {}
 ): AlertaDeJornada[] {
   const ahora = opciones.ahora ?? new Date();
   const limite = opciones.limiteVelocidadKmh ?? LIMITE_VELOCIDAD_KMH;
   const sinSenal = opciones.minutosSinSenal ?? MINUTOS_SIN_SENAL;
+  const esHoy = opciones.esHoy ?? true;
   const alertas: AlertaDeJornada[] = [];
 
   for (const jornada of jornadas) {
     const minutosDesdeLaUltima = Math.round((ahora.getTime() - new Date(jornada.ultimaSenal).getTime()) / MINUTO_MS);
 
-    if (minutosDesdeLaUltima > sinSenal) {
+    if (esHoy && minutosDesdeLaUltima > sinSenal) {
+      const duracion = minutosDesdeLaUltima < 60 ? `${minutosDesdeLaUltima} min` : minutosAHoras(minutosDesdeLaUltima);
+      const pos = jornada.ultimaPosicion ?? null;
       alertas.push({
         tipo: "sin-senal",
         severidad: minutosDesdeLaUltima >= 30 ? "alta" : "media",
         driverId: jornada.driverId,
         vehicleId: jornada.vehicleId,
-        texto: `${nombreDe(jornada)} dejó de reportar hace ${minutosDesdeLaUltima} min`
+        ocurrioEn: jornada.ultimaSenal,
+        latitude: pos ? pos[0] : null,
+        longitude: pos ? pos[1] : null,
+        texto: `${nombreDe(jornada)} sin señal desde las ${horaArgentina(jornada.ultimaSenal)} (dejó de reportar hace ${duracion})`
       });
     }
 
     if (jornada.velocidadMaximaKmh != null && jornada.velocidadMaximaKmh > limite) {
+      const pos = jornada.velocidadMaximaPunto ?? jornada.ultimaPosicion ?? null;
+      const cuando = jornada.velocidadMaximaEn ? ` a las ${horaArgentina(jornada.velocidadMaximaEn)}` : "";
       alertas.push({
         tipo: "exceso-de-velocidad",
         severidad: jornada.velocidadMaximaKmh > limite + 20 ? "alta" : "media",
         driverId: jornada.driverId,
         vehicleId: jornada.vehicleId,
-        texto: `${nombreDe(jornada)} llegó a ${jornada.velocidadMaximaKmh} km/h (límite ${limite})`
+        ocurrioEn: jornada.velocidadMaximaEn ?? jornada.ultimaSenal,
+        latitude: pos ? pos[0] : null,
+        longitude: pos ? pos[1] : null,
+        texto: `${nombreDe(jornada)} llegó a ${jornada.velocidadMaximaKmh} km/h${cuando} (límite ${limite})`
       });
     }
 
     if (jornada.muestras > 1 && jornada.km < 0.5 && jornada.minutosEnMovimiento < 5) {
+      const pos = jornada.ultimaPosicion ?? null;
       alertas.push({
         tipo: "sin-actividad",
         severidad: "baja",
         driverId: jornada.driverId,
         vehicleId: jornada.vehicleId,
+        ocurrioEn: jornada.ultimaSenal,
+        latitude: pos ? pos[0] : null,
+        longitude: pos ? pos[1] : null,
         texto: `${nombreDe(jornada)} reportó todo el día sin moverse del lugar`
       });
     }
@@ -318,6 +368,7 @@ export function alertasDeJornadas(
         severidad: "media",
         driverId: jornada.driverId,
         vehicleId: jornada.vehicleId,
+        ocurrioEn: jornada.ultimaSenal,
         texto: `${nombreDe(jornada)} tuvo ${jornada.huecos} cortes de señal en el día`
       });
     }
@@ -327,7 +378,10 @@ export function alertasDeJornadas(
   return alertas.sort((a, b) => orden[a.severidad] - orden[b.severidad] || a.texto.localeCompare(b.texto));
 }
 
-export function resumirDia(muestras: MuestraDeJornada[], opciones: { ahora?: Date } = {}): ResumenDelDia {
+export function resumirDia(
+  muestras: MuestraDeJornada[],
+  opciones: { ahora?: Date; esHoy?: boolean } = {}
+): ResumenDelDia {
   const jornadas = armarJornadas(muestras);
   return {
     jornadas,

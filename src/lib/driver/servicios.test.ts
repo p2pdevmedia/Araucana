@@ -24,7 +24,7 @@ function flotaCon(naves: Array<Partial<FlotaEnVivo["naves"][number]> & { vehicle
       recordedAt: enMinutos(-(nave.minutosDesdeLaSenal ?? 1)).toISOString(),
       minutosDesdeLaSenal: nave.minutosDesdeLaSenal ?? 1,
       estado: nave.estado ?? "en-movimiento",
-      speedKmh: 30,
+      speedKmh: nave.speedKmh ?? 30,
       heading: 90,
       accuracy: 6,
       isStopped: nave.estado === "detenida",
@@ -58,6 +58,28 @@ describe("evaluarServicio", () => {
     expect(evaluado.minutosParaSalir).toBe(60);
   });
 
+  it("marca en-curso cuando el servicio ya arrancó pero sigue dentro de su ventana y la unidad reporta", () => {
+    const evaluado = evaluarServicio(
+      servicio({ at: enMinutos(-20), endsAt: enMinutos(40) }),
+      flotaCon([{ vehicleId: "veh-08", estado: "en-movimiento", speedKmh: 45 }]),
+      { ahora: AHORA }
+    );
+    expect(evaluado.enCurso).toBe(true);
+    expect(evaluado.nivel).toBe("en-curso");
+    expect(evaluado.motivo).toContain("45 km/h");
+  });
+
+  it("marca en-riesgo cuando el servicio está en curso y la unidad perdió señal", () => {
+    const evaluado = evaluarServicio(
+      servicio({ at: enMinutos(-20), endsAt: enMinutos(40) }),
+      flotaCon([{ vehicleId: "veh-08", estado: "sin-senal", minutosDesdeLaSenal: 35 }]),
+      { ahora: AHORA }
+    );
+    expect(evaluado.enCurso).toBe(true);
+    expect(evaluado.nivel).toBe("en-riesgo");
+    expect(evaluado.motivo).toContain("en servicio");
+  });
+
   it("marca riesgo cuando falta poco y la unidad dejó de reportar", () => {
     const evaluado = evaluarServicio(
       servicio(),
@@ -86,7 +108,7 @@ describe("evaluarServicio", () => {
   it("marca sin-unidad cuando el servicio está cerca y no hay nada asignado", () => {
     const evaluado = evaluarServicio(servicio({ unidades: [] }), flotaCon([]), { ahora: AHORA });
     expect(evaluado.nivel).toBe("sin-unidad");
-    expect(evaluado.motivo).toBe("sin nave asignada");
+    expect(evaluado.motivo).toBe("falta asignar nave");
   });
 
   it("no alarma por un servicio sin unidad que es a la tarde", () => {
@@ -94,7 +116,7 @@ describe("evaluarServicio", () => {
     expect(evaluado.nivel).toBe("futuro");
   });
 
-  it("un servicio que ya pasó no compite por la atención", () => {
+  it("un servicio que ya pasó su ventana de llegada no compite por la atención", () => {
     const evaluado = evaluarServicio(servicio({ at: enMinutos(-120) }), flotaCon([]), { ahora: AHORA });
     expect(evaluado.nivel).toBe("pasado");
   });
@@ -123,7 +145,11 @@ describe("evaluarServiciosDelDia", () => {
       [
         servicio({ id: "listo", at: enMinutos(50) }),
         servicio({ id: "sin-unidad", unidades: [], at: enMinutos(20) }),
-        servicio({ id: "riesgo", at: enMinutos(30), unidades: [{ vehicleId: "veh-12", vehicleName: "B", internalNumber: "AR-12", driverId: null, driverName: null }] })
+        servicio({
+          id: "riesgo",
+          at: enMinutos(30),
+          unidades: [{ vehicleId: "veh-12", vehicleName: "B", internalNumber: "AR-12", driverId: null, driverName: null }]
+        })
       ],
       flotaCon([
         { vehicleId: "veh-08", estado: "en-movimiento" },

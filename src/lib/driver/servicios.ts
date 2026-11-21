@@ -1,4 +1,5 @@
 import type { FlotaEnVivo, NaveEnVivo } from "./en-vivo";
+import { minutosAHoras } from "./jornada";
 
 /**
  * Servicios del día cruzados con la unidad asignada.
@@ -26,6 +27,8 @@ export type ServicioDelDia = {
   area: AreaDeServicio;
   /** Hora de salida (o primer ascenso); `null` si el servicio no tiene hora cargada. */
   at: Date | null;
+  /** Hora estimada de cierre del servicio (llegada a destino, fin del reparto o del viaje especial). */
+  endsAt?: Date | null;
   titulo: string;
   detalle: string | null;
   unidades: UnidadDeServicio[];
@@ -33,23 +36,44 @@ export type ServicioDelDia = {
   href: string;
 };
 
-export type NivelDeServicio = "sin-unidad" | "en-riesgo" | "atencion" | "listo" | "pasado" | "futuro";
+export type NivelDeServicio =
+  | "sin-unidad"
+  | "en-riesgo"
+  | "en-curso"
+  | "atencion"
+  | "listo"
+  | "pasado"
+  | "futuro";
+
+export type EstadoDeUnidadEnServicio = {
+  vehicleId: string;
+  estado: NaveEnVivo["estado"] | "sin-posicion";
+  minutos: number | null;
+  recordedAt: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  speedKmh: number | null;
+};
 
 export type ServicioEvaluado = ServicioDelDia & {
   nivel: NivelDeServicio;
   /** Texto corto con el motivo, listo para la fila. */
   motivo: string;
-  /** Minutos que faltan para la hora del servicio (negativo si ya pasó). */
+  /** Minutos que faltan para la hora del servicio (negativo si ya arrancó). */
   minutosParaSalir: number | null;
-  /** Estado de cada unidad asignada, para pintar el punto de color. */
-  estados: Array<{ vehicleId: string; estado: NaveEnVivo["estado"] | "sin-posicion"; minutos: number | null }>;
+  /** true cuando el servicio ya arrancó pero todavía no terminó su ventana operativa. */
+  enCurso: boolean;
+  /** Estado de cada unidad asignada, para pintar el punto de color y cruzar con el mapa. */
+  estados: EstadoDeUnidadEnServicio[];
 };
 
 export type ResumenDeServicios = {
   total: number;
   enRiesgo: number;
   sinUnidad: number;
+  enCurso: number;
   listos: number;
+  finalizados: number;
   evaluados: ServicioEvaluado[];
 };
 
@@ -59,14 +83,17 @@ const RECIEN_VISTA_MINUTOS = 10;
 export const AVISO_PREVIO_MINUTOS = 90;
 /** Si la unidad no se movió en todo este rato antes del servicio, no va a llegar sola. */
 const DETENIDA_CRITICA_MINUTOS = 20;
+/** Si un servicio no trae `endsAt`, se considera en curso durante esta ventana después de su hora de salida. */
+const DURACION_EN_CURSO_POR_DEFECTO_MIN = 90;
 
 const ORDEN: Record<NivelDeServicio, number> = {
   "sin-unidad": 0,
   "en-riesgo": 1,
-  atencion: 2,
-  listo: 3,
-  futuro: 4,
-  pasado: 5
+  "en-curso": 2,
+  atencion: 3,
+  listo: 4,
+  futuro: 5,
+  pasado: 6
 };
 
 function minutosEntre(desde: Date, hasta: Date) {
@@ -78,16 +105,23 @@ function buscarNave(flota: FlotaEnVivo | null, vehicleId: string): NaveEnVivo | 
   return flota.naves.find((nave) => nave.vehicleId === vehicleId) ?? null;
 }
 
+function duracionHumana(minutos: number) {
+  return minutos < 60 ? `${minutos} min` : minutosAHoras(minutos);
+}
+
 /**
  * Evalúa un servicio contra la flota. Las reglas, en orden:
  *
- * 1. Sin unidad asignada y el servicio está cerca → riesgo (es el caso que el cliente teme).
- * 2. Unidad sin posición o sin señal → riesgo si falta poco; atención si falta más.
- * 3. Unidad detenida hace rato con el servicio encima → riesgo.
- * 4. Unidad en movimiento → listo.
- *
- * «Cerca» es `AVISO_PREVIO_MINUTOS`; más lejos que eso todavía no es un problema operativo y se marca
- * como futuro para no llenar la pantalla de rojo a las 8 de la mañana.
+ * 1. Si el servicio ya cerró su ventana (`ahora > endsAt` o `minutosParaSalir < -90` sin `endsAt`), es `pasado`.
+ * 2. Si el servicio está dentro de su ventana operativa (`at <= ahora <= endsAt`), está `enCurso`:
+ *    - Sin nave asignada → `sin-unidad` ("en horario de servicio sin nave").
+ *    - Unidad sin señal o sin posición → `en-riesgo` ("en servicio y sin señal hace X").
+ *    - Unidad reportando / en movimiento → `en-curso` ("en curso · unidad reportando").
+ * 3. Antes de salir:
+ *    - Sin unidad asignada y cerca (`<= AVISO_PREVIO_MINUTOS`) → `sin-unidad`.
+ *    - Unidad sin posición o sin señal → `en-riesgo` si falta poco; `atencion` o `futuro` si falta más.
+ *    - Unidad detenida hace rato con el servicio encima → `en-riesgo`.
+ *    - Unidad en movimiento → `listo`.
  */
 export function evaluarServicio(
   servicio: ServicioDelDia,
@@ -97,24 +131,51 @@ export function evaluarServicio(
   const ahora = opciones.ahora ?? new Date();
   const aviso = opciones.avisoPrevioMinutos ?? AVISO_PREVIO_MINUTOS;
   const minutosParaSalir = servicio.at ? minutosEntre(ahora, servicio.at) : null;
-  const cerca = minutosParaSalir != null && minutosParaSalir <= aviso && minutosParaSalir >= -30;
-  const yaPaso = minutosParaSalir != null && minutosParaSalir < -30;
+  const finEstimado =
+    servicio.endsAt ??
+    (servicio.at ? new Date(servicio.at.getTime() + DURACION_EN_CURSO_POR_DEFECTO_MIN * 60_000) : null);
 
-  const estados = servicio.unidades.map((unidad) => {
+  const yaArranco = minutosParaSalir != null && minutosParaSalir <= 0;
+  const yaTermino =
+    finEstimado != null
+      ? ahora.getTime() > finEstimado.getTime()
+      : minutosParaSalir != null && minutosParaSalir < -DURACION_EN_CURSO_POR_DEFECTO_MIN;
+  const enCurso = Boolean(yaArranco && !yaTermino);
+  const cerca = Boolean(!yaTermino && minutosParaSalir != null && minutosParaSalir <= aviso);
+
+  const estados: EstadoDeUnidadEnServicio[] = servicio.unidades.map((unidad) => {
     const nave = buscarNave(flota, unidad.vehicleId);
-    if (!nave) return { vehicleId: unidad.vehicleId, estado: "sin-posicion" as const, minutos: null };
-    return { vehicleId: unidad.vehicleId, estado: nave.estado, minutos: nave.minutosDesdeLaSenal };
+    if (!nave) {
+      return {
+        vehicleId: unidad.vehicleId,
+        estado: "sin-posicion" as const,
+        minutos: null,
+        recordedAt: null,
+        latitude: null,
+        longitude: null,
+        speedKmh: null
+      };
+    }
+    return {
+      vehicleId: unidad.vehicleId,
+      estado: nave.estado,
+      minutos: nave.minutosDesdeLaSenal,
+      recordedAt: nave.recordedAt,
+      latitude: nave.latitude,
+      longitude: nave.longitude,
+      speedKmh: nave.speedKmh
+    };
   });
 
-  const base = { ...servicio, minutosParaSalir, estados };
+  const base = { ...servicio, minutosParaSalir, enCurso, estados };
 
-  if (yaPaso) return { ...base, nivel: "pasado", motivo: "servicio ya cumplido" };
+  if (yaTermino) return { ...base, nivel: "pasado", motivo: "servicio finalizado" };
 
   if (servicio.unidades.length === 0) {
     return {
       ...base,
       nivel: cerca ? "sin-unidad" : "futuro",
-      motivo: cerca ? "sin nave asignada" : "todavía sin nave"
+      motivo: enCurso ? "en horario de servicio sin nave" : cerca ? "falta asignar nave" : "todavía sin nave"
     };
   }
 
@@ -123,9 +184,7 @@ export function evaluarServicio(
   const detenidas = estados.filter((estado) => estado.estado === "detenida");
   const vivas = estados.filter((estado) => estado.estado === "en-movimiento");
 
-  if (sinPosicion > 0) {
-    // Una unidad que nunca reportó importa cuando el servicio se acerca; a las 8 de la mañana por un
-    // servicio de las 16 todavía hay tiempo de darla de alta en el seguimiento.
+  if (sinPosicion > 0 && vivas.length === 0) {
     return {
       ...base,
       nivel: cerca ? "en-riesgo" : "futuro",
@@ -135,13 +194,25 @@ export function evaluarServicio(
     };
   }
 
-  if (sinSenal.length > 0) {
+  if (sinSenal.length > 0 && vivas.length === 0) {
     const peor = sinSenal.reduce((max, estado) => Math.max(max, estado.minutos ?? 0), 0);
     return {
       ...base,
       nivel: cerca || peor >= 30 ? "en-riesgo" : "atencion",
-      motivo: `sin señal hace ${peor} min`
+      motivo: `${enCurso ? "en servicio · " : ""}sin señal hace ${duracionHumana(peor)}`
     };
+  }
+
+  if (enCurso) {
+    if (vivas.length > 0) {
+      const vel = vivas[0].speedKmh;
+      return {
+        ...base,
+        nivel: "en-curso",
+        motivo: vel != null && vel > 0 ? `en curso · ${Math.round(vel)} km/h` : "en curso · unidad en movimiento"
+      };
+    }
+    return { ...base, nivel: "en-curso", motivo: "en curso · unidad detenida en parada" };
   }
 
   if (detenidas.length > 0 && vivas.length === 0) {
@@ -180,7 +251,9 @@ export function evaluarServiciosDelDia(
     total: evaluados.length,
     enRiesgo: evaluados.filter((servicio) => servicio.nivel === "en-riesgo" || servicio.nivel === "sin-unidad").length,
     sinUnidad: evaluados.filter((servicio) => servicio.nivel === "sin-unidad").length,
+    enCurso: evaluados.filter((servicio) => servicio.nivel === "en-curso").length,
     listos: evaluados.filter((servicio) => servicio.nivel === "listo").length,
+    finalizados: evaluados.filter((servicio) => servicio.nivel === "pasado").length,
     evaluados
   };
 }

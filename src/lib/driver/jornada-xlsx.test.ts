@@ -21,8 +21,11 @@ function dia(extra: Partial<DiaDeFlota> = {}): DiaDeFlota {
         minutosEnMovimiento: 55,
         minutosDetenido: 10,
         velocidadMaximaKmh: 34,
+        velocidadMaximaEn: "2026-11-20T11:20:00.000Z",
+        velocidadMaximaPunto: [-40.157, -71.31],
         primeraSenal: "2026-11-20T11:09:00.000Z",
         ultimaSenal: "2026-11-21T01:25:00.000Z",
+        ultimaPosicion: [-40.157, -71.31],
         muestras: 171,
         huecos: 1,
         paradas: [

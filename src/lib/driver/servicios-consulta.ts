@@ -7,8 +7,8 @@ import type { ServicioDelDia } from "./servicios";
 
 /**
  * Servicios del día con su unidad asignada. Consulta acotada a lo que esta pantalla necesita: hora,
- * título, unidades y pasajeros. **No** recalcula cupo, sobrecupo ni precios — de eso se ocupa el
- * tablero de salidas del día, que es su dueño.
+ * cierre estimado, título, unidades y pasajeros. **No** recalcula cupo, sobrecupo ni precios — de eso
+ * se ocupa el tablero de salidas del día, que es su dueño.
  *
  * Se incluyen las cuatro modalidades porque el operador no piensa en módulos: piensa en «el de las 9».
  */
@@ -24,6 +24,7 @@ export async function cargarServiciosDelDia(dateKey = localDateKey(new Date())):
         id: true,
         routeId: true,
         departureAt: true,
+        arrivalAt: true,
         route: { select: { from: true, to: true } },
         vehicle: { select: { id: true, name: true, internalNumber: true } },
         driver: { select: { id: true, name: true } },
@@ -102,6 +103,7 @@ export async function cargarServiciosDelDia(dateKey = localDateKey(new Date())):
           where: { startsAt: { lt: to }, endsAt: { gt: from } },
           select: {
             startsAt: true,
+            endsAt: true,
             vehicle: { select: { id: true, name: true, internalNumber: true } },
             driver: { select: { id: true, name: true } }
           }
@@ -136,6 +138,7 @@ export async function cargarServiciosDelDia(dateKey = localDateKey(new Date())):
       id: `salida-${schedule.id}`,
       area: "RUTA",
       at: schedule.departureAt,
+      endsAt: schedule.arrivalAt,
       titulo: `${schedule.route.from} → ${schedule.route.to}`,
       detalle: null,
       unidades,
@@ -149,10 +152,14 @@ export async function cargarServiciosDelDia(dateKey = localDateKey(new Date())):
     const cuando = hora instanceof Date && !Number.isNaN(hora.getTime()) ? hora : flight.scheduledAt;
     // El servicio es cuando hay que buscar al pasajero, no la hora de despegue.
     if (cuando < from || cuando >= to) continue;
+    const fin = flight.direction === "ARRIVAL"
+      ? new Date(cuando.getTime() + 90 * 60_000)
+      : flight.scheduledAt;
     servicios.push({
       id: `vuelo-${flight.id}`,
       area: "AEROPUERTO",
       at: cuando,
+      endsAt: fin,
       titulo: `Aeropuerto · vuelo ${flight.number}`,
       detalle: flight.direction === "ARRIVAL" ? "llegada" : "salida",
       unidades: flight.assignments.map((assignment) => ({
@@ -174,10 +181,12 @@ export async function cargarServiciosDelDia(dateKey = localDateKey(new Date())):
       .map((reserva) => reserva.chapelcoDetails?.ascentSlot)
       .filter((slot): slot is string => Boolean(slot))
       .sort();
+    const inicio = slots[0] ? new Date(`${dateKey}T${slots[0]}:00-03:00`) : null;
     servicios.push({
       id: `chapelco-${dia.id}`,
       area: "CHAPELCO",
-      at: slots[0] ? new Date(`${dateKey}T${slots[0]}:00-03:00`) : null,
+      at: inicio,
+      endsAt: inicio ? new Date(inicio.getTime() + 9 * 3_600_000) : null,
       titulo: `Chapelco · ${route.from} → ${route.to}`,
       detalle: dia.status === "OPEN" ? null : dia.status,
       unidades: dia.vehicleDuties.map((duty) => ({
@@ -198,6 +207,7 @@ export async function cargarServiciosDelDia(dateKey = localDateKey(new Date())):
       id: `especial-${trip.id}`,
       area: "ESPECIAL",
       at: primera?.startsAt && primera.startsAt.toISOString().slice(0, 10) === dateKey ? primera.startsAt : null,
+      endsAt: primera?.endsAt ?? null,
       titulo: `Viaje especial · ${trip.client}`,
       detalle: null,
       unidades: trip.assignments.map((assignment) => ({

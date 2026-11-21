@@ -1,5 +1,13 @@
 import { prisma } from "@/lib/db/prisma";
-import { alertasDeJornadas, armarJornadas, resumirDia, rangoDelDia, type MuestraDeJornada, type ResumenDelDia } from "./jornada";
+import {
+  alertasDeJornadas,
+  armarJornadas,
+  fechaLocal,
+  resumirDia,
+  rangoDelDia,
+  type MuestraDeJornada,
+  type ResumenDelDia
+} from "./jornada";
 
 /**
  * Lectura del día para el resumen operativo. Separado de `jornada.ts` (que es puro y se testea sin
@@ -13,30 +21,38 @@ export type DiaDeFlota = ResumenDelDia & {
   fecha: string;
   /** true si se alcanzó el tope de filas: el resumen queda incompleto y la pantalla lo dice. */
   truncado: boolean;
+  /** Total de unidades activas en el padrón, para comparar «3 de 8 unidades con actividad». */
+  flotaTotal?: number;
 };
 
 export async function cargarDiaDeFlota(fecha: string, opciones: { ahora?: Date } = {}): Promise<DiaDeFlota | null> {
   const rango = rangoDelDia(fecha);
   if (!rango) return null;
 
-  const filas = await prisma.driverLocationSample.findMany({
-    where: { recordedAt: { gte: rango.desde, lt: rango.hasta } },
-    select: {
-      driverId: true,
-      vehicleId: true,
-      latitude: true,
-      longitude: true,
-      recordedAt: true,
-      isStopped: true,
-      stoppedDurationSeconds: true,
-      reportedSpeedKmh: true,
-      inferredSpeedKmh: true,
-      driver: { select: { name: true } },
-      vehicle: { select: { name: true, internalNumber: true } }
-    },
-    orderBy: { recordedAt: "asc" },
-    take: MAX_MUESTRAS_DIA
-  });
+  const ahora = opciones.ahora ?? new Date();
+  const esHoy = fecha === fechaLocal(ahora);
+
+  const [filas, flotaTotal] = await Promise.all([
+    prisma.driverLocationSample.findMany({
+      where: { recordedAt: { gte: rango.desde, lt: rango.hasta } },
+      select: {
+        driverId: true,
+        vehicleId: true,
+        latitude: true,
+        longitude: true,
+        recordedAt: true,
+        isStopped: true,
+        stoppedDurationSeconds: true,
+        reportedSpeedKmh: true,
+        inferredSpeedKmh: true,
+        driver: { select: { name: true } },
+        vehicle: { select: { name: true, internalNumber: true } }
+      },
+      orderBy: { recordedAt: "asc" },
+      take: MAX_MUESTRAS_DIA
+    }),
+    prisma.vehicle.count({ where: { isActive: true } })
+  ]);
 
   const muestras: MuestraDeJornada[] = filas.map((fila) => ({
     driverId: fila.driverId,
@@ -53,12 +69,13 @@ export async function cargarDiaDeFlota(fecha: string, opciones: { ahora?: Date }
     inferredSpeedKmh: fila.inferredSpeedKmh
   }));
 
-  const resumen = resumirDia(muestras, opciones);
+  const resumen = resumirDia(muestras, { ahora, esHoy });
 
   return {
     ...resumen,
     fecha,
-    truncado: filas.length >= MAX_MUESTRAS_DIA
+    truncado: filas.length >= MAX_MUESTRAS_DIA,
+    flotaTotal
   };
 }
 

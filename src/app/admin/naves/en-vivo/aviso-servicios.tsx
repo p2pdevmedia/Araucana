@@ -3,8 +3,8 @@ import type { ResumenDeServicios } from "@/lib/driver/servicios";
 
 /**
  * Aviso arriba del mapa: mientras alguien mira las unidades, esto le dice si algún servicio del día
- * se está quedando sin cobertura. Sin este renglón, el mapa y los servicios son dos mundos y el
- * operador tiene que acordarse de cambiar de pestaña.
+ * se está quedando sin cobertura, qué nave lo tiene asignado y permite centrarla en el mapa o ir a
+ * asignarla en un clic.
  */
 export function AvisoDeServicios({ resumen, fecha }: { resumen: ResumenDeServicios; fecha: string }) {
   const pendientes = resumen.evaluados.filter(
@@ -21,23 +21,44 @@ export function AvisoDeServicios({ resumen, fecha }: { resumen: ResumenDeServici
         {pendientes.length} {pendientes.length === 1 ? "servicio pide" : "servicios piden"} atención
       </strong>
       <ul>
-        {primeros.map((servicio) => (
-          <li key={servicio.id}>
-            {servicio.at
-              ? servicio.at.toLocaleTimeString("es-AR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: false,
-                  timeZone: "America/Argentina/Buenos_Aires"
-                })
-              : "sin hora"}{" "}
-            · {servicio.titulo} — {servicio.motivo}
-          </li>
-        ))}
+        {primeros.map((servicio) => {
+          const primeraUnidad = servicio.unidades[0] ?? null;
+          const etiquetaUnidad = primeraUnidad
+            ? `${primeraUnidad.internalNumber ?? primeraUnidad.vehicleName}${primeraUnidad.driverName ? ` (${primeraUnidad.driverName})` : ""}`
+            : null;
+          return (
+            <li key={servicio.id}>
+              <span>
+                {servicio.at
+                  ? servicio.at.toLocaleTimeString("es-AR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: false,
+                      timeZone: "America/Argentina/Buenos_Aires"
+                    })
+                  : "sin hora"}{" "}
+                · {servicio.titulo}
+                {etiquetaUnidad ? ` · ${etiquetaUnidad}` : ""} — {servicio.motivo}
+              </span>
+              {primeraUnidad ? (
+                <Link
+                  className="aviso-servicios-accion"
+                  href={`/admin/naves/en-vivo?unidad=${encodeURIComponent(primeraUnidad.vehicleId)}`}
+                >
+                  Ver en mapa
+                </Link>
+              ) : (
+                <Link className="aviso-servicios-accion" href={servicio.href}>
+                  Asignar nave
+                </Link>
+              )}
+            </li>
+          );
+        })}
       </ul>
       {resto > 0 ? <span className="aviso-servicios-resto">y {resto} más</span> : null}
       <Link className="aviso-servicios-link" href={`/admin/naves/en-vivo?vista=servicios&fecha=${fecha}`}>
-        Ver servicios
+        Ver todos los servicios
       </Link>
     </aside>
   );

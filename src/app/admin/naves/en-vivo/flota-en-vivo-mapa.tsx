@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FlotaEnVivo } from "@/lib/driver/en-vivo";
 import type { Recorrido } from "@/lib/driver/recorrido";
+import type { ServicioEvaluado } from "@/lib/driver/servicios";
 import {
   asignarColores,
   distanciaVisible,
@@ -29,25 +31,48 @@ function hace(minutos: number) {
   if (minutos < 1) return "recién";
   if (minutos < 60) return `hace ${minutos} min`;
   const horas = Math.floor(minutos / 60);
-  return horas === 1 ? "hace 1 h" : `hace ${horas} h`;
+  const resto = minutos % 60;
+  if (resto === 0) return horas === 1 ? "hace 1 h" : `hace ${horas} h`;
+  return `hace ${horas} h ${resto} min`;
 }
 
 function haceSegundos(segundos: number) {
   return segundos < 60 ? "hace instantes" : hace(Math.floor(segundos / 60));
 }
 
+function horaCorta(fecha: Date | string | null) {
+  if (!fecha) return "";
+  const d = typeof fecha === "string" ? new Date(fecha) : fecha;
+  return d.toLocaleTimeString("es-AR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "America/Argentina/Buenos_Aires"
+  });
+}
+
 export function FlotaEnVivoMapa({
   inicial,
-  recorridosIniciales
+  recorridosIniciales,
+  servicios = [],
+  unidadInicial = null
 }: {
   inicial: FlotaEnVivo;
   recorridosIniciales: Recorrido[];
+  servicios?: ServicioEvaluado[];
+  unidadInicial?: string | null;
 }) {
   const [flota, setFlota] = useState(inicial);
   const [recorridos, setRecorridos] = useState(recorridosIniciales);
   const [truncado, setTruncado] = useState(false);
   const [mostrar, setMostrar] = useState(true);
-  const [seleccion, setSeleccion] = useState<string | null>(null);
+  const [seleccion, setSeleccion] = useState<string | null>(() => {
+    if (!unidadInicial) return null;
+    const encontrada = inicial.naves.find(
+      (n) => n.vehicleId === unidadInicial || n.internalNumber === unidadInicial || claveUnidad(n) === unidadInicial
+    );
+    return encontrada ? claveUnidad(encontrada) : null;
+  });
   const [encuadre, setEncuadre] = useState<{ tipo: "todas" | "recorrido"; numero: number }>({
     tipo: "todas",
     numero: 0
@@ -55,6 +80,14 @@ export function FlotaEnVivoMapa({
   const [errorPosiciones, setErrorPosiciones] = useState("");
   const [errorHistorial, setErrorHistorial] = useState("");
   const [reloj, setReloj] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!unidadInicial) return;
+    const encontrada = flota.naves.find(
+      (n) => n.vehicleId === unidadInicial || n.internalNumber === unidadInicial || claveUnidad(n) === unidadInicial
+    );
+    if (encontrada) setSeleccion(claveUnidad(encontrada));
+  }, [unidadInicial, flota.naves]);
 
   // La antigüedad se recalcula con el reloj local: si el servidor no responde, la pantalla no sigue
   // diciendo «hace 1 min» para siempre.
@@ -74,6 +107,20 @@ export function FlotaEnVivoMapa({
     return mapa;
   }, [recorridos, naves]);
 
+  /** Servicio actual o próximo asignado a cada unidad hoy, para mostrarlo en la tarjeta lateral. */
+  const servicioPorVehiculo = useMemo(() => {
+    const mapa = new Map<string, ServicioEvaluado>();
+    const vigentes = servicios
+      .filter((s) => s.nivel !== "pasado")
+      .sort((a, b) => (a.minutosParaSalir ?? 9_999) - (b.minutosParaSalir ?? 9_999));
+    for (const srv of vigentes) {
+      for (const u of srv.unidades) {
+        if (!mapa.has(u.vehicleId)) mapa.set(u.vehicleId, srv);
+      }
+    }
+    return mapa;
+  }, [servicios]);
+
   const filas = useMemo(() => {
     const vivas = naves
       .map((nave) => ({
@@ -82,6 +129,7 @@ export function FlotaEnVivoMapa({
         nombre: nave.driverName ?? "Chofer sin nombre",
         unidad: nombreUnidad(nave),
         metros: metrosPorUnidad.get(claveUnidad(nave)) ?? null,
+        servicio: servicioPorVehiculo.get(nave.vehicleId) ?? null,
         detalle:
           nave.estado === "detenida"
             ? `Parado ${haceSegundos(nave.stoppedDurationSeconds)}`
@@ -95,7 +143,7 @@ export function FlotaEnVivoMapa({
         (a, b) => ORDEN[a.nave.estado] - ORDEN[b.nave.estado] || a.nombre.localeCompare(b.nombre, "es")
       );
     return { vivas, sinDato: flota.sinUbicacion };
-  }, [naves, metrosPorUnidad, flota.sinUbicacion]);
+  }, [naves, metrosPorUnidad, servicioPorVehiculo, flota.sinUbicacion]);
 
   /** Un color por chofer, estable y sin repetir mientras alcance la paleta. */
   const colores = useMemo(
@@ -107,6 +155,7 @@ export function FlotaEnVivoMapa({
   const tramosSeleccionados = seleccion
     ? recorridos.filter((tramo) => claveUnidad(tramo) === seleccion)
     : [];
+  const servicioSeleccionado = seleccionada ? servicioPorVehiculo.get(seleccionada.vehicleId) ?? null : null;
 
   const seleccionar = useCallback((clave: string) => {
     setSeleccion((actual) => (actual === clave ? null : clave));
@@ -174,61 +223,63 @@ export function FlotaEnVivoMapa({
 
   return (
     <section className="flota-en-vivo">
-      <div className="flota-en-vivo-estado" role="status" aria-live="polite">
-        <span className="flota-leyenda">
-          <span className="flota-punto is-en-movimiento" aria-hidden="true" /> {vivas} reportando
-        </span>
-        <span className="flota-leyenda">
-          <span className="flota-punto is-sin-senal" aria-hidden="true" /> {naves.length - vivas} sin señal
-        </span>
-        <span className="flota-leyenda">
-          <span className="flota-punto is-recorrido" aria-hidden="true" /> {recorridos.length} tramo
-          {recorridos.length === 1 ? "" : "s"} de recorrido
-        </span>
-        <span className="flota-en-vivo-refresco">
-          {segundos < 60 ? `Actualizado hace ${segundos} s` : `Actualizado ${hace(Math.floor(segundos / 60))}`}
-        </span>
-      </div>
+      <div className="flota-toolbar">
+        <div className="flota-en-vivo-estado" role="status" aria-live="polite">
+          <span className="flota-leyenda">
+            <span className="flota-punto is-en-movimiento" aria-hidden="true" /> {vivas} reportando
+          </span>
+          <span className="flota-leyenda">
+            <span className="flota-punto is-sin-senal" aria-hidden="true" /> {naves.length - vivas} sin señal
+          </span>
+          <span className="flota-leyenda">
+            <span className="flota-punto is-recorrido" aria-hidden="true" /> {recorridos.length} tramo
+            {recorridos.length === 1 ? "" : "s"} de recorrido
+          </span>
+          <span className="flota-en-vivo-refresco">
+            {segundos < 60 ? `Actualizado hace ${segundos} s` : `Actualizado ${hace(Math.floor(segundos / 60))}`}
+          </span>
+        </div>
 
-      <div className="flota-controles">
-        <button
-          type="button"
-          className="flota-toggle"
-          aria-pressed={mostrar}
-          onClick={() => setMostrar((valor) => !valor)}
-        >
-          {mostrar ? "Ocultar recorridos" : "Ver recorridos"}
-        </button>
-        <button
-          type="button"
-          className="flota-toggle"
-          onClick={() => setEncuadre((e) => ({ tipo: "todas", numero: e.numero + 1 }))}
-        >
-          Ver todas
-        </button>
-        <button
-          type="button"
-          className="flota-toggle"
-          disabled={!seleccion || tramosSeleccionados.length === 0}
-          onClick={() => setEncuadre((e) => ({ tipo: "recorrido", numero: e.numero + 1 }))}
-        >
-          Encuadrar recorrido
-        </button>
-        {seleccion ? (
-          <button type="button" className="flota-toggle" onClick={() => setSeleccion(null)}>
-            Quitar selección
+        <div className="flota-controles">
+          <button
+            type="button"
+            className="flota-toggle"
+            aria-pressed={mostrar}
+            onClick={() => setMostrar((valor) => !valor)}
+          >
+            {mostrar ? "Ocultar recorridos" : "Ver recorridos"}
           </button>
-        ) : null}
-        <button
-          type="button"
-          className="flota-toggle"
-          onClick={() => {
-            void traerPosiciones();
-            void traerRecorridos();
-          }}
-        >
-          Actualizar ahora
-        </button>
+          <button
+            type="button"
+            className="flota-toggle"
+            onClick={() => setEncuadre((e) => ({ tipo: "todas", numero: e.numero + 1 }))}
+          >
+            Ver todas
+          </button>
+          <button
+            type="button"
+            className="flota-toggle"
+            disabled={!seleccion || tramosSeleccionados.length === 0}
+            onClick={() => setEncuadre((e) => ({ tipo: "recorrido", numero: e.numero + 1 }))}
+          >
+            Encuadrar recorrido
+          </button>
+          {seleccion ? (
+            <button type="button" className="flota-toggle" onClick={() => setSeleccion(null)}>
+              Quitar selección
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="flota-toggle"
+            onClick={() => {
+              void traerPosiciones();
+              void traerRecorridos();
+            }}
+          >
+            Actualizar ahora
+          </button>
+        </div>
       </div>
 
       {errorPosiciones ? (
@@ -252,8 +303,6 @@ export function FlotaEnVivoMapa({
       ) : null}
 
       <div className="flota-en-vivo-grid">
-        {/* La leyenda va dentro de la columna del mapa: como hija directa del grid ocupaba el lugar
-            del panel y lo empujaba a una segunda fila. */}
         <div className="flota-mapa-col">
           <MapaUnidades
             naves={naves}
@@ -301,17 +350,28 @@ export function FlotaEnVivoMapa({
                         aria-hidden="true"
                       />
                       <span className="flota-fila-texto">
-                        <strong>{fila.nombre}</strong>
+                        <span className="flota-fila-top">
+                          <strong>{fila.unidad}</strong>
+                          <span className="flota-fila-hora">{horaSenal(fila.nave.recordedAt)}</span>
+                        </span>
+                        <span className="flota-fila-chofer">{fila.nombre}</span>
                         <small>
-                          {fila.unidad} · {ESTADO[fila.nave.estado]} · {fila.detalle}
+                          {ESTADO[fila.nave.estado]} · {fila.detalle}
                         </small>
                         <small className="flota-fila-recorrido">
                           {fila.metros != null && fila.metros > 0
                             ? `Recorrido ≈ ${distanciaVisible(fila.metros)}`
                             : "Sin recorrido todavía"}
                         </small>
+                        {fila.servicio ? (
+                          <small className={`flota-fila-servicio is-${fila.servicio.nivel}`}>
+                            {fila.servicio.enCurso ? "Ahora" : horaCorta(fila.servicio.at)} · {fila.servicio.titulo}
+                            {fila.servicio.pasajeros > 0 ? ` (${fila.servicio.pasajeros} pas.)` : ""}
+                          </small>
+                        ) : (
+                          <small className="flota-fila-servicio is-libre">Sin servicio próximo hoy</small>
+                        )}
                       </span>
-                      <span className="flota-fila-hora">{horaSenal(fila.nave.recordedAt)}</span>
                     </button>
                   </li>
                 );
@@ -346,7 +406,7 @@ export function FlotaEnVivoMapa({
               <h2>Seleccionado</h2>
               <p>
                 {seleccionada
-                  ? `${seleccionada.driverName ?? "Chofer"} · ${nombreUnidad(seleccionada)}`
+                  ? `${nombreUnidad(seleccionada)} · ${seleccionada.driverName ?? "Chofer"}`
                   : "Unidad sin posición actual"}
               </p>
               <p className="flota-detalle-dato">
@@ -356,6 +416,19 @@ export function FlotaEnVivoMapa({
                     )} en la ventana`
                   : "Esa unidad no tiene recorrido en la ventana."}
               </p>
+              {servicioSeleccionado ? (
+                <p className="flota-detalle-dato">
+                  Servicio: <Link href={servicioSeleccionado.href}>{servicioSeleccionado.titulo}</Link> (
+                  {servicioSeleccionado.enCurso ? "en curso" : horaCorta(servicioSeleccionado.at)})
+                </p>
+              ) : null}
+              {seleccionada ? (
+                <p className="flota-detalle-links">
+                  <Link href={`/admin/naves/${seleccionada.vehicleId}`}>Ficha de la nave</Link>
+                  {" · "}
+                  <Link href={`/admin/naves/${seleccionada.vehicleId}/recorridos`}>Historial de servicios</Link>
+                </p>
+              ) : null}
             </div>
           ) : null}
         </aside>
