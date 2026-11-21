@@ -92,6 +92,7 @@ export default async function NavesEnVivoPage({ searchParams }: Props) {
 
       {vista === "en-vivo" && flota ? (
         <>
+          <AutoRefresco cadaMs={60_000} />
           <AvisoDeServicios resumen={resumenServicios ?? evaluarServiciosDelDia([], flota)} fecha={fecha} />
           <FlotaEnVivoMapa
             inicial={flota}

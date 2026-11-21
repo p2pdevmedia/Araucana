@@ -17,10 +17,14 @@ export function AvisoDeServicios({ resumen, fecha }: { resumen: ResumenDeServici
 
   return (
     <aside className="aviso-servicios" role="status">
-      <strong className="aviso-servicios-titulo">
-        {pendientes.length} {pendientes.length === 1 ? "servicio pide" : "servicios piden"} atención
-      </strong>
-      <ul>
+      <div className="aviso-servicios-cabecera">
+        <strong className="aviso-servicios-titulo">
+          {pendientes.length} {pendientes.length === 1 ? "servicio pide" : "servicios piden"} atención
+        </strong>
+        {resto > 0 ? <span className="aviso-servicios-resto">+{resto} más</span> : null}
+      </div>
+
+      <ul className="aviso-servicios-lista">
         {primeros.map((servicio) => {
           const primeraUnidad = servicio.unidades[0] ?? null;
           const etiquetaUnidad = primeraUnidad
@@ -28,16 +32,18 @@ export function AvisoDeServicios({ resumen, fecha }: { resumen: ResumenDeServici
             : null;
           return (
             <li key={servicio.id}>
-              <span>
-                {servicio.at
-                  ? servicio.at.toLocaleTimeString("es-AR", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: false,
-                      timeZone: "America/Argentina/Buenos_Aires"
-                    })
-                  : "sin hora"}{" "}
-                · {servicio.titulo}
+              <span className="aviso-servicios-texto">
+                <b>
+                  {servicio.at
+                    ? servicio.at.toLocaleTimeString("es-AR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                        timeZone: "America/Argentina/Buenos_Aires"
+                      })
+                    : "sin hora"}
+                </b>
+                {` · ${servicio.titulo}`}
                 {etiquetaUnidad ? ` · ${etiquetaUnidad}` : ""} — {servicio.motivo}
               </span>
               {primeraUnidad ? (
@@ -56,9 +62,9 @@ export function AvisoDeServicios({ resumen, fecha }: { resumen: ResumenDeServici
           );
         })}
       </ul>
-      {resto > 0 ? <span className="aviso-servicios-resto">y {resto} más</span> : null}
+
       <Link className="aviso-servicios-link" href={`/admin/naves/en-vivo?vista=servicios&fecha=${fecha}`}>
-        Ver todos los servicios
+        Ver los {pendientes.length}
       </Link>
     </aside>
   );
