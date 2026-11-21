@@ -8,6 +8,7 @@ import { fechaLocal, rangoDelDia } from "@/lib/driver/jornada";
 import { cargarServiciosDelDia } from "@/lib/driver/servicios-consulta";
 import { evaluarServiciosDelDia } from "@/lib/driver/servicios";
 import { ServiciosDelDia } from "./servicios-del-dia";
+import { AutoRefresco } from "./auto-refresco";
 import { FlotaEnVivoMapa } from "./flota-en-vivo-mapa";
 import { ResumenDelDia } from "./resumen-del-dia";
 import "./en-vivo.css";
@@ -78,7 +79,10 @@ export default async function NavesEnVivoPage({ searchParams }: Props) {
           <FlotaEnVivoMapa inicial={flota} recorridosIniciales={recorridos ?? []} />
         </>
       ) : vista === "servicios" && servicios ? (
-        <ServiciosDelDia resumen={evaluarServiciosDelDia(servicios, flota)} fecha={fecha} />
+        <>
+          <AutoRefresco cadaMs={60_000} />
+          <ServiciosDelDia resumen={evaluarServiciosDelDia(servicios, flota)} fecha={fecha} />
+        </>
       ) : dia ? (
         <ResumenDelDia dia={dia} dias={dias} hoy={hoy} />
       ) : (
