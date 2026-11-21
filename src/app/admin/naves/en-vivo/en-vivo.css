@@ -313,7 +313,7 @@ button.flota-fila:hover, button.flota-fila:focus-visible { background: #f1efe7; 
 .dia-tabla th, .dia-tabla td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
 .dia-tabla thead th { color: var(--ink-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
 .dia-tabla tbody th { font-weight: 800; white-space: nowrap; }
-.dia-tabla .num { text-align: right; font-variant-numeric: tabular-nums; }
+.dia-tabla .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .dia-senal { color: var(--ink-soft); white-space: nowrap; }
 .dia-paradas { margin: 6px 0 0; padding-left: 16px; color: var(--ink-soft); font-weight: 600; }
 .dia-paradas li { margin: 2px 0; }
