@@ -1,4 +1,4 @@
-import { localStreetReference, streetKey } from "./street-reference";
+import { localStreetReference, sameStreetName, streetKey } from "./street-reference";
 import { z } from "zod";
 import { ApiError } from "@/lib/api/responses";
 import { lookupAirportIntersection } from "./intersection-lookup";
@@ -222,10 +222,14 @@ async function suggestStreetAddress(name: string, context: string, address: NonN
   const officialQuery = localNunez ? `Doctor Ernesto Luis Núñez ${address.number}` : name;
   const official = await lookupStreetAddresses(officialQuery, context.split(",")[0], signal).catch(() => []);
   const suggestions: AirportPlaceSuggestion[] = [];
-  const requestedStreet = streetKey(localNunez ? "Doctor Ernesto Luis Núñez" : address.street);
-  const sameStreet = official.filter((match) => streetKey(match.calle.nombre) === requestedStreet);
+  const requestedStreet = localNunez ? "Doctor Ernesto Luis Núñez" : address.street;
+  // Un candidato de GeoRef entra sólo si su calle es la pedida o la misma sin el
+  // tratamiento («Rohde 975» ↔ «Coronel Rohde»). Antes, si ninguna coincidía, se
+  // usaba toda la respuesta oficial y una calle inventada devolvía una homónima
+  // real con aspecto de dirección buena (#352).
+  const sameStreet = official.filter((match) => sameStreetName(requestedStreet, match.calle.nombre));
   const knownStreet = localStreetReference(address.street, address.number, locality);
-  const relevant = sameStreet.length || knownStreet ? sameStreet : official;
+  const relevant = sameStreet;
   for (const match of relevant) {
     if (String(match.altura.valor) !== address.number || signal.aborted) continue;
     const officialStreet = match.calle.nombre.toLocaleLowerCase("es").replace(/\b\p{L}/gu, (letter) => letter.toLocaleUpperCase("es"));
