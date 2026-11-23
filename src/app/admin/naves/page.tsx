@@ -130,6 +130,9 @@ export default async function AdminVehiclesPage({ searchParams }: AdminVehiclesP
           <Link className="ghost-button" href="/admin/naves/en-vivo">
             Naves en vivo
           </Link>
+          <a className="ghost-button" href="/admin/naves/export">
+            Descargar planilla
+          </a>
           <Link className="button" href="/admin/naves/nueva">
             Agregar nave
           </Link>
