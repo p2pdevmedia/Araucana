@@ -28,6 +28,7 @@ const select = Object.fromEntries(
     'pickupStartOverrideAt',
     'pickupGroupId',
     'passengers',
+    'notes',
   ].map((k) => [k, true]),
 );
 select._count = { select: { reservations: true, assignments: true } };
@@ -146,7 +147,8 @@ function attached(row) {
     row._count?.assignments ||
     row.pickupStartOverrideAt ||
     row.pickupGroupId ||
-    row.passengers,
+    row.passengers ||
+    row.notes?.trim(),
   );
 }
 function change(id, direction, before, after, kind) {

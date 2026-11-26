@@ -137,6 +137,107 @@ async function collectOfficial(browser, dates) {
   return { flights, coverage, warnings };
 }
 
+// Las ofertas disponibles solo aportan lecturas positivas. Un vuelo agotado puede seguir programado.
+async function readOffers(page, date, direction) {
+  const incoming = direction === "ARRIVAL";
+  const url = new URL("https://interturis.almundo.com.ar/flights/results");
+  url.search = new URLSearchParams({ adults: "1", currencyCode: "ARS", date,
+    from: incoming ? "BUE" : "CPC", to: incoming ? "CPC" : "BUE" }).toString();
+  const response = await page.goto(url.href, { waitUntil: "domcontentloaded" });
+  if (!response?.ok()) throw new Error("HTTP " + (response?.status() ?? "sin respuesta"));
+  const options = page.locator(".choice__detail");
+  await options.first().waitFor();
+  const offered = await options.evaluateAll(nodes => nodes.map((node, index) => ({
+    index, direct: node.innerText.split(/\s+/).includes("Directo"),
+    times: Array.from(node.querySelectorAll(".choice__detail__hour"), el => el.innerText.trim()),
+    cities: Array.from(node.querySelectorAll(".choice__detail__city"), el => el.innerText.trim()),
+    logo: node.querySelector(".choice__airlinesInfo img")?.getAttribute("src")
+  })));
+  const flights = new Map();
+  const seen = new Set();
+  const months = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  const [year, month, day] = date.split("-");
+  const datePattern = new RegExp("\\b0?" + Number(day) + " de " + months[Number(month)-1] + "(?:t)?\\.? " + year + "$", "i");
+  for (const option of offered) {
+    if (!option.direct || option.times.length !== 2 || !option.times.every(time => clock.test(time))) continue;
+    const identity = JSON.stringify([option.logo, option.times, option.cities]);
+    if (seen.has(identity)) continue;
+    seen.add(identity);
+    const choice = options.nth(option.index).locator(".choice__detail__hour").first();
+    await choice.click();
+    const legs = page.locator(".leg_detail:visible");
+    await legs.first().waitFor();
+    const details = await legs.evaluateAll(nodes => nodes.map(leg => ({
+      operator: leg.querySelector(".leg_detail__airlineContainer__info")?.innerText ?? "",
+      dates: Array.from(leg.querySelectorAll(".date"), el => el.innerText.trim()),
+      hours: Array.from(leg.querySelectorAll(".hour"), el => el.innerText.trim())
+    })));
+    for (const detail of details) {
+      if (!/operado por jetsmart/i.test(detail.operator) || detail.dates.length !== 2 ||
+          !detail.dates.every(value => datePattern.test(value)) || detail.hours.length !== 2) continue;
+      const number = detail.operator.match(/N[°º] vuelo:\s*(?:JA|WJ)\s*(\d{2,4})\b/i)?.[1];
+      const departure = detail.hours[0].match(/^(\d\d:\d\d) ([A-Z]{3})$/);
+      const arrival = detail.hours[1].match(/^(\d\d:\d\d) ([A-Z]{3})$/);
+      if (!number || !departure || !arrival || departure[1] !== option.times[0] || arrival[1] !== option.times[1]) continue;
+      const [, dep, origin] = departure;
+      const [, arr, destination] = arrival;
+      const valid = incoming ? destination === "CPC" && AIRPORTS.includes(origin) : origin === "CPC" && AIRPORTS.includes(destination);
+      if (valid && arr > dep) {
+        const flight = { date, number: "JA" + number, direction, origin, destination, time: incoming ? arr : dep,
+          source: "ITINERARIO", url: url.href };
+        const previous = flights.get(flight.number);
+        if (previous && (previous.origin !== origin || previous.destination !== destination || previous.time !== flight.time)) {
+          throw new Error("Dos ofertas contradictorias para el mismo vuelo");
+        }
+        flights.set(flight.number, flight);
+      }
+    }
+    await choice.click();
+  }
+  return [...flights.values()];
+}
+
+async function collectPublishedOffers(browser, dates, itinerary) {
+  const complete = new Set(itinerary.coverage.map(scope => scope.date + "|" + scope.direction));
+  const existing = new Set(itinerary.flights.map(f => [f.date, f.number, f.direction].join("|")));
+  const missing = dates.filter(date => !complete.has(date + "|ARRIVAL") || !complete.has(date + "|DEPARTURE"));
+  if (!missing.length) return;
+  const context = await browser.newContext({ timezoneId: ZONE, viewport: { width: 1500, height: 1200 } });
+  context.setDefaultTimeout(12_000);
+  try {
+    await Promise.all(["ARRIVAL", "DEPARTURE"].map(async direction => {
+      const page = await context.newPage();
+      for (const date of missing) {
+        if (complete.has(date + "|" + direction)) continue;
+        try {
+          for (const flight of await readOffers(page, date, direction)) {
+            if (!existing.has([date, flight.number, direction].join("|"))) itinerary.flights.push(flight);
+          }
+        } catch (error) {
+          const detail = error.message.split("\n")[0];
+          itinerary.warnings.push({ date, direction, source: "ITINERARIO", url: "https://interturis.almundo.com.ar", error: detail });
+          if (/^HTTP (?:401|403|406|429)/.test(detail)) break;
+        }
+      }
+    }));
+  } finally {
+    await context.close();
+  }
+}
+
+async function collectLater(browser, dates) {
+  if (!dates.length) return { flights: [], coverage: [], warnings: [] };
+  const itinerary = await fetchJetSmartItinerary(dates, { browser }).catch(error => ({
+    flights: [], coverage: [], warnings: [{source: "ITINERARIO", error: String(error)}]
+  }));
+  try {
+    await collectPublishedOffers(browser, dates, itinerary);
+  } catch (error) {
+    itinerary.warnings.push({source: "ITINERARIO", error: String(error)});
+  }
+  return itinerary;
+}
+
 export async function collectJetSmart(browser, days) {
   const today = new Intl.DateTimeFormat("sv-SE", { timeZone: ZONE }).format(new Date());
   const dates = validateDays(days, today);
@@ -145,7 +246,7 @@ export async function collectJetSmart(browser, days) {
   const later = dates.filter(date => date > horizon);
   const results = await Promise.allSettled([
     collectOfficial(browser, near),
-    later.length ? fetchJetSmartItinerary(later, { browser }) : { flights: [], coverage: [] }
+    collectLater(browser, later)
   ]);
   const flights = [];
   const coverage = [];
